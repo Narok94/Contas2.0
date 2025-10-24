@@ -4,7 +4,7 @@
   "description": "Um software de controle de contas moderno e intuitivo.",
   "private": true,
   "scripts": {
-    "build": "esbuild index.tsx --bundle --outfile=dist/bundle.js --jsx=automatic"
+    "build": "esbuild index.tsx --bundle --outfile=dist/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
