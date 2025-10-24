@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { type Account } from '../types';
-import { ACCOUNT_CATEGORIES } from '../utils/mockData';
 
 interface AccountFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (accountData: any) => void;
   account: Account | null;
+  categories: string[];
+  onManageCategories: () => void;
 }
 
-const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, onSubmit, account }) => {
+const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, onSubmit, account, categories, onManageCategories }) => {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState(ACCOUNT_CATEGORIES[0]);
+  const [category, setCategory] = useState(categories[0] || '');
   const [value, setValue] = useState('');
   const [isRecurrent, setIsRecurrent] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
@@ -28,13 +29,13 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
     } else {
       // Reset form
       setName('');
-      setCategory(ACCOUNT_CATEGORIES[0]);
+      setCategory(categories[0] || '');
       setValue('');
       setIsRecurrent(false);
       setIsInstallment(false);
       setTotalInstallments('2');
     }
-  }, [account, isOpen]);
+  }, [account, isOpen, categories]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,9 +72,14 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             </div>
              <div>
                 <label htmlFor="category" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Categoria</label>
-                <select id="category" value={category} onChange={e => setCategory(e.target.value)} className="mt-1 block w-full bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary h-[42px]">
-                {ACCOUNT_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
+                 <div className="flex items-center gap-2 mt-1">
+                    <select id="category" value={category} onChange={e => setCategory(e.target.value)} className="block w-full bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary h-[42px]">
+                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                    <button type="button" onClick={onManageCategories} title="Gerenciar categorias" className="flex-shrink-0 p-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors h-[42px]">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-text-secondary dark:text-dark-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </button>
+                </div>
             </div>
           </div>
           <div className="space-y-2 pt-2">

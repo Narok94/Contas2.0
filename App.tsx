@@ -1,9 +1,6 @@
-
-
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { type User, type Group, type Account, Role, AccountStatus } from './types';
-import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS } from './utils/mockData';
+import { type User, type Group, type Account, Role, AccountStatus, type Income } from './types';
+import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from './utils/mockData';
 import LoginScreen from './components/LoginScreen';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -17,9 +14,206 @@ import StatCardSkeleton from './components/skeletons/StatCardSkeleton';
 import AccountCardSkeleton from './components/skeletons/AccountCardSkeleton';
 import FloatingAiButton from './components/FloatingAiButton';
 import { useTheme } from './hooks/useTheme';
-import { ParsedCommand } from './services/geminiService';
+import { ParsedCommand, analyzeSpending } from './services/geminiService';
 
 export type View = 'login' | 'dashboard' | 'admin' | 'history';
+
+interface ManageCategoriesModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    categories: string[];
+    onAdd: (name: string) => boolean;
+    onUpdate: (oldName: string, newName: string) => boolean;
+    onDelete: (name: string) => boolean;
+}
+
+const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({ isOpen, onClose, categories, onAdd, onUpdate, onDelete }) => {
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [editingCategory, setEditingCategory] = useState<{ oldName: string; newName: string } | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setNewCategoryName('');
+            setEditingCategory(null);
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleAdd = () => {
+        if (onAdd(newCategoryName.trim())) {
+            setNewCategoryName('');
+        } else {
+            alert('Nome de categoria inválido ou já existente.');
+        }
+    };
+
+    const handleStartEdit = (name: string) => {
+        setEditingCategory({ oldName: name, newName: name });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingCategory(null);
+    };
+
+    const handleSaveEdit = () => {
+        if (editingCategory && onUpdate(editingCategory.oldName, editingCategory.newName.trim())) {
+            setEditingCategory(null);
+        } else {
+            alert('Novo nome de categoria inválido ou já existente.');
+        }
+    };
+    
+    const handleDelete = (name: string) => {
+        if (window.confirm(`Tem certeza que deseja excluir a categoria "${name}"?`)) {
+            onDelete(name);
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-[60] p-4 animate-fade-in">
+            <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-md animate-fade-in-up">
+                <h2 className="text-2xl font-bold mb-4">Gerenciar Categorias</h2>
+                <div className="space-y-2 max-h-64 overflow-y-auto mb-4 p-1">
+                    {categories.map(cat => (
+                        <div key={cat} className="flex items-center justify-between p-2 bg-surface-light dark:bg-dark-surface-light rounded-md">
+                            {editingCategory?.oldName === cat ? (
+                                <input 
+                                    type="text"
+                                    value={editingCategory.newName}
+                                    onChange={(e) => setEditingCategory({ ...editingCategory, newName: e.target.value })}
+                                    className="w-full text-sm py-1 px-2 rounded bg-white dark:bg-dark-background border border-primary focus:outline-none"
+                                    autoFocus
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                />
+                            ) : (
+                                <span className="text-sm">{cat}</span>
+                            )}
+                            <div className="flex items-center space-x-3 text-sm">
+                                {editingCategory?.oldName === cat ? (
+                                    <>
+                                        <button onClick={handleSaveEdit} className="font-semibold text-success hover:opacity-80">Salvar</button>
+                                        <button onClick={handleCancelEdit} className="text-text-muted hover:opacity-80">Cancelar</button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button onClick={() => handleStartEdit(cat)} className="text-primary-light hover:text-primary transition-colors">Editar</button>
+                                        <button onClick={() => handleDelete(cat)} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="flex space-x-2">
+                    <input 
+                        type="text" 
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="Adicionar nova categoria"
+                        className="w-full p-2 text-sm rounded-md bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:outline-none focus:ring-1 focus:ring-primary"
+                        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                    />
+                    <button onClick={handleAdd} className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary-dark transition-colors">Adicionar</button>
+                </div>
+                <div className="flex justify-end pt-4 mt-4 border-t border-border-color dark:border-dark-border-color">
+                    <button onClick={onClose} className="px-4 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors text-sm font-medium">Fechar</button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+const IncomeModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    incomes: Income[];
+    onAddOrUpdate: (incomeData: Omit<Income, 'id' | 'groupId' | 'date'> & { id?: string }) => void;
+    onDelete: (incomeId: string) => void;
+}> = ({ isOpen, onClose, incomes, onAddOrUpdate, onDelete }) => {
+    const [name, setName] = useState('');
+    const [value, setValue] = useState('');
+    const [isRecurrent, setIsRecurrent] = useState(false);
+    const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) {
+            resetForm();
+        }
+    }, [isOpen]);
+
+    const resetForm = () => {
+        setName('');
+        setValue('');
+        setIsRecurrent(false);
+        setEditingIncome(null);
+    };
+    
+    const handleEditClick = (income: Income) => {
+        setEditingIncome(income);
+        setName(income.name);
+        setValue(String(income.value));
+        setIsRecurrent(income.isRecurrent);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onAddOrUpdate({
+            id: editingIncome?.id,
+            name,
+            value: parseFloat(value),
+            isRecurrent,
+        });
+        resetForm();
+    };
+
+    if (!isOpen) return null;
+
+    const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
+            <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col animate-fade-in-up">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold">Gerenciar Entradas</h2>
+                    <button onClick={onClose} className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-3xl">&times;</button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto pr-2 space-y-2">
+                    {incomes.length > 0 ? incomes.map(income => (
+                        <div key={income.id} className="flex items-center justify-between p-3 bg-surface-light dark:bg-dark-surface-light rounded-lg">
+                            <div>
+                                <p className="font-semibold">{income.name} {income.isRecurrent && <span className="text-xs text-primary">(Recorrente)</span>}</p>
+                                <p className="text-sm text-success">{formatCurrency(income.value)}</p>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <button onClick={() => handleEditClick(income)} className="text-primary-light hover:text-primary">Editar</button>
+                                <button onClick={() => onDelete(income.id)} className="text-danger hover:text-pink-700">Excluir</button>
+                            </div>
+                        </div>
+                    )) : <p className="text-center text-text-muted py-8">Nenhuma entrada cadastrada.</p>}
+                </div>
+
+                <form onSubmit={handleSubmit} className="mt-4 pt-4 border-t border-border-color dark:border-dark-border-color space-y-3">
+                    <h3 className="text-lg font-semibold">{editingIncome ? 'Editando Entrada' : 'Adicionar Nova Entrada'}</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="text" placeholder="Nome (ex: Salário)" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
+                        <input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
+                    </div>
+                     <div className="flex items-center">
+                        <input id="income-recurrent" type="checkbox" checked={isRecurrent} onChange={e => setIsRecurrent(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded" />
+                        <label htmlFor="income-recurrent" className="ml-2 block text-sm text-text-secondary dark:text-dark-text-secondary">Entrada Recorrente</label>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                        {editingIncome && <button type="button" onClick={resetForm} className="px-4 py-2 text-sm rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color">Cancelar Edição</button>}
+                        <button type="submit" className="px-4 py-2 text-sm rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90">{editingIncome ? 'Salvar Alterações' : 'Adicionar'}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 
 const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -28,21 +222,24 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [view, setView] = useState<View>('dashboard');
 
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
+  
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [startVoiceOnChatOpen, setStartVoiceOnChatOpen] = useState(false);
   const [isAiListening, setIsAiListening] = useState(false);
-
-
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const constraintsRef = useRef<HTMLDivElement>(null);
-
 
   const loadData = useCallback(() => {
     setIsLoading(true);
@@ -50,6 +247,8 @@ const App: React.FC = () => {
       const storedUsers = localStorage.getItem('app_users');
       const storedGroups = localStorage.getItem('app_groups');
       const storedAccounts = localStorage.getItem('app_accounts');
+      const storedCategories = localStorage.getItem('app_categories');
+      const storedIncomes = localStorage.getItem('app_incomes');
 
       if (storedUsers && storedGroups && storedAccounts) {
         setUsers(JSON.parse(storedUsers));
@@ -63,6 +262,21 @@ const App: React.FC = () => {
         setGroups(MOCK_GROUPS);
         setAccounts(MOCK_ACCOUNTS);
       }
+      
+      if (storedCategories) {
+          setCategories(JSON.parse(storedCategories));
+      } else {
+          localStorage.setItem('app_categories', JSON.stringify(ACCOUNT_CATEGORIES));
+          setCategories(ACCOUNT_CATEGORIES);
+      }
+      
+      if (storedIncomes) {
+          setIncomes(JSON.parse(storedIncomes));
+      } else {
+          localStorage.setItem('app_incomes', JSON.stringify(MOCK_INCOMES));
+          setIncomes(MOCK_INCOMES);
+      }
+      
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
     } finally {
@@ -79,6 +293,16 @@ const App: React.FC = () => {
     }
     loadData();
   }, [loadData]);
+  
+  const userAccounts = useMemo(() => {
+    if (!currentUser) return [];
+    return accounts.filter(acc => acc.groupId === currentUser.groupId);
+  }, [accounts, currentUser]);
+
+  const userIncomes = useMemo(() => {
+      if (!currentUser) return [];
+      return incomes.filter(inc => inc.groupId === currentUser.groupId);
+  }, [incomes, currentUser]);
 
   const saveData = useCallback(<T,>(key: string, data: T) => {
     localStorage.setItem(key, JSON.stringify(data));
@@ -171,6 +395,49 @@ const App: React.FC = () => {
     return false;
   };
 
+  // Income CRUD
+  const handleAddOrUpdateIncome = (incomeData: Omit<Income, 'id' | 'groupId' | 'date'> & { id?: string }) => {
+    if (incomeData.id) {
+        // Update
+        const newIncomes = incomes.map(inc => inc.id === incomeData.id ? { ...inc, ...incomeData } : inc);
+        setIncomes(newIncomes);
+        saveData('app_incomes', newIncomes);
+    } else {
+        // Add
+        if (!currentUser) return;
+        const newIncome: Income = {
+            ...incomeData,
+            id: `inc-${Date.now()}`,
+            groupId: currentUser.groupId,
+            date: new Date().toISOString(),
+        };
+        const newIncomes = [...incomes, newIncome];
+        setIncomes(newIncomes);
+        saveData('app_incomes', newIncomes);
+    }
+  };
+
+  const handleDeleteIncome = (incomeId: string) => {
+      const newIncomes = incomes.filter(inc => inc.id !== incomeId);
+      setIncomes(newIncomes);
+      saveData('app_incomes', newIncomes);
+  };
+  
+   const handleEditIncomeByName = (editData: { original_name: string; new_name?: string; new_value?: number }): boolean => {
+    const incomeToEdit = userIncomes.find(inc => inc.name.toLowerCase() === editData.original_name.toLowerCase());
+    if (incomeToEdit) {
+        const updatedIncome = {
+            ...incomeToEdit,
+            name: editData.new_name || incomeToEdit.name,
+            value: editData.new_value || incomeToEdit.value,
+        };
+        const newIncomes = incomes.map(inc => inc.id === updatedIncome.id ? updatedIncome : inc);
+        setIncomes(newIncomes);
+        saveData('app_incomes', newIncomes);
+        return true;
+    }
+    return false;
+  };
 
   // User CRUD
   const handleAddUser = (user: Omit<User, 'id'>) => {
@@ -211,6 +478,47 @@ const App: React.FC = () => {
     setGroups(newGroups);
     saveData('app_groups', newGroups);
   };
+
+  // Category CRUD
+   const handleAddCategory = (name: string): boolean => {
+        if (name && !categories.find(c => c.toLowerCase() === name.toLowerCase())) {
+            const newCategories = [...categories, name].sort((a, b) => a.localeCompare(b));
+            setCategories(newCategories);
+            saveData('app_categories', newCategories);
+            return true;
+        }
+        return false;
+    };
+    
+    const handleUpdateCategory = (oldName: string, newName: string): boolean => {
+        if (newName && oldName !== newName && !categories.find(c => c.toLowerCase() === newName.toLowerCase())) {
+            const newCategories = categories.map(c => (c === oldName ? newName : c)).sort((a, b) => a.localeCompare(b));
+            setCategories(newCategories);
+            saveData('app_categories', newCategories);
+
+            const newAccounts = accounts.map(acc => (acc.category === oldName ? { ...acc, category: newName } : acc));
+            setAccounts(newAccounts);
+            saveData('app_accounts', newAccounts);
+            return true;
+        }
+        return false;
+    };
+
+    const handleDeleteCategory = (name: string): boolean => {
+        const isCategoryInUse = accounts.some(acc => acc.category === name);
+        if (isCategoryInUse) {
+            alert(`A categoria "${name}" está em uso e não pode ser excluída.`);
+            return false;
+        }
+        if (categories.length <= 1) {
+            alert("Você deve ter pelo menos uma categoria.");
+            return false;
+        }
+        const newCategories = categories.filter(c => c !== name);
+        setCategories(newCategories);
+        saveData('app_categories', newCategories);
+        return true;
+    };
   
   const openAccountModal = (account: Account | null = null) => {
       setAccountToEdit(account);
@@ -237,8 +545,16 @@ const App: React.FC = () => {
                 return editSuccess
                     ? `Conta "${command.data.original_name}" atualizada com sucesso!`
                     : `Não encontrei a conta "${command.data.original_name}" para editar.`;
+            case 'add_income':
+                handleAddOrUpdateIncome({ ...command.data, isRecurrent: false });
+                return `Entrada "${command.data.name}" adicionada com sucesso!`;
+            case 'edit_income':
+                 const editIncomeSuccess = handleEditIncomeByName(command.data);
+                return editIncomeSuccess
+                    ? `Entrada "${command.data.original_name}" atualizada com sucesso!`
+                    : `Não encontrei a entrada "${command.data.original_name}" para editar.`;
             default:
-                return "Não consegui entender seu comando. Você pode tentar reformular?";
+                return command.data.text || "Não consegui entender seu comando. Você pode tentar reformular?";
         }
     };
     
@@ -247,10 +563,132 @@ const App: React.FC = () => {
         setIsChatOpen(true);
     };
 
-  const userAccounts = useMemo(() => {
-    if (!currentUser) return [];
-    return accounts.filter(acc => acc.groupId === currentUser.groupId);
-  }, [accounts, currentUser]);
+    const handleTriggerAiAnalysis = async (): Promise<string> => {
+        if (userAccounts.length === 0) {
+            return "Não há contas para analisar.";
+        }
+
+        try {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
+            const prevMonth = previousMonthDate.getMonth();
+            const prevYear = previousMonthDate.getFullYear();
+
+            const currentMonthAccounts = userAccounts.filter(acc => {
+                if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
+                const paymentDate = new Date(acc.paymentDate);
+                return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+            });
+
+            const previousMonthAccounts = userAccounts.filter(acc => {
+                if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
+                const paymentDate = new Date(acc.paymentDate);
+                return paymentDate.getMonth() === prevMonth && paymentDate.getFullYear() === prevYear;
+            });
+            
+            const insight = await analyzeSpending(currentMonthAccounts, previousMonthAccounts);
+            return insight;
+
+        } catch (error) {
+            console.error("Failed to run spending analysis:", error);
+            return "Desculpe, ocorreu um erro ao tentar analisar seus gastos.";
+        }
+    };
+    
+    // Data Management
+    const handleExportData = () => {
+        try {
+            const dataToExport = {
+                users: users,
+                groups: groups,
+                accounts: accounts,
+                categories: categories,
+                incomes: incomes,
+            };
+            const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+                JSON.stringify(dataToExport, null, 2)
+            )}`;
+            const link = document.createElement("a");
+            link.href = jsonString;
+            const date = new Date().toISOString().slice(0, 10);
+            link.download = `controle_contas_backup_${date}.json`;
+            link.click();
+        } catch (error) {
+            console.error("Failed to export data", error);
+            alert("Ocorreu um erro ao exportar os dados.");
+        }
+    };
+
+    const handleImportData = (file: File) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target?.result;
+                if (typeof text !== 'string') throw new Error("Failed to read file");
+                
+                const data = JSON.parse(text);
+                if (data.users && data.groups && data.accounts && data.categories) {
+                    saveData('app_users', data.users);
+                    saveData('app_groups', data.groups);
+                    saveData('app_accounts', data.accounts);
+                    saveData('app_categories', data.categories);
+                    if (data.incomes) {
+                       saveData('app_incomes', data.incomes);
+                    }
+
+                    alert("Backup restaurado com sucesso! A aplicação será recarregada.");
+                    window.location.reload();
+                } else {
+                    alert("Arquivo de backup inválido ou corrompido.");
+                }
+            } catch (error) {
+                console.error("Failed to import data", error);
+                alert("Ocorreu um erro ao importar o arquivo de backup.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleExportToCsv = () => {
+        if (userAccounts.length === 0) {
+            alert("Nenhuma conta para exportar.");
+            return;
+        }
+
+        try {
+            const headers = ["ID", "Nome", "Categoria", "Valor", "Status", "Recorrente", "Parcela Atual", "Total Parcelas", "Data Pagamento"];
+            const rows = userAccounts.map(acc => [
+                `"${acc.id}"`,
+                `"${acc.name.replace(/"/g, '""')}"`,
+                `"${acc.category}"`,
+                acc.value,
+                `"${acc.status}"`,
+                acc.isRecurrent ? "Sim" : "Não",
+                acc.isInstallment ? acc.currentInstallment : "",
+                acc.isInstallment ? acc.totalInstallments : "",
+                `"${acc.paymentDate ? new Date(acc.paymentDate).toLocaleDateString('pt-BR') : ''}"`
+            ].join(','));
+
+            const csvContent = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+            
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            const date = new Date().toISOString().slice(0, 10);
+            link.setAttribute("download", `contas_export_${date}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Failed to export to CSV", error);
+            alert("Ocorreu um erro ao exportar para CSV.");
+        }
+    };
 
   const filteredDashboardAccounts = useMemo(() => {
     return userAccounts
@@ -265,7 +703,6 @@ const App: React.FC = () => {
         return a.name.localeCompare(b.name);
     });
   }, [userAccounts, searchTerm, filterStatus]);
-
 
   if (!currentUser) {
     return <LoginScreen onLogin={handleLogin} />;
@@ -295,6 +732,7 @@ const App: React.FC = () => {
           return (
             <Dashboard 
               accounts={filteredDashboardAccounts} 
+              incomes={userIncomes}
               onEditAccount={openAccountModal} 
               onDeleteAccount={handleDeleteAccount} 
               onToggleStatus={handleToggleAccountStatus} 
@@ -339,6 +777,23 @@ const App: React.FC = () => {
         onClose={closeAccountModal}
         onSubmit={handleAddOrUpdateAccount}
         account={accountToEdit}
+        categories={categories}
+        onManageCategories={() => setIsCategoryModalOpen(true)}
+      />
+       <ManageCategoriesModal
+          isOpen={isCategoryModalOpen}
+          onClose={() => setIsCategoryModalOpen(false)}
+          categories={categories}
+          onAdd={handleAddCategory}
+          onUpdate={handleUpdateCategory}
+          onDelete={handleDeleteCategory}
+        />
+      <IncomeModal
+        isOpen={isIncomeModalOpen}
+        onClose={() => setIsIncomeModalOpen(false)}
+        incomes={userIncomes}
+        onAddOrUpdate={handleAddOrUpdateIncome}
+        onDelete={handleDeleteIncome}
       />
       <AiChatModal 
         isOpen={isChatOpen}
@@ -347,15 +802,21 @@ const App: React.FC = () => {
             setStartVoiceOnChatOpen(false);
         }}
         accounts={userAccounts}
+        incomes={userIncomes}
+        categories={categories}
         onCommand={handleAiCommand}
         startWithVoice={startVoiceOnChatOpen}
         onListeningChange={setIsAiListening}
+        onTriggerAnalysis={handleTriggerAiAnalysis}
       />
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         theme={theme}
         toggleTheme={toggleTheme}
+        onExportData={handleExportData}
+        onImportData={handleImportData}
+        onExportToCsv={handleExportToCsv}
       />
        <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
        <FloatingAiButton 
@@ -368,6 +829,7 @@ const App: React.FC = () => {
           activeView={view}
           onViewChange={setView}
           onAddClick={() => openAccountModal()}
+          onIncomeClick={() => setIsIncomeModalOpen(true)}
           isAdmin={currentUser.role === Role.ADMIN}
        />
     </div>

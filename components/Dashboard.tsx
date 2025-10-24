@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { type Account, AccountStatus } from '../types';
+import { type Account, AccountStatus, type Income } from '../types';
 import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
 
 interface DashboardProps {
   accounts: Account[];
+  incomes: Income[];
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (accountId: string) => void;
   onToggleStatus: (accountId: string) => void;
@@ -22,19 +23,40 @@ const StatCard: React.FC<{ title: string; value: string | number; colorClass: st
 );
 
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, onEditAccount, onDeleteAccount, onToggleStatus, searchTerm, setSearchTerm, filterStatus, setFilterStatus }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, searchTerm, setSearchTerm, filterStatus, setFilterStatus }) => {
   
   const stats = useMemo(() => {
-    const totalValue = accounts.reduce((sum, acc) => sum + acc.value, 0);
-    const pendingValue = accounts.filter(acc => acc.status === AccountStatus.PENDING).reduce((sum, acc) => sum + acc.value, 0);
-    const paidValue = totalValue - pendingValue;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const currentMonthIncomes = incomes.filter(inc => {
+        const incomeDate = new Date(inc.date);
+        return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
+    });
+    const totalIncome = currentMonthIncomes.reduce((sum, inc) => sum + inc.value, 0);
+
+    const paidThisMonthValue = accounts
+        .filter(acc => {
+            if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
+            const paymentDate = new Date(acc.paymentDate);
+            return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+        })
+        .reduce((sum, acc) => sum + acc.value, 0);
+
+    const balance = totalIncome - paidThisMonthValue;
+    
+    const pendingValue = accounts
+        .filter(acc => acc.status === AccountStatus.PENDING)
+        .reduce((sum, acc) => sum + acc.value, 0);
+
     return {
-      count: accounts.length,
-      total: totalValue,
-      pending: pendingValue,
-      paid: paidValue,
+        totalIncome,
+        paidThisMonth: paidThisMonthValue,
+        balance,
+        pending: pendingValue,
     };
-  }, [accounts]);
+  }, [accounts, incomes]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -43,10 +65,10 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, onEditAccount, onDelete
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total de Contas" value={stats.count} colorClass="border-primary" />
-        <StatCard title="Valor Total" value={formatCurrency(stats.total)} colorClass="border-secondary" />
-        <StatCard title="Total Pendente" value={formatCurrency(stats.pending)} colorClass="border-danger" />
-        <StatCard title="Total Pago" value={formatCurrency(stats.paid)} colorClass="border-success" />
+        <StatCard title="Entradas (Mês)" value={formatCurrency(stats.totalIncome)} colorClass="border-success" />
+        <StatCard title="Despesas Pagas (Mês)" value={formatCurrency(stats.paidThisMonth)} colorClass="border-accent" />
+        <StatCard title="Saldo (Mês)" value={formatCurrency(stats.balance)} colorClass={stats.balance >= 0 ? "border-primary" : "border-danger"} />
+        <StatCard title="Pendente (Total)" value={formatCurrency(stats.pending)} colorClass="border-warning" />
       </div>
 
       <div>

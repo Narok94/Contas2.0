@@ -37,6 +37,15 @@ export interface Account {
   paymentDate?: string; // ISO string date
 }
 
+export interface Income {
+  id: string;
+  groupId: string;
+  name: string;
+  value: number;
+  date: string; // ISO string date for when it was received
+  isRecurrent: boolean;
+}
+
 export interface ChatMessage {
     role: 'user' | 'model';
     content: string;

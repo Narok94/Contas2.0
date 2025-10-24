@@ -1,9 +1,5 @@
-
-
-
-
 import React, { useState, useRef, useEffect } from 'react';
-import { type Account, type ChatMessage } from '../types';
+import { type Account, type ChatMessage, type Income } from '../types';
 import { processUserCommand, ParsedCommand } from '../services/geminiService';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 
@@ -11,9 +7,12 @@ interface AiChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   accounts: Account[];
+  incomes: Income[];
+  categories: string[];
   onCommand: (command: ParsedCommand) => string;
   startWithVoice: boolean;
   onListeningChange: (isListening: boolean) => void;
+  onTriggerAnalysis: () => Promise<string>;
 }
 
 // Efeito de digitação para as respostas do modelo
@@ -39,7 +38,7 @@ const Typewriter: React.FC<{ text: string }> = ({ text }) => {
 };
 
 
-const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, onCommand, startWithVoice, onListeningChange }) => {
+const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, incomes, categories, onCommand, startWithVoice, onListeningChange, onTriggerAnalysis }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -49,12 +48,14 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
         if (!content.trim() || isLoading) return;
 
         const userMessage: ChatMessage = { role: 'user', content: isVoice ? `🎤: "${content}"` : content };
+        const historyForApi = [...messages];
+
         setMessages(prev => [...prev, userMessage]);
         if (!isVoice) setInput('');
         setIsLoading(true);
 
         try {
-            const result = await processUserCommand(content, accounts);
+            const result = await processUserCommand(content, historyForApi, accounts, categories, incomes);
             let modelResponse: string;
 
             if (result.intent === 'unknown') {
@@ -79,6 +80,14 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
     };
 
     const { isListening, startListening, stopListening, isSupported } = useVoiceRecognition({ onResult: handleVoiceResult });
+    
+    const handleAnalyzeClick = async () => {
+        setIsLoading(true);
+        const analysisResult = await onTriggerAnalysis();
+        const modelMessage: ChatMessage = { role: 'model', content: analysisResult };
+        setMessages(prev => [...prev, modelMessage]);
+        setIsLoading(false);
+    };
 
     useEffect(() => {
         onListeningChange(isListening);
@@ -86,9 +95,10 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
 
     useEffect(() => {
         if(isOpen) {
-            setMessages([{ role: 'model', content: 'Olá! Sou seu assistente financeiro. Como posso ajudar? Você pode adicionar, pagar ou editar contas, ou me fazer uma pergunta.' }]);
+             setMessages([{ role: 'model', content: 'Olá! Sou seu assistente financeiro. Como posso ajudar? Você pode adicionar, pagar ou editar contas, ou me fazer uma pergunta.' }]);
+             setInput('');
         } else {
-            onListeningChange(false);
+             onListeningChange(false);
         }
     }, [isOpen, onListeningChange]);
     
@@ -126,7 +136,9 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
                                 ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white rounded-2xl rounded-br-lg' 
                                 : 'bg-dark-surface-light text-dark-text-primary rounded-2xl rounded-bl-lg'
                             }`}>
-                                {msg.role === 'model' && index === messages.length - 1 && !isLoading ? (
+                                {msg.role === 'model' && index === messages.length - 1 && isLoading ? (
+                                    <p className="text-sm" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
+                                ) : msg.role === 'model' ? (
                                     <Typewriter text={msg.content} />
                                 ) : (
                                     <p className="text-sm" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
@@ -150,6 +162,17 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
 
                 <div className="p-4 border-t border-primary/20">
                     <form onSubmit={handleSend} className="flex items-center space-x-2">
+                         <button
+                            type="button"
+                            onClick={handleAnalyzeClick}
+                            disabled={isLoading || isListening}
+                            className="p-2 rounded-full text-white bg-slate-800/50 border border-primary/30 hover:bg-primary/50 disabled:opacity-50 transition-all"
+                            title="Analisar Gastos"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                            </svg>
+                        </button>
                         <input
                             type="text"
                             value={input}

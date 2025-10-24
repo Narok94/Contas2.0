@@ -28,7 +28,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
   };
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full h-full">
        <div className="absolute inset-0 flex items-center justify-between px-4 bg-gray-100 dark:bg-dark-surface-light rounded-2xl">
         {/* Swipe Right Action */}
         <div className="flex items-center space-x-2 text-success">
@@ -45,7 +45,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
-          className={`relative rounded-2xl shadow-md p-3 sm:p-4 border-l-4 ${cardBorderColor} ${bgColor} transition-shadow duration-300 flex flex-col justify-between cursor-grab active:cursor-grabbing active:scale-95`}
+          className={`relative rounded-2xl shadow-md p-3 sm:p-4 border-l-4 ${cardBorderColor} ${bgColor} transition-shadow duration-300 flex flex-col justify-between cursor-grab active:cursor-grabbing active:scale-95 h-full`}
       >
         <div>
           <div className="flex items-start justify-between mb-2">
