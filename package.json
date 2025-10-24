@@ -1,24 +1,12 @@
 {
   "name": "controle-de-contas-inteligente",
+  "version": "1.0.0",
+  "description": "Um software de controle de contas moderno e intuitivo.",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@google/genai": "^1.27.0",
-    "recharts": "^3.3.0",
-    "framer-motion": "^11.3.19"
+    "build": "echo 'Nenhum passo de build necessário, projeto estático.'"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "typescript": "^5.0.0"
   }
 }
