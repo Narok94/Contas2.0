@@ -1,6 +1,5 @@
 import React from 'react';
-import { View } from '../App';
-import { Role } from '../types';
+import { View, Role } from '../types';
 
 interface BottomNavBarProps {
     activeView: View;
@@ -67,12 +66,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, o
                         onClick={() => onViewChange('admin')}
                     />
                 ) : (
-                     <NavItem 
-                        label="Admin"
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                        isActive={activeView === 'admin'}
-                        onClick={() => onViewChange('admin')}
-                    />
+                    <div /> // Placeholder to keep the layout consistent
                 )}
             </div>
         </div>

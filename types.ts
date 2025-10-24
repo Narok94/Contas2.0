@@ -1,3 +1,5 @@
+export type View = 'login' | 'dashboard' | 'admin' | 'history';
+
 export enum Role {
   ADMIN = 'ADMIN',
   USER = 'USER',
