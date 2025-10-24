@@ -14,8 +14,8 @@ interface DashboardProps {
   setFilterStatus: (status: AccountStatus | 'ALL') => void;
 }
 
-const StatCard: React.FC<{ title: string; value: string | number; }> = ({ title, value }) => (
-    <div className="bg-surface dark:bg-dark-surface p-4 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 active:scale-95">
+const StatCard: React.FC<{ title: string; value: string | number; colorClass: string; }> = ({ title, value, colorClass }) => (
+    <div className={`bg-surface dark:bg-dark-surface p-4 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 active:scale-95 border-t-4 ${colorClass}`}>
         <p className="text-2xl lg:text-3xl font-bold text-text-primary dark:text-dark-text-primary truncate">{value}</p>
         <p className="text-sm text-text-muted dark:text-dark-text-muted mt-1">{title}</p>
     </div>
@@ -43,10 +43,10 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, onEditAccount, onDelete
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total de Contas" value={stats.count} />
-        <StatCard title="Valor Total" value={formatCurrency(stats.total)} />
-        <StatCard title="Total Pendente" value={formatCurrency(stats.pending)} />
-        <StatCard title="Total Pago" value={formatCurrency(stats.paid)} />
+        <StatCard title="Total de Contas" value={stats.count} colorClass="border-primary" />
+        <StatCard title="Valor Total" value={formatCurrency(stats.total)} colorClass="border-secondary" />
+        <StatCard title="Total Pendente" value={formatCurrency(stats.pending)} colorClass="border-danger" />
+        <StatCard title="Total Pago" value={formatCurrency(stats.paid)} colorClass="border-success" />
       </div>
 
       <div>
@@ -57,7 +57,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, onEditAccount, onDelete
             setFilterStatus={setFilterStatus}
         />
         {accounts.length > 0 ? (
-          <div className="flex flex-col space-y-4 md:grid md:grid-cols-3 md:gap-4 md:space-y-0 xl:grid-cols-4 mt-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 mt-4">
             {accounts.map(acc => (
               <AccountCard 
                 key={acc.id} 

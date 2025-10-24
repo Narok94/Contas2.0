@@ -45,26 +45,26 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
-          className={`relative rounded-2xl shadow-md p-4 border-l-4 ${cardBorderColor} ${bgColor} transition-shadow duration-300 flex flex-col justify-between cursor-grab active:cursor-grabbing active:scale-95`}
+          className={`relative rounded-2xl shadow-md p-3 sm:p-4 border-l-4 ${cardBorderColor} ${bgColor} transition-shadow duration-300 flex flex-col justify-between cursor-grab active:cursor-grabbing active:scale-95`}
       >
         <div>
           <div className="flex items-start justify-between mb-2">
-              <h3 className="text-base sm:text-lg font-bold text-text-primary dark:text-dark-text-primary break-all pr-2">{account.name}</h3>
+              <h3 className="text-sm sm:text-base font-bold text-text-primary dark:text-dark-text-primary break-all pr-2">{account.name}</h3>
               <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${isPaid ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
                   {isPaid ? 'PAGO' : 'PENDENTE'}
               </span>
           </div>
-          <p className="text-xl sm:text-2xl font-light text-text-primary dark:text-dark-text-primary">{formatCurrency(account.value)}</p>
-          <div className="text-sm text-text-muted dark:text-dark-text-muted mt-2 space-y-1">
+          <p className="text-lg sm:text-xl font-light text-text-primary dark:text-dark-text-primary">{formatCurrency(account.value)}</p>
+          <div className="text-xs sm:text-sm text-text-muted dark:text-dark-text-muted mt-2 space-y-1">
             <p>Categoria: {account.category}</p>
             {account.isRecurrent && <p className="font-medium">Recorrente</p>}
             {account.isInstallment && <p className="font-medium">Parcela {account.currentInstallment}/{account.totalInstallments}</p>}
           </div>
         </div>
         
-        <div className="flex items-center justify-end space-x-2 mt-4">
-          <button onClick={() => onEdit(account)} title="Editar" className="p-2 rounded-full hover:bg-primary/20 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-light" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+        <div className="flex items-center justify-end space-x-1 sm:space-x-2 mt-3 sm:mt-4">
+          <button onClick={() => onEdit(account)} title="Editar" className="p-1 sm:p-2 rounded-full hover:bg-primary/20 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-primary-light" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
           </button>
         </div>
       </motion.div>

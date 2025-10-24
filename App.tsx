@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus } from './types';
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS } from './utils/mockData';
@@ -35,6 +36,8 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [startVoiceOnChatOpen, setStartVoiceOnChatOpen] = useState(false);
+  const [isAiListening, setIsAiListening] = useState(false);
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
@@ -150,6 +153,24 @@ const App: React.FC = () => {
       setAccounts(newAccounts);
       saveData('app_accounts', newAccounts);
   };
+  
+  const handleEditAccountByName = (editData: { original_name: string; new_name?: string; new_value?: number; new_category?: string }): boolean => {
+    const accountToEdit = userAccounts.find(acc => acc.name.toLowerCase() === editData.original_name.toLowerCase());
+    if (accountToEdit) {
+        const updatedAccount = {
+            ...accountToEdit,
+            name: editData.new_name || accountToEdit.name,
+            value: editData.new_value || accountToEdit.value,
+            category: editData.new_category || accountToEdit.category,
+        };
+        const newAccounts = accounts.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc);
+        setAccounts(newAccounts);
+        saveData('app_accounts', newAccounts);
+        return true;
+    }
+    return false;
+  };
+
 
   // User CRUD
   const handleAddUser = (user: Omit<User, 'id'>) => {
@@ -201,19 +222,21 @@ const App: React.FC = () => {
       setAccountToEdit(null);
   };
   
-   const handleVoiceCommand = (command: ParsedCommand): string => {
+   const handleAiCommand = (command: ParsedCommand): string => {
         switch (command.intent) {
             case 'add_account':
-                // FIX: Add missing properties 'isRecurrent' and 'isInstallment'
-                // to satisfy the type required by handleAddOrUpdateAccount.
-                // Voice commands for adding accounts default to non-recurrent and non-installment.
                 handleAddOrUpdateAccount({ ...command.data, isRecurrent: false, isInstallment: false });
                 return `Conta "${command.data.name}" adicionada com sucesso!`;
             case 'pay_account':
-                const success = handleToggleAccountStatusByName(command.data.name);
-                return success
+                const paySuccess = handleToggleAccountStatusByName(command.data.name);
+                return paySuccess
                     ? `Conta "${command.data.name}" marcada como paga!`
                     : `Não encontrei a conta "${command.data.name}" para pagar.`;
+            case 'edit_account':
+                const editSuccess = handleEditAccountByName(command.data);
+                return editSuccess
+                    ? `Conta "${command.data.original_name}" atualizada com sucesso!`
+                    : `Não encontrei a conta "${command.data.original_name}" para editar.`;
             default:
                 return "Não consegui entender seu comando. Você pode tentar reformular?";
         }
@@ -324,8 +347,9 @@ const App: React.FC = () => {
             setStartVoiceOnChatOpen(false);
         }}
         accounts={userAccounts}
-        onCommand={handleVoiceCommand}
+        onCommand={handleAiCommand}
         startWithVoice={startVoiceOnChatOpen}
+        onListeningChange={setIsAiListening}
       />
       <SettingsModal
         isOpen={isSettingsModalOpen}
@@ -338,6 +362,7 @@ const App: React.FC = () => {
             onClick={() => setIsChatOpen(true)} 
             onLongPress={handleAiButtonLongPress}
             constraintsRef={constraintsRef}
+            isListening={isAiListening}
         />
        <BottomNavBar
           activeView={view}

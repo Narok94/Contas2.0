@@ -1,7 +1,10 @@
 
+
+
+
 import React, { useState, useRef, useEffect } from 'react';
 import { type Account, type ChatMessage } from '../types';
-import { getFinancialInsights, processVoiceCommand, ParsedCommand } from '../services/geminiService';
+import { processUserCommand, ParsedCommand } from '../services/geminiService';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 
 interface AiChatModalProps {
@@ -10,6 +13,7 @@ interface AiChatModalProps {
   accounts: Account[];
   onCommand: (command: ParsedCommand) => string;
   startWithVoice: boolean;
+  onListeningChange: (isListening: boolean) => void;
 }
 
 // Efeito de digitação para as respostas do modelo
@@ -35,38 +39,58 @@ const Typewriter: React.FC<{ text: string }> = ({ text }) => {
 };
 
 
-const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, onCommand, startWithVoice }) => {
+const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, onCommand, startWithVoice, onListeningChange }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const handleVoiceResult = async (transcript: string) => {
-        if (!transcript) return;
-        setIsLoading(true);
-        const userMessage: ChatMessage = { role: 'user', content: `🎤: "${transcript}"` };
+    const submitMessage = async (content: string, isVoice: boolean = false) => {
+        if (!content.trim() || isLoading) return;
+
+        const userMessage: ChatMessage = { role: 'user', content: isVoice ? `🎤: "${content}"` : content };
         setMessages(prev => [...prev, userMessage]);
+        if (!isVoice) setInput('');
+        setIsLoading(true);
 
         try {
-            const command = await processVoiceCommand(transcript, accounts);
-            const feedback = onCommand(command);
-            const modelMessage: ChatMessage = { role: 'model', content: feedback };
+            const result = await processUserCommand(content, accounts);
+            let modelResponse: string;
+
+            if (result.intent === 'unknown') {
+                modelResponse = result.data.text;
+            } else {
+                modelResponse = onCommand(result);
+            }
+            
+            const modelMessage: ChatMessage = { role: 'model', content: modelResponse };
             setMessages(prev => [...prev, modelMessage]);
         } catch (error) {
-            const errorMessage: ChatMessage = { role: 'model', content: 'Ocorreu um erro ao processar o comando de voz.' };
+            const errorMessage: ChatMessage = { role: 'model', content: 'Ocorreu um erro. Por favor, tente novamente.' };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleVoiceResult = (transcript: string) => {
+        if (!transcript) return;
+        submitMessage(transcript, true);
+    };
+
     const { isListening, startListening, stopListening, isSupported } = useVoiceRecognition({ onResult: handleVoiceResult });
 
     useEffect(() => {
+        onListeningChange(isListening);
+    }, [isListening, onListeningChange]);
+
+    useEffect(() => {
         if(isOpen) {
-            setMessages([{ role: 'model', content: 'Olá! Sou seu assistente financeiro. Como posso ajudar? Você pode digitar ou usar o microfone para dar comandos.' }]);
+            setMessages([{ role: 'model', content: 'Olá! Sou seu assistente financeiro. Como posso ajudar? Você pode adicionar, pagar ou editar contas, ou me fazer uma pergunta.' }]);
+        } else {
+            onListeningChange(false);
         }
-    }, [isOpen]);
+    }, [isOpen, onListeningChange]);
     
     useEffect(() => {
         if (isOpen && startWithVoice && isSupported && !isListening) {
@@ -79,25 +103,9 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading]);
 
-    const handleSend = async (e?: React.FormEvent) => {
+    const handleSend = (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!input.trim() || isLoading) return;
-
-        const userMessage: ChatMessage = { role: 'user', content: input };
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        setIsLoading(true);
-
-        try {
-            const responseContent = await getFinancialInsights(accounts, input);
-            const modelMessage: ChatMessage = { role: 'model', content: responseContent };
-            setMessages(prev => [...prev, modelMessage]);
-        } catch (error) {
-            const errorMessage: ChatMessage = { role: 'model', content: 'Ocorreu um erro. Por favor, tente novamente.' };
-            setMessages(prev => [...prev, errorMessage]);
-        } finally {
-            setIsLoading(false);
-        }
+        submitMessage(input);
     };
 
     if (!isOpen) return null;
@@ -106,14 +114,18 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex justify-center items-center z-50 p-4 animate-fade-in">
             <div className="bg-gradient-to-b from-slate-900 via-black to-slate-900 border border-primary/30 rounded-2xl shadow-2xl shadow-primary/20 w-full max-w-2xl h-[80vh] flex flex-col animate-fade-in-up">
                 <div className="flex justify-between items-center p-4 border-b border-primary/20">
-                    <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-secondary-light">Assistente IA</h2>
+                    <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-light via-secondary-light to-accent-light">Assistente IA</h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl transition-colors">&times;</button>
                 </div>
 
                 <div className="flex-1 p-4 overflow-y-auto space-y-4 [scrollbar-width:thin] [scrollbar-color:#6366f1_#0f172a]">
                     {messages.map((msg, index) => (
-                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-md p-3 rounded-lg text-white ${msg.role === 'user' ? 'bg-gradient-to-br from-primary to-secondary' : 'bg-sky-500/10 border border-sky-500/30'}`}>
+                        <div key={index} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`w-fit max-w-xl px-4 py-3 ${
+                                msg.role === 'user' 
+                                ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white rounded-2xl rounded-br-lg' 
+                                : 'bg-dark-surface-light text-dark-text-primary rounded-2xl rounded-bl-lg'
+                            }`}>
                                 {msg.role === 'model' && index === messages.length - 1 && !isLoading ? (
                                     <Typewriter text={msg.content} />
                                 ) : (
@@ -124,9 +136,11 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, on
                     ))}
                     {isLoading && (
                          <div className="flex justify-start">
-                             <div className="max-w-sm w-full p-3 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center space-x-2">
-                                <div className="w-full h-2 bg-primary/50 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gradient-to-r from-transparent via-secondary-light to-transparent w-1/2 rounded-full animate-scanner-beam"></div>
+                             <div className="px-4 py-3 rounded-2xl rounded-bl-lg bg-dark-surface-light w-24">
+                                <div className="flex items-center space-x-2 h-5">
+                                    <div className="w-full h-2 bg-primary/50 rounded-full overflow-hidden">
+                                        <div className="h-full bg-gradient-to-r from-transparent via-secondary-light to-transparent w-1/2 rounded-full animate-scanner-beam"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

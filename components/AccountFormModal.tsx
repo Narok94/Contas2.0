@@ -94,7 +94,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
           )}
           <div className="flex justify-end space-x-3 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-md bg-surface-light dark:bg-dark-surface-light text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">Cancelar</button>
-            <button type="submit" className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark transition-colors">{account ? 'Salvar Alterações' : 'Adicionar Conta'}</button>
+            <button type="submit" className="px-4 py-2 text-sm font-medium rounded-md text-white bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark transition-all">{account ? 'Salvar Alterações' : 'Adicionar Conta'}</button>
           </div>
         </form>
       </div>

@@ -34,7 +34,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ searchTerm, setSearchTerm, filter
                         onClick={() => setFilterStatus(filter.value)}
                         className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                             filterStatus === filter.value
-                                ? 'bg-primary text-white shadow'
+                                ? 'bg-gradient-to-r from-primary to-secondary text-white shadow'
                                 : 'text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color/50'
                         }`}
                     >
