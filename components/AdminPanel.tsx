@@ -1,5 +1,5 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
+
+import React, { useState, useEffect } from 'react';
 import { type User, type Group, Role } from '../types';
 
 interface UserFormModalProps {

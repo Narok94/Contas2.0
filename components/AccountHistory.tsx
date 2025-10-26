@@ -1,7 +1,7 @@
 
 
-import * as React from 'react';
-const { useMemo, useState } = React;
+
+import React, { useMemo, useState } from 'react';
 import { type Account, AccountStatus } from '../types';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, 

@@ -1,4 +1,5 @@
-import * as React from 'react';
+
+import React from 'react';
 
 const AccountCardSkeleton: React.FC = () => {
   return (

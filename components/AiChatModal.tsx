@@ -1,5 +1,5 @@
-import * as React from 'react';
-const { useState, useRef, useEffect, forwardRef, useImperativeHandle } = React;
+
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { type Account, type ChatMessage, type Income, type User } from '../types';
 import { generateResponseStream, ParsedCommand } from '../services/geminiService';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';

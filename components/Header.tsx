@@ -1,5 +1,5 @@
-import * as React from 'react';
-const { useState, useRef, useEffect } = React;
+
+import React, { useState, useRef, useEffect } from 'react';
 import { type User } from '../types';
 
 interface HeaderProps {

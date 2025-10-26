@@ -1,5 +1,5 @@
-import * as React from 'react';
-const { useMemo, useState } = React;
+
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Account, AccountStatus, type Income } from '../types';
 import AccountCard from './AccountCard';

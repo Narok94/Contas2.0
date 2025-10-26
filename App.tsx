@@ -1,5 +1,5 @@
-import * as React from 'react';
-const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from './utils/mockData';
 import LoginScreen from './components/LoginScreen';

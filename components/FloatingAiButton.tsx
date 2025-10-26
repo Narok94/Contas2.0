@@ -1,5 +1,5 @@
-import * as React from 'react';
-const { useRef } = React;
+
+import React, { useRef } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 
 interface FloatingAiButtonProps {

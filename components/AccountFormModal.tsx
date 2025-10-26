@@ -1,5 +1,5 @@
-import * as React from 'react';
-const { useState, useEffect, useRef } = React;
+
+import React, { useState, useEffect, useRef } from 'react';
 import { type Account } from '../types';
 
 interface AccountFormModalProps {
