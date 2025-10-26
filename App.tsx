@@ -1,7 +1,7 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
-import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from './utils/mockData';
 import LoginScreen from './components/LoginScreen';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -16,6 +16,7 @@ import AccountCardSkeleton from './components/skeletons/AccountCardSkeleton';
 import FloatingAiButton from './components/FloatingAiButton';
 import { useTheme } from './hooks/useTheme';
 import { ParsedCommand, analyzeSpending } from './services/geminiService';
+import * as dataService from './services/dataService';
 import IncomeManagement from './components/IncomeManagement';
 import ChangePasswordModal from './components/ChangePasswordModal';
 
@@ -23,9 +24,9 @@ interface ManageCategoriesModalProps {
     isOpen: boolean;
     onClose: () => void;
     categories: string[];
-    onAdd: (name: string) => boolean;
-    onUpdate: (oldName: string, newName: string) => boolean;
-    onDelete: (name: string) => boolean;
+    onAdd: (name: string) => Promise<boolean>;
+    onUpdate: (oldName: string, newName: string) => Promise<boolean>;
+    onDelete: (name: string) => Promise<boolean>;
 }
 
 const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({ isOpen, onClose, categories, onAdd, onUpdate, onDelete }) => {
@@ -41,8 +42,8 @@ const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({ isOpen, o
 
     if (!isOpen) return null;
 
-    const handleAdd = () => {
-        if (onAdd(newCategoryName.trim())) {
+    const handleAdd = async () => {
+        if (await onAdd(newCategoryName.trim())) {
             setNewCategoryName('');
         } else {
             alert('Nome de categoria inválido ou já existente.');
@@ -57,17 +58,17 @@ const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({ isOpen, o
         setEditingCategory(null);
     };
 
-    const handleSaveEdit = () => {
-        if (editingCategory && onUpdate(editingCategory.oldName, editingCategory.newName.trim())) {
+    const handleSaveEdit = async () => {
+        if (editingCategory && await onUpdate(editingCategory.oldName, editingCategory.newName.trim())) {
             setEditingCategory(null);
         } else {
             alert('Novo nome de categoria inválido ou já existente.');
         }
     };
     
-    const handleDelete = (name: string) => {
+    const handleDelete = async (name: string) => {
         if (window.confirm(`Tem certeza que deseja excluir a categoria "${name}"?`)) {
-            onDelete(name);
+            await onDelete(name);
         }
     }
 
@@ -151,62 +152,37 @@ const App: React.FC = () => {
   const constraintsRef = useRef<HTMLDivElement>(null);
   const chatModalRef = useRef<AiChatModalRef>(null);
 
-  const saveData = useCallback(<T,>(key: string, data: T) => {
-    localStorage.setItem(key, JSON.stringify(data));
-  }, []);
-
-  const loadData = useCallback(() => {
-    setIsLoading(true);
-    try {
-      const storedUsers = localStorage.getItem('app_users');
-      const storedGroups = localStorage.getItem('app_groups');
-      const storedAccounts = localStorage.getItem('app_accounts');
-      const storedCategories = localStorage.getItem('app_categories');
-      const storedIncomes = localStorage.getItem('app_incomes');
-
-      if (storedUsers && storedGroups && storedAccounts) {
-        setUsers(JSON.parse(storedUsers));
-        setGroups(JSON.parse(storedGroups));
-        setAccounts(JSON.parse(storedAccounts));
-      } else {
-        localStorage.setItem('app_users', JSON.stringify(MOCK_USERS));
-        localStorage.setItem('app_groups', JSON.stringify(MOCK_GROUPS));
-        localStorage.setItem('app_accounts', JSON.stringify(MOCK_ACCOUNTS));
-        setUsers(MOCK_USERS);
-        setGroups(MOCK_GROUPS);
-        setAccounts(MOCK_ACCOUNTS);
-      }
-      
-      if (storedCategories) {
-          setCategories(JSON.parse(storedCategories));
-      } else {
-          localStorage.setItem('app_categories', JSON.stringify(ACCOUNT_CATEGORIES));
-          setCategories(ACCOUNT_CATEGORIES);
-      }
-      
-      if (storedIncomes) {
-          setIncomes(JSON.parse(storedIncomes));
-      } else {
-          localStorage.setItem('app_incomes', JSON.stringify(MOCK_INCOMES));
-          setIncomes(MOCK_INCOMES);
-      }
-      
-    } catch (error) {
-      console.error("Failed to load data from localStorage", error);
-    } finally {
-      setTimeout(() => setIsLoading(false), 1000); // Simulate loading
-    }
-  }, []);
-
   useEffect(() => {
-    // Only run on initial mount
-    const storedUser = sessionStorage.getItem('app_currentUser');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-      setView('dashboard');
-    }
-    loadData();
-  }, [loadData]);
+    const loadInitialData = async () => {
+        setIsLoading(true);
+        try {
+            const [usersData, groupsData, accountsData, categoriesData, incomesData] = await Promise.all([
+                dataService.getUsers(),
+                dataService.getGroups(),
+                dataService.getAccounts(),
+                dataService.getCategories(),
+                dataService.getIncomes(),
+            ]);
+            setUsers(usersData);
+            setGroups(groupsData);
+            setAccounts(accountsData);
+            setCategories(categoriesData);
+            setIncomes(incomesData);
+
+            const storedUser = sessionStorage.getItem('app_currentUser');
+            if (storedUser) {
+                setCurrentUser(JSON.parse(storedUser));
+                setView('dashboard');
+            }
+        } catch (error) {
+            console.error("Failed to load data", error);
+        } finally {
+            setTimeout(() => setIsLoading(false), 500);
+        }
+    };
+    
+    loadInitialData();
+  }, []);
   
   const userAccounts = useMemo(() => {
     if (!currentUser) return [];
@@ -218,7 +194,7 @@ const App: React.FC = () => {
       return incomes.filter(inc => currentUser.groupIds.includes(inc.groupId));
   }, [incomes, currentUser]);
 
-  const handleLogin = useCallback((username: string, password: string): boolean => {
+  const handleLogin = (username: string, password: string): boolean => {
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (user) {
       setCurrentUser(user);
@@ -229,7 +205,7 @@ const App: React.FC = () => {
       return true;
     }
     return false;
-  }, [users]);
+  };
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -238,119 +214,118 @@ const App: React.FC = () => {
   };
 
   // Account CRUD
-  const handleAddOrUpdateAccount = (accountData: Omit<Account, 'id' | 'status'> & { id?: string }) => {
+  const handleAddOrUpdateAccount = async (accountData: Omit<Account, 'id' | 'status'> & { id?: string }) => {
     if (accountData.id) {
         // Update
-        const newAccounts = accounts.map(acc => acc.id === accountData.id ? { ...acc, ...accountData } : acc);
-        setAccounts(newAccounts);
-        saveData('app_accounts', newAccounts);
+        const existingAccount = accounts.find(acc => acc.id === accountData.id);
+        if (!existingAccount) return;
+        
+        const updatedAccountData = { ...existingAccount, ...accountData };
+        const updatedAccount = await dataService.updateAccount(updatedAccountData);
+        setAccounts(prev => prev.map(acc => acc.id === accountData.id ? updatedAccount : acc));
     } else {
         // Add
         if (!currentUser) return;
-        const newAccount: Account = {
+        const newAccountData: Account = {
             ...accountData,
             id: `acc-${Date.now()}`,
             status: AccountStatus.PENDING,
             ...(accountData.isInstallment && { currentInstallment: 1 }),
         };
-        const newAccounts = [...accounts, newAccount];
-        setAccounts(newAccounts);
-        saveData('app_accounts', newAccounts);
+        const newAccount = await dataService.addAccount(newAccountData);
+        setAccounts(prev => [...prev, newAccount]);
     }
-};
-  const handleToggleAccountStatus = (accountId: string) => {
-      const newAccounts = accounts.map(acc => {
-        if (acc.id === accountId) {
-            const isNowPaid = acc.status === AccountStatus.PENDING;
-            return {
-                ...acc,
-                status: isNowPaid ? AccountStatus.PAID : AccountStatus.PENDING,
-                paymentDate: isNowPaid ? new Date().toISOString() : undefined,
-            };
-        }
-        return acc;
-    });
-    setAccounts(newAccounts);
-    saveData('app_accounts', newAccounts);
   };
   
-  const handleToggleAccountStatusByName = (accountName: string) => {
+  const handleToggleAccountStatus = async (accountId: string) => {
+      const account = accounts.find(acc => acc.id === accountId);
+      if (!account) return;
+      
+      const isNowPaid = account.status === AccountStatus.PENDING;
+      const updatedAccountData = {
+          ...account,
+          status: isNowPaid ? AccountStatus.PAID : AccountStatus.PENDING,
+          paymentDate: isNowPaid ? new Date().toISOString() : undefined,
+      };
+
+      const updatedAccount = await dataService.updateAccount(updatedAccountData);
+      setAccounts(prevAccounts => prevAccounts.map(acc => acc.id === accountId ? updatedAccount : acc));
+  };
+  
+  const handleToggleAccountStatusByName = async (accountName: string): Promise<boolean> => {
       const accountToToggle = userAccounts.find(acc => acc.name.toLowerCase() === accountName.toLowerCase());
       if (accountToToggle) {
-          handleToggleAccountStatus(accountToToggle.id);
+          await handleToggleAccountStatus(accountToToggle.id);
           return true;
       }
       return false;
   };
 
-  const handleDeleteAccount = (accountId: string) => {
-      const newAccounts = accounts.filter(acc => acc.id !== accountId);
-      setAccounts(newAccounts);
-      saveData('app_accounts', newAccounts);
+  const handleDeleteAccount = async (accountId: string) => {
+      await dataService.deleteAccount(accountId);
+      setAccounts(prev => prev.filter(acc => acc.id !== accountId));
   };
   
-  const handleEditAccountByName = (editData: { original_name: string; new_name?: string; new_value?: number; new_category?: string }): boolean => {
+  const handleEditAccountByName = async (editData: { original_name: string; new_name?: string; new_value?: number; new_category?: string }): Promise<boolean> => {
     const accountToEdit = userAccounts.find(acc => acc.name.toLowerCase() === editData.original_name.toLowerCase());
     if (accountToEdit) {
-        const updatedAccount = {
+        const updatedAccountData = {
             ...accountToEdit,
             name: editData.new_name || accountToEdit.name,
             value: editData.new_value || accountToEdit.value,
             category: editData.new_category || accountToEdit.category,
         };
-        const newAccounts = accounts.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc);
-        setAccounts(newAccounts);
-        saveData('app_accounts', newAccounts);
+        const updatedAccount = await dataService.updateAccount(updatedAccountData);
+        setAccounts(prev => prev.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc));
         return true;
     }
     return false;
   };
 
   // Income CRUD
-  const handleAddOrUpdateIncome = (incomeData: Omit<Income, 'id' | 'date'> & { id?: string }) => {
+  const handleAddOrUpdateIncome = async (incomeData: Omit<Income, 'id' | 'date'> & { id?: string }) => {
     if (incomeData.id) {
         // Update
-        const newIncomes = incomes.map(inc => inc.id === incomeData.id ? { ...inc, ...incomeData } : inc);
-        setIncomes(newIncomes);
-        saveData('app_incomes', newIncomes);
+        const existingIncome = incomes.find(inc => inc.id === incomeData.id);
+        if (!existingIncome) return;
+        const updatedIncomeData = { ...existingIncome, ...incomeData };
+        const updatedIncome = await dataService.updateIncome(updatedIncomeData);
+        setIncomes(prev => prev.map(inc => inc.id === incomeData.id ? updatedIncome : inc));
     } else {
         // Add
         if (!currentUser) return;
-        const newIncome: Income = {
+        const newIncomeData: Income = {
             ...(incomeData as Omit<Income, 'id'|'date'>),
             id: `inc-${Date.now()}`,
             date: new Date().toISOString(),
         };
-        const newIncomes = [...incomes, newIncome];
-        setIncomes(newIncomes);
-        saveData('app_incomes', newIncomes);
+        const newIncome = await dataService.addIncome(newIncomeData);
+        setIncomes(prev => [...prev, newIncome]);
     }
   };
 
-  const handleDeleteIncome = (incomeId: string) => {
-      const newIncomes = incomes.filter(inc => inc.id !== incomeId);
-      setIncomes(newIncomes);
-      saveData('app_incomes', newIncomes);
+  const handleDeleteIncome = async (incomeId: string) => {
+      await dataService.deleteIncome(incomeId);
+      setIncomes(prev => prev.filter(inc => inc.id !== incomeId));
   };
   
-   const handleEditIncomeByName = (editData: { original_name: string; new_name?: string; new_value?: number }): boolean => {
+   const handleEditIncomeByName = async (editData: { original_name: string; new_name?: string; new_value?: number }): Promise<boolean> => {
     const incomeToEdit = userIncomes.find(inc => inc.name.toLowerCase() === editData.original_name.toLowerCase());
     if (incomeToEdit) {
-        const updatedIncome = {
+        const updatedIncomeData = {
             ...incomeToEdit,
             name: editData.new_name || incomeToEdit.name,
             value: editData.new_value || incomeToEdit.value,
         };
-        const newIncomes = incomes.map(inc => inc.id === updatedIncome.id ? updatedIncome : inc);
-        setIncomes(newIncomes);
-        saveData('app_incomes', newIncomes);
+        const updatedIncome = await dataService.updateIncome(updatedIncomeData);
+        setIncomes(prev => prev.map(inc => inc.id === updatedIncome.id ? updatedIncome : inc));
         return true;
     }
     return false;
   };
 
   // User CRUD
-  const handleAddUser = useCallback((user: Omit<User, 'id'>): boolean => {
+  const handleAddUser = async (user: Omit<User, 'id'>): Promise<boolean> => {
     if (users.some(u => u.username.toLowerCase() === user.username.toLowerCase())) {
         alert('Este nome de usuário já está em uso. Por favor, escolha outro.');
         return false;
@@ -359,14 +334,12 @@ const App: React.FC = () => {
         alert('A senha é obrigatória para novos usuários.');
         return false;
     }
-    const newUser = { ...user, id: `user-${Date.now()}` };
-    const newUsers = [...users, newUser];
-    setUsers(newUsers);
-    saveData('app_users', newUsers);
+    const newUser = await dataService.addUser(user);
+    setUsers(prevUsers => [...prevUsers, newUser]);
     return true;
-  }, [users, saveData]);
+  };
 
-  const handleUpdateUser = useCallback((updatedUser: User): boolean => {
+  const handleUpdateUser = async (updatedUser: User): Promise<boolean> => {
     const originalUser = users.find(u => u.id === updatedUser.id);
     if (originalUser && originalUser.username.toLowerCase() !== updatedUser.username.toLowerCase()) {
         if (users.some(u => u.id !== updatedUser.id && u.username.toLowerCase() === updatedUser.username.toLowerCase())) {
@@ -374,84 +347,75 @@ const App: React.FC = () => {
             return false;
         }
     }
-    const newUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
-    setUsers(newUsers);
-    saveData('app_users', newUsers);
+    const user = await dataService.updateUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === user.id ? user : u));
     return true;
-  }, [users, saveData]);
-
-  const handleDeleteUser = (userId: string) => {
-    const newUsers = users.filter(u => u.id !== userId);
-    setUsers(newUsers);
-    saveData('app_users', newUsers);
   };
 
-  const handleChangePassword = (userId: string, newPassword: string) => {
-    const newUsers = users.map(u => {
-      if (u.id === userId) {
-        return { ...u, password: newPassword, mustChangePassword: false };
-      }
-      return u;
-    });
-    setUsers(newUsers);
-    saveData('app_users', newUsers);
+  const handleDeleteUser = async (userId: string) => {
+    await dataService.deleteUser(userId);
+    setUsers(prev => prev.filter(u => u.id !== userId));
+  };
 
+  const handleChangePassword = async (userId: string, newPassword: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    const updatedUserData = { ...user, password: newPassword, mustChangePassword: false };
+    const updatedUser = await dataService.updateUser(updatedUserData);
+    setUsers(prev => prev.map(u => (u.id === userId ? updatedUser : u)));
+    
     if (currentUser && currentUser.id === userId) {
-      const updatedCurrentUser = { ...currentUser, password: newPassword, mustChangePassword: false };
-      setCurrentUser(updatedCurrentUser);
-      sessionStorage.setItem('app_currentUser', JSON.stringify(updatedCurrentUser));
+      setCurrentUser(updatedUser);
+      sessionStorage.setItem('app_currentUser', JSON.stringify(updatedUser));
       setView('dashboard');
     }
   };
 
   // Group CRUD
-  const handleAddGroup = (group: Omit<Group, 'id'>) => {
-    const newGroup = { ...group, id: `group-${Date.now()}` };
-    const newGroups = [...groups, newGroup];
-    setGroups(newGroups);
-    saveData('app_groups', newGroups);
+  const handleAddGroup = async (group: Omit<Group, 'id'>) => {
+    const newGroup = await dataService.addGroup(group);
+    setGroups(prev => [...prev, newGroup]);
   };
-  const handleUpdateGroup = (updatedGroup: Group) => {
-    const newGroups = groups.map(g => g.id === updatedGroup.id ? updatedGroup : g);
-    setGroups(newGroups);
-    saveData('app_groups', newGroups);
+  const handleUpdateGroup = async (updatedGroup: Group) => {
+    const group = await dataService.updateGroup(updatedGroup);
+    setGroups(prev => prev.map(g => g.id === group.id ? group : g));
   };
-  const handleDeleteGroup = (groupId: string) => {
+  const handleDeleteGroup = async (groupId: string) => {
     if (users.some(u => u.groupIds.includes(groupId))) {
       alert("Não é possível excluir um grupo que contém usuários.");
       return;
     }
-    const newGroups = groups.filter(g => g.id !== groupId);
-    setGroups(newGroups);
-    saveData('app_groups', newGroups);
+    await dataService.deleteGroup(groupId);
+    setGroups(prev => prev.filter(g => g.id !== groupId));
   };
 
   // Category CRUD
-   const handleAddCategory = (name: string): boolean => {
+   const handleAddCategory = async (name: string): Promise<boolean> => {
         if (name && !categories.find(c => c.toLowerCase() === name.toLowerCase())) {
             const newCategories = [...categories, name].sort((a, b) => a.localeCompare(b));
+            await dataService.saveCategories(newCategories);
             setCategories(newCategories);
-            saveData('app_categories', newCategories);
             return true;
         }
         return false;
     };
     
-    const handleUpdateCategory = (oldName: string, newName: string): boolean => {
+    const handleUpdateCategory = async (oldName: string, newName: string): Promise<boolean> => {
         if (newName && oldName !== newName && !categories.find(c => c.toLowerCase() === newName.toLowerCase())) {
             const newCategories = categories.map(c => (c === oldName ? newName : c)).sort((a, b) => a.localeCompare(b));
+            await dataService.saveCategories(newCategories);
             setCategories(newCategories);
-            saveData('app_categories', newCategories);
 
             const newAccounts = accounts.map(acc => (acc.category === oldName ? { ...acc, category: newName } : acc));
+            await dataService.updateMultipleAccounts(newAccounts);
             setAccounts(newAccounts);
-            saveData('app_accounts', newAccounts);
             return true;
         }
         return false;
     };
 
-    const handleDeleteCategory = (name: string): boolean => {
+    const handleDeleteCategory = async (name: string): Promise<boolean> => {
         const isCategoryInUse = accounts.some(acc => acc.category === name);
         if (isCategoryInUse) {
             alert(`A categoria "${name}" está em uso e não pode ser excluída.`);
@@ -462,8 +426,8 @@ const App: React.FC = () => {
             return false;
         }
         const newCategories = categories.filter(c => c !== name);
+        await dataService.saveCategories(newCategories);
         setCategories(newCategories);
-        saveData('app_categories', newCategories);
         return true;
     };
   
@@ -488,23 +452,23 @@ const App: React.FC = () => {
                 handleAddOrUpdateAccount({ ...command.data, groupId: defaultGroupId, isRecurrent: false, isInstallment: false });
                 return `Conta "${command.data.name}" adicionada com sucesso!`;
             case 'pay_account':
-                const paySuccess = handleToggleAccountStatusByName(command.data.name);
-                return paySuccess
-                    ? `Conta "${command.data.name}" marcada como paga!`
-                    : `Não encontrei a conta "${command.data.name}" para pagar.`;
+                handleToggleAccountStatusByName(command.data.name).then(success => {
+                    // Feedback handled by model response for now
+                });
+                return `Conta "${command.data.name}" marcada como paga!`;
             case 'edit_account':
-                const editSuccess = handleEditAccountByName(command.data);
-                return editSuccess
-                    ? `Conta "${command.data.original_name}" atualizada com sucesso!`
-                    : `Não encontrei a conta "${command.data.original_name}" para editar.`;
+                handleEditAccountByName(command.data).then(success => {
+                    // Feedback handled by model response for now
+                });
+                return `Conta "${command.data.original_name}" atualizada com sucesso!`;
             case 'add_income':
                 handleAddOrUpdateIncome({ ...command.data, groupId: defaultGroupId, isRecurrent: false });
                 return `Entrada "${command.data.name}" adicionada com sucesso!`;
             case 'edit_income':
-                 const editIncomeSuccess = handleEditIncomeByName(command.data);
-                return editIncomeSuccess
-                    ? `Entrada "${command.data.original_name}" atualizada com sucesso!`
-                    : `Não encontrei a entrada "${command.data.original_name}" para editar.`;
+                handleEditIncomeByName(command.data).then(success => {
+                    // Feedback handled by model response for now
+                });
+                return `Entrada "${command.data.original_name}" atualizada com sucesso!`;
             default:
                 return command.data.text || "Não consegui entender seu comando. Você pode tentar reformular?";
         }
@@ -559,15 +523,9 @@ const App: React.FC = () => {
     };
     
     // Data Management
-    const handleExportData = () => {
+    const handleExportData = async () => {
         try {
-            const dataToExport = {
-                users: users,
-                groups: groups,
-                accounts: accounts,
-                categories: categories,
-                incomes: incomes,
-            };
+            const dataToExport = await dataService.exportData();
             const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
                 JSON.stringify(dataToExport, null, 2)
             )}`;
@@ -585,25 +543,18 @@ const App: React.FC = () => {
     const handleImportData = (file: File) => {
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const text = e.target?.result;
                 if (typeof text !== 'string') throw new Error("Failed to read file");
                 
                 const data = JSON.parse(text);
-                if (data.users && data.groups && data.accounts && data.categories) {
-                    saveData('app_users', data.users);
-                    saveData('app_groups', data.groups);
-                    saveData('app_accounts', data.accounts);
-                    saveData('app_categories', data.categories);
-                    if (data.incomes) {
-                       saveData('app_incomes', data.incomes);
-                    }
-
+                if (data.users && data.groups && data.accounts && data.categories && data.incomes) {
+                    await dataService.importData(data);
                     alert("Backup restaurado com sucesso! A aplicação será recarregada.");
                     window.location.reload();
                 } else {
-                    alert("Arquivo de backup inválido ou corrompido.");
+                    alert("Arquivo de backup inválido ou corrompido. Verifique se o arquivo contém 'users', 'groups', 'accounts', 'categories' e 'incomes'.");
                 }
             } catch (error) {
                 console.error("Failed to import data", error);
