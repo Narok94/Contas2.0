@@ -218,7 +218,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleLogin = (username: string, password: string): boolean => {
-    const user = users.find(u => u.username === username && u.password === password);
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (user) {
       setCurrentUser(user);
       sessionStorage.setItem('app_currentUser', JSON.stringify(user));
