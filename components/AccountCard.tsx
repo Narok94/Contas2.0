@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { type Account, AccountStatus } from '../types';
 

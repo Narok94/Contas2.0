@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 interface VoiceRecognitionProps {
@@ -7,7 +6,6 @@ interface VoiceRecognitionProps {
 
 const getSpeechRecognition = () => {
   if (typeof window !== 'undefined') {
-    // FIX: Cast window to `any` to access vendor-prefixed or non-standard SpeechRecognition API.
     return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   }
   return null;
@@ -15,9 +13,9 @@ const getSpeechRecognition = () => {
 
 export const useVoiceRecognition = ({ onResult }: VoiceRecognitionProps) => {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  // FIX: Use `any` for the recognition ref since SpeechRecognition types are not standard in TypeScript.
   const recognitionRef = useRef<any | null>(null);
+  const onResultRef = useRef(onResult);
+  onResultRef.current = onResult;
 
   useEffect(() => {
     const SpeechRecognition = getSpeechRecognition();
@@ -31,17 +29,22 @@ export const useVoiceRecognition = ({ onResult }: VoiceRecognitionProps) => {
     recognition.lang = 'pt-BR';
     recognition.interimResults = false;
 
-    // FIX: Use `any` for the event type as SpeechRecognitionEvent is not a standard type.
-    recognition.onresult = (event: any) => {
-      const currentTranscript = event.results[0][0].transcript;
-      setTranscript(currentTranscript);
-      onResult(currentTranscript);
-      setIsListening(false);
+    recognition.onstart = () => {
+      setIsListening(true);
     };
 
-    // FIX: Use `any` for the event type as SpeechRecognitionErrorEvent is not a standard type.
+    recognition.onresult = (event: any) => {
+      const currentTranscript = event.results[0][0].transcript;
+      if (onResultRef.current) {
+        onResultRef.current(currentTranscript);
+      }
+    };
+
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error", event.error);
+      if (event.error !== 'aborted' && event.error !== 'no-speech') {
+        console.error("Speech recognition error:", event.error);
+      }
+      // Garante que o estado seja redefinido em caso de erro, pois onend pode não disparar.
       setIsListening(false);
     };
 
@@ -52,28 +55,34 @@ export const useVoiceRecognition = ({ onResult }: VoiceRecognitionProps) => {
     recognitionRef.current = recognition;
 
     return () => {
-      recognition.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
     };
-  }, [onResult]);
+  }, []);
 
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {
-      setTranscript('');
-      recognitionRef.current.start();
-      setIsListening(true);
+      try {
+        recognitionRef.current.start();
+        // O estado será atualizado pelo handler 'onstart'.
+      } catch (err) {
+        console.error("Error starting speech recognition:", err);
+        // Em caso de erro, garanta que não estamos presos em um estado de escuta.
+        setIsListening(false);
+      }
     }
   }, [isListening]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+        recognitionRef.current.stop();
+        // Deixa o onend cuidar da definição de isListening para false para ser a única fonte da verdade.
     }
   }, [isListening]);
 
   return {
     isListening,
-    transcript,
     startListening,
     stopListening,
     isSupported: !!getSpeechRecognition(),

@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, FunctionDeclaration, Content } from "@google/genai";
+import { GoogleGenAI, Type, FunctionDeclaration, Content, GenerateContentResponse } from "@google/genai";
 import { Account, ChatMessage, AccountStatus, Income } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -20,17 +20,13 @@ const cleanMessageContent = (content: string): string => {
     return content;
 };
 
-export const processUserCommand = async (
+export async function* generateResponseStream(
   command: string, 
   history: ChatMessage[], 
   accounts: Account[], 
   categories: string[],
   incomes: Income[],
-): Promise<ParsedCommand> => {
-  if (!command) {
-    return { intent: 'unknown', data: { text: 'Nenhum comando recebido.' } };
-  }
-
+): AsyncGenerator<GenerateContentResponse> {
   const addAccountFunctionDeclaration: FunctionDeclaration = {
     name: 'add_account',
     description: 'Adiciona uma nova conta ou despesa.',
@@ -112,16 +108,18 @@ export const processUserCommand = async (
     const incomeList = incomes.map(i => i.name).join(', ');
     const categoryList = categories.join(', ');
     
-    const systemInstruction = `Você é um assistente financeiro conversacional e prestativo.
-- Analise os comandos do usuário para adicionar, pagar ou editar contas e entradas de dinheiro, e chame a função apropriada (add_account, pay_account, edit_account, add_income, edit_income).
-- Use o histórico da conversa para entender o contexto de perguntas de acompanhamento. Por exemplo, se o usuário adicionar uma conta e depois disser "edite o valor para 50", você deve saber a qual conta ele se refere.
-- Se o usuário estiver apenas fazendo uma pergunta ou conversando, responda de forma útil e amigável sem chamar uma função.
-- Seja conciso e direto em suas respostas.
+    const systemInstruction = `Você é a Ricka, uma assistente financeira com uma personalidade divertida, moderna e um pouco sarcástica. Seu objetivo é ajudar o usuário a gerenciar suas finanças de forma descontraída.
+- Seu nome é Ricka.
+- Responda sempre em Português do Brasil, usando uma linguagem informal, emojis e um tom bem-humorado.
+- Analise os comandos do usuário para adicionar, pagar ou editar contas e entradas, e chame a função apropriada (add_account, pay_account, edit_account, add_income, edit_income).
+- Use o histórico da conversa para entender o contexto. Se o usuário adicionar uma conta e depois disser 'muda o valor pra 50', você sabe qual conta é.
+- Se o usuário estiver só conversando, responda de forma divertida e engajadora. Dê dicas financeiras com uma pitada de humor.
+- Seja direta, mas com personalidade. Evite respostas robóticas.
 
 **Contexto Atual:**
-- Lista de contas (despesas) existentes: ${accountList || 'Nenhuma'}
-- Lista de entradas (renda) existentes: ${incomeList || 'Nenhuma'}
-- Categorias de conta disponíveis: ${categoryList}. Se o usuário mencionar uma categoria que não está na lista para adicionar ou editar uma conta, use a categoria "Outros".`;
+- Contas (despesas) na área: ${accountList || 'Nenhuma'}
+- Grana entrando (renda): ${incomeList || 'Nenhuma'}
+- Categorias de conta disponíveis: ${categoryList}. Se o usuário falar uma categoria que não existe, joga em 'Outros'.`;
     
     const contents: Content[] = [
       ...history.map(msg => ({
@@ -134,7 +132,7 @@ export const processUserCommand = async (
       },
     ];
 
-    const response = await ai.models.generateContent({
+    const stream = await ai.models.generateContentStream({
       model: 'gemini-2.5-flash',
       contents: contents,
       config: {
@@ -143,31 +141,16 @@ export const processUserCommand = async (
       },
     });
 
-    const functionCall = response.functionCalls?.[0];
-
-    if (functionCall) {
-      if (functionCall.name === 'add_account') {
-        return { intent: 'add_account', data: functionCall.args as { name: string; value: number; category: string } };
-      }
-      if (functionCall.name === 'pay_account') {
-        return { intent: 'pay_account', data: functionCall.args as { name: string } };
-      }
-       if (functionCall.name === 'edit_account') {
-        return { intent: 'edit_account', data: functionCall.args as { original_name: string; new_name?: string; new_value?: number; new_category?: string } };
-      }
-      if (functionCall.name === 'add_income') {
-        return { intent: 'add_income', data: functionCall.args as { name: string; value: number } };
-      }
-      if (functionCall.name === 'edit_income') {
-        return { intent: 'edit_income', data: functionCall.args as { original_name: string; new_name?: string; new_value?: number } };
-      }
+    for await (const chunk of stream) {
+        yield chunk;
     }
-
-    // If no function call, it's a general question/statement. Return the model's text response.
-    return { intent: 'unknown', data: { text: response.text } };
   } catch (error) {
     console.error("Error processing command with Gemini:", error);
-    return { intent: 'unknown', data: { text: 'Desculpe, não consegui processar sua solicitação no momento.' } };
+    const errorChunk = {
+        text: () => "Desculpe, não consegui processar sua solicitação no momento.",
+        functionCalls: () => undefined,
+    } as unknown as GenerateContentResponse;
+    yield errorChunk;
   }
 };
 
@@ -193,14 +176,15 @@ export const analyzeSpending = async (
   const formattedCurrentSummary = JSON.stringify(currentMonthSummary);
   const formattedPreviousSummary = JSON.stringify(previousMonthSummary);
 
-  const systemInstruction = `Você é um analista financeiro prestativo. Seu objetivo é analisar os dados de gastos do usuário e fornecer insights claros e acionáveis.
-- Compare os gastos do mês anterior com os do mês atual.
-- Identifique até 3 categorias com os maiores aumentos percentuais de gastos.
-- Forneça uma breve observação (uma ou duas frases) para cada aumento, sugerindo uma possível causa ou um ponto de atenção.
-- Se não houver aumentos significativos, mencione que os gastos estão estáveis.
-- Responda de forma amigável e direta.
-- Formate sua resposta usando markdown simples (use ** para negrito).
-- Se não houver dados em um dos meses, informe que a comparação não é possível.`;
+  const systemInstruction = `Você é a Ricka, uma analista financeira super afiada e com um ótimo senso de humor. Sua missão é dar uma olhada nos gastos do usuário e mandar a real de forma clara e divertida.
+- Responda sempre em Português do Brasil, com uma linguagem descontraída e usando emojis.
+- Compare os gastos do mês anterior com o mês atual.
+- Aponte até 3 categorias onde a galera mais 'meteu o pé na jaca' (maiores aumentos percentuais).
+- Dê um pitaco rápido (uma ou duas frases) sobre cada aumento, tipo 'Eita, o que rolou aqui? 🧐'.
+- Se os gastos estiverem de boa, comente que a situação está sob controle.
+- Seja amigável e direta, sem enrolação.
+- Use markdown para deixar as coisas mais legíveis (tipo **negrito**).
+- Se faltar informação, avise que 'com esses dados não rola fazer mágica'. ✨`;
 
   const prompt = `Aqui estão os resumos de gastos. Mês anterior: ${formattedPreviousSummary}. Mês atual: ${formattedCurrentSummary}. Por favor, forneça sua análise.`;
 

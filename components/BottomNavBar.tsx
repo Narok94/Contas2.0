@@ -1,11 +1,10 @@
-import React from 'react';
+import * as React from 'react';
 import { View, Role } from '../types';
 
 interface BottomNavBarProps {
     activeView: View;
     onViewChange: (view: View) => void;
     onAddClick: () => void;
-    onIncomeClick: () => void;
     isAdmin: boolean;
 }
 
@@ -22,7 +21,7 @@ const NavItem: React.FC<{
 );
 
 
-const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, onAddClick, onIncomeClick, isAdmin }) => {
+const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, onAddClick, isAdmin }) => {
     return (
         <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface/80 dark:bg-dark-surface/80 backdrop-blur-lg border-t border-border-color/50 dark:border-dark-border-color/50 z-40">
             <div className="max-w-7xl mx-auto h-full grid grid-cols-5 items-center">
@@ -54,8 +53,8 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, o
                  <NavItem 
                     label="Entradas"
                     icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
-                    isActive={false}
-                    onClick={onIncomeClick}
+                    isActive={activeView === 'income'}
+                    onClick={() => onViewChange('income')}
                 />
                 
                 {isAdmin ? (

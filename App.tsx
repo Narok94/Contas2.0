@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from './utils/mockData';
 import LoginScreen from './components/LoginScreen';
@@ -8,13 +9,14 @@ import AdminPanel from './components/AdminPanel';
 import AccountHistory from './components/AccountHistory';
 import AccountFormModal from './components/AccountFormModal';
 import BottomNavBar from './components/BottomNavBar';
-import AiChatModal from './components/AiChatModal';
+import AiChatModal, { AiChatModalRef } from './components/AiChatModal';
 import SettingsModal from './components/SettingsModal';
 import StatCardSkeleton from './components/skeletons/StatCardSkeleton';
 import AccountCardSkeleton from './components/skeletons/AccountCardSkeleton';
 import FloatingAiButton from './components/FloatingAiButton';
 import { useTheme } from './hooks/useTheme';
 import { ParsedCommand, analyzeSpending } from './services/geminiService';
+import IncomeManagement from './components/IncomeManagement';
 
 interface ManageCategoriesModalProps {
     isOpen: boolean;
@@ -122,97 +124,6 @@ const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({ isOpen, o
     )
 }
 
-const IncomeModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    incomes: Income[];
-    onAddOrUpdate: (incomeData: Omit<Income, 'id' | 'groupId' | 'date'> & { id?: string }) => void;
-    onDelete: (incomeId: string) => void;
-}> = ({ isOpen, onClose, incomes, onAddOrUpdate, onDelete }) => {
-    const [name, setName] = useState('');
-    const [value, setValue] = useState('');
-    const [isRecurrent, setIsRecurrent] = useState(false);
-    const [editingIncome, setEditingIncome] = useState<Income | null>(null);
-
-    useEffect(() => {
-        if (!isOpen) {
-            resetForm();
-        }
-    }, [isOpen]);
-
-    const resetForm = () => {
-        setName('');
-        setValue('');
-        setIsRecurrent(false);
-        setEditingIncome(null);
-    };
-    
-    const handleEditClick = (income: Income) => {
-        setEditingIncome(income);
-        setName(income.name);
-        setValue(String(income.value));
-        setIsRecurrent(income.isRecurrent);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onAddOrUpdate({
-            id: editingIncome?.id,
-            name,
-            value: parseFloat(value),
-            isRecurrent,
-        });
-        resetForm();
-    };
-
-    if (!isOpen) return null;
-
-    const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-    return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
-            <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col animate-fade-in-up">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">Gerenciar Entradas</h2>
-                    <button onClick={onClose} className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-3xl">&times;</button>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto pr-2 space-y-2">
-                    {incomes.length > 0 ? incomes.map(income => (
-                        <div key={income.id} className="flex items-center justify-between p-3 bg-surface-light dark:bg-dark-surface-light rounded-lg">
-                            <div>
-                                <p className="font-semibold">{income.name} {income.isRecurrent && <span className="text-xs text-primary">(Recorrente)</span>}</p>
-                                <p className="text-sm text-success">{formatCurrency(income.value)}</p>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <button onClick={() => handleEditClick(income)} className="text-primary-light hover:text-primary">Editar</button>
-                                <button onClick={() => onDelete(income.id)} className="text-danger hover:text-pink-700">Excluir</button>
-                            </div>
-                        </div>
-                    )) : <p className="text-center text-text-muted py-8">Nenhuma entrada cadastrada.</p>}
-                </div>
-
-                <form onSubmit={handleSubmit} className="mt-4 pt-4 border-t border-border-color dark:border-dark-border-color space-y-3">
-                    <h3 className="text-lg font-semibold">{editingIncome ? 'Editando Entrada' : 'Adicionar Nova Entrada'}</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input type="text" placeholder="Nome (ex: Salário)" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
-                        <input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
-                    </div>
-                     <div className="flex items-center">
-                        <input id="income-recurrent" type="checkbox" checked={isRecurrent} onChange={e => setIsRecurrent(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded" />
-                        <label htmlFor="income-recurrent" className="ml-2 block text-sm text-text-secondary dark:text-dark-text-secondary">Entrada Recorrente</label>
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                        {editingIncome && <button type="button" onClick={resetForm} className="px-4 py-2 text-sm rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color">Cancelar Edição</button>}
-                        <button type="submit" className="px-4 py-2 text-sm rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90">{editingIncome ? 'Salvar Alterações' : 'Adicionar'}</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-
 const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -228,7 +139,6 @@ const App: React.FC = () => {
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
   
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -238,6 +148,7 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const constraintsRef = useRef<HTMLDivElement>(null);
+  const chatModalRef = useRef<AiChatModalRef>(null);
 
   const loadData = useCallback(() => {
     setIsLoading(true);
@@ -556,6 +467,14 @@ const App: React.FC = () => {
         }
     };
     
+    const handleAiButtonClick = () => {
+        if (isAiListening) {
+            chatModalRef.current?.stopListening();
+        } else {
+            setIsChatOpen(true);
+        }
+    };
+    
     const handleAiButtonLongPress = () => {
         setStartVoiceOnChatOpen(true);
         setIsChatOpen(true);
@@ -755,6 +674,14 @@ const App: React.FC = () => {
           ) : <p>Acesso negado.</p>;
         case 'history':
           return <AccountHistory accounts={userAccounts} />;
+        case 'income':
+            return (
+                <IncomeManagement
+                    incomes={userIncomes}
+                    onAddOrUpdate={handleAddOrUpdateIncome}
+                    onDelete={handleDeleteIncome}
+                />
+            );
         default:
           return null;
       }
@@ -786,19 +713,14 @@ const App: React.FC = () => {
           onUpdate={handleUpdateCategory}
           onDelete={handleDeleteCategory}
         />
-      <IncomeModal
-        isOpen={isIncomeModalOpen}
-        onClose={() => setIsIncomeModalOpen(false)}
-        incomes={userIncomes}
-        onAddOrUpdate={handleAddOrUpdateIncome}
-        onDelete={handleDeleteIncome}
-      />
       <AiChatModal 
+        ref={chatModalRef}
         isOpen={isChatOpen}
         onClose={() => {
             setIsChatOpen(false);
             setStartVoiceOnChatOpen(false);
         }}
+        currentUser={currentUser}
         accounts={userAccounts}
         incomes={userIncomes}
         categories={categories}
@@ -818,7 +740,7 @@ const App: React.FC = () => {
       />
        <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
        <FloatingAiButton 
-            onClick={() => setIsChatOpen(true)} 
+            onClick={handleAiButtonClick} 
             onLongPress={handleAiButtonLongPress}
             constraintsRef={constraintsRef}
             isListening={isAiListening}
@@ -827,7 +749,6 @@ const App: React.FC = () => {
           activeView={view}
           onViewChange={setView}
           onAddClick={() => openAccountModal()}
-          onIncomeClick={() => setIsIncomeModalOpen(true)}
           isAdmin={currentUser.role === Role.ADMIN}
        />
     </div>

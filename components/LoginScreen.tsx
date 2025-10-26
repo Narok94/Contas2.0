@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+import { useTheme } from '../hooks/useTheme';
 
 interface LoginScreenProps {
   onLogin: (username: string, password: string) => boolean;
@@ -8,6 +10,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('henrique');
   const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
+  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +20,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[length:200%_200%] bg-gradient-to-br from-slate-100 via-sky-100 to-slate-200 dark:from-slate-900 dark:via-secondary-dark dark:to-slate-800 animate-gradient-pan">
+    <div className="flex items-center justify-center min-h-screen bg-[length:200%_200%] bg-gradient-to-br from-slate-100 via-sky-100 to-slate-200 dark:from-slate-900 dark:via-secondary-dark dark:to-slate-800 animate-gradient-pan relative">
       <div className="w-full max-w-md p-8 space-y-8 bg-white/70 dark:bg-dark-background/70 backdrop-blur-xl rounded-4xl shadow-2xl ring-1 ring-black/5">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
@@ -65,6 +68,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           </div>
         </form>
       </div>
+       <div className="absolute bottom-6">
+            <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full bg-slate-200/50 dark:bg-dark-surface/50 text-text-secondary dark:text-dark-text-secondary hover:bg-slate-300/80 dark:hover:bg-dark-surface-light/80 transition-colors backdrop-blur-sm"
+                aria-label={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}
+                title={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}
+            >
+                {theme === 'light' ? (
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                )}
+            </button>
+        </div>
     </div>
   );
 };

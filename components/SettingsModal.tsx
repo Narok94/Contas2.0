@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+import * as React from 'react';
+const { useRef } = React;
 
 interface SettingsModalProps {
     isOpen: boolean;

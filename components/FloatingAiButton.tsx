@@ -1,9 +1,6 @@
-
-
-
-
-import React, { useRef } from 'react';
-import { motion } from 'framer-motion';
+import * as React from 'react';
+const { useRef } = React;
+import { motion, PanInfo } from 'framer-motion';
 
 interface FloatingAiButtonProps {
     onClick: () => void;
@@ -14,39 +11,49 @@ interface FloatingAiButtonProps {
 
 const FloatingAiButton: React.FC<FloatingAiButtonProps> = ({ onClick, onLongPress, constraintsRef, isListening }) => {
     const pressTimer = useRef<number | null>(null);
-    const isLongPress = useRef(false);
-    const isDragging = useRef(false);
+    const hasDragged = useRef(false);
 
     const handlePointerDown = () => {
-        isDragging.current = false;
-        isLongPress.current = false;
+        hasDragged.current = false;
         pressTimer.current = window.setTimeout(() => {
-            if (!isDragging.current) {
-                isLongPress.current = true;
+            if (!hasDragged.current) {
                 onLongPress();
+                pressTimer.current = null; // Mark timer as fired for long press
             }
-        }, 500); // 500ms para long press
+        }, 2000); // 2000ms for long press
     };
 
     const handlePointerUp = () => {
+        // If timer is still pending, it was a short press (tap)
         if (pressTimer.current) {
             clearTimeout(pressTimer.current);
             pressTimer.current = null;
+            if (!hasDragged.current) {
+                onClick();
+            }
+        }
+        // If timer is null, it means long press already fired or was cancelled by drag, so do nothing.
+    };
+
+    // Using onDrag to have more control over what constitutes a "drag"
+    const handleDrag = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        // A tiny movement shouldn't count as a drag that cancels the long press.
+        const dragThreshold = 10; // 10px threshold
+        const distance = Math.sqrt(info.offset.x ** 2 + info.offset.y ** 2);
+
+        if (distance > dragThreshold) {
+            hasDragged.current = true;
+            // If there's a pending timer, cancel it because it's a real drag.
+            if (pressTimer.current) {
+                clearTimeout(pressTimer.current);
+                pressTimer.current = null;
+            }
         }
     };
 
-    const handleTap = () => {
-        if (!isLongPress.current && !isDragging.current) {
-            onClick();
-        }
-    };
-
-    const handleDragStart = () => {
-        isDragging.current = true;
-        if (pressTimer.current) {
-            clearTimeout(pressTimer.current);
-            pressTimer.current = null;
-        }
+    const handleDragEnd = () => {
+        // Reset for the next interaction.
+        hasDragged.current = false;
     };
     
     return (
@@ -57,8 +64,8 @@ const FloatingAiButton: React.FC<FloatingAiButtonProps> = ({ onClick, onLongPres
             dragElastic={0.1}
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
-            onTap={handleTap}
-            onDragStart={handleDragStart}
+            onDrag={handleDrag}
+            onDragEnd={handleDragEnd}
             animate={{
                 y: [0, -10, 0],
             }}

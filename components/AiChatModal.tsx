@@ -1,11 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { type Account, type ChatMessage, type Income } from '../types';
-import { processUserCommand, ParsedCommand } from '../services/geminiService';
+import * as React from 'react';
+const { useState, useRef, useEffect, forwardRef, useImperativeHandle } = React;
+import { type Account, type ChatMessage, type Income, type User } from '../types';
+import { generateResponseStream, ParsedCommand } from '../services/geminiService';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 
 interface AiChatModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUser: User | null;
   accounts: Account[];
   incomes: Income[];
   categories: string[];
@@ -15,34 +17,17 @@ interface AiChatModalProps {
   onTriggerAnalysis: () => Promise<string>;
 }
 
-// Efeito de digitação para as respostas do modelo
-const Typewriter: React.FC<{ text: string }> = ({ text }) => {
-    const [displayedText, setDisplayedText] = useState('');
+export interface AiChatModalRef {
+    stopListening: () => void;
+}
 
-    useEffect(() => {
-        setDisplayedText(''); // Limpa o texto ao receber novo conteúdo
-        let i = 0;
-        const intervalId = setInterval(() => {
-            if (i < text.length) {
-                setDisplayedText(prev => prev + text.charAt(i));
-                i++;
-            } else {
-                clearInterval(intervalId);
-            }
-        }, 20); // Velocidade da digitação
-
-        return () => clearInterval(intervalId);
-    }, [text]);
-
-    return <p className="text-sm" dangerouslySetInnerHTML={{ __html: displayedText.replace(/\n/g, '<br />') }} />;
-};
-
-
-const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, incomes, categories, onCommand, startWithVoice, onListeningChange, onTriggerAnalysis }) => {
+const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onClose, currentUser, accounts, incomes, categories, onCommand, startWithVoice, onListeningChange, onTriggerAnalysis }, ref) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const initialVoiceStartHandled = useRef(false);
+
 
     const submitMessage = async (content: string, isVoice: boolean = false) => {
         if (!content.trim() || isLoading) return;
@@ -53,22 +38,71 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
         setMessages(prev => [...prev, userMessage]);
         if (!isVoice) setInput('');
         setIsLoading(true);
+        
+        setMessages(prev => [...prev, { role: 'model', content: '' }]);
 
         try {
-            const result = await processUserCommand(content, historyForApi, accounts, categories, incomes);
-            let modelResponse: string;
+            const stream = generateResponseStream(content, historyForApi, accounts, categories, incomes);
+            
+            let fullResponse = "";
+            const allFunctionCalls = [];
 
-            if (result.intent === 'unknown') {
-                modelResponse = result.data.text;
-            } else {
-                modelResponse = onCommand(result);
+            for await (const chunk of stream) {
+                if (chunk.text) {
+                    fullResponse += chunk.text;
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        newMessages[newMessages.length - 1].content = fullResponse;
+                        return newMessages;
+                    });
+                }
+                if (chunk.functionCalls) {
+                    allFunctionCalls.push(...chunk.functionCalls);
+                }
             }
             
-            const modelMessage: ChatMessage = { role: 'model', content: modelResponse };
-            setMessages(prev => [...prev, modelMessage]);
+            if (allFunctionCalls.length > 0) {
+                let commandResultText = "";
+                for (const functionCall of allFunctionCalls) {
+                    let parsedCommand: ParsedCommand | null = null;
+                    const { name, args } = functionCall;
+
+                    if (name === 'add_account') parsedCommand = { intent: 'add_account', data: args };
+                    else if (name === 'pay_account') parsedCommand = { intent: 'pay_account', data: args };
+                    else if (name === 'edit_account') parsedCommand = { intent: 'edit_account', data: args };
+                    else if (name === 'add_income') parsedCommand = { intent: 'add_income', data: args };
+                    else if (name === 'edit_income') parsedCommand = { intent: 'edit_income', data: args };
+
+                    if (parsedCommand) {
+                        const result = onCommand(parsedCommand);
+                        commandResultText += (commandResultText ? "\n" : "") + result;
+                    }
+                }
+                if (commandResultText) {
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        newMessages[newMessages.length - 1].content = commandResultText;
+                        return newMessages;
+                    });
+                } else if (!fullResponse) {
+                     setMessages(prev => {
+                        const newMessages = [...prev];
+                        newMessages[newMessages.length - 1].content = "Ação concluída.";
+                        return newMessages;
+                    });
+                }
+            }
         } catch (error) {
-            const errorMessage: ChatMessage = { role: 'model', content: 'Ocorreu um erro. Por favor, tente novamente.' };
-            setMessages(prev => [...prev, errorMessage]);
+             setMessages(prev => {
+                const newMessages = [...prev];
+                const lastMessage = newMessages[newMessages.length - 1];
+                if (lastMessage && lastMessage.role === 'model') {
+                    lastMessage.content = 'Ocorreu um erro. Por favor, tente novamente.';
+                } else {
+                    newMessages.push({ role: 'model', content: 'Ocorreu um erro. Por favor, tente novamente.' });
+                }
+                return newMessages;
+            });
         } finally {
             setIsLoading(false);
         }
@@ -81,6 +115,10 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
 
     const { isListening, startListening, stopListening, isSupported } = useVoiceRecognition({ onResult: handleVoiceResult });
     
+    useImperativeHandle(ref, () => ({
+        stopListening,
+    }));
+
     const handleAnalyzeClick = async () => {
         setIsLoading(true);
         const analysisResult = await onTriggerAnalysis();
@@ -95,16 +133,22 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
 
     useEffect(() => {
         if(isOpen) {
-             setMessages([{ role: 'model', content: 'Olá! Sou seu assistente financeiro. Como posso ajudar? Você pode adicionar, pagar ou editar contas, ou me fazer uma pergunta.' }]);
+             const userName = currentUser?.name?.split(' ')[0] || 'você';
+             const greeting = `E aí, ${userName}! Beleza? Sou a Ricka, sua nova parceira financeira. 💰✨<br/>Me diga o que você precisa: adicionar uma conta, pagar um boleto, ou só bater um papo sobre como ficar rico. Manda a ver!`;
+             setMessages([{ role: 'model', content: greeting }]);
              setInput('');
+             initialVoiceStartHandled.current = false; // Reset on open
         } else {
              onListeningChange(false);
         }
-    }, [isOpen, onListeningChange]);
+    }, [isOpen, currentUser, onListeningChange]);
     
     useEffect(() => {
-        if (isOpen && startWithVoice && isSupported && !isListening) {
-            const timer = setTimeout(() => startListening(), 100);
+        if (isOpen && startWithVoice && isSupported && !isListening && !initialVoiceStartHandled.current) {
+            const timer = setTimeout(() => {
+                startListening();
+                initialVoiceStartHandled.current = true;
+            }, 100);
             return () => clearTimeout(timer);
         }
     }, [isOpen, startWithVoice, isSupported, isListening, startListening]);
@@ -124,7 +168,7 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex justify-center items-center z-50 p-4 animate-fade-in">
             <div className="bg-gradient-to-b from-slate-900 via-black to-slate-900 border border-primary/30 rounded-2xl shadow-2xl shadow-primary/20 w-full max-w-2xl h-[80vh] flex flex-col animate-fade-in-up">
                 <div className="flex justify-between items-center p-4 border-b border-primary/20">
-                    <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-light via-secondary-light to-accent-light">Assistente IA</h2>
+                    <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-light via-secondary-light to-accent-light">Ricka ✨</h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl transition-colors">&times;</button>
                 </div>
 
@@ -136,17 +180,11 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
                                 ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white rounded-2xl rounded-br-lg' 
                                 : 'bg-dark-surface-light text-dark-text-primary rounded-2xl rounded-bl-lg'
                             }`}>
-                                {msg.role === 'model' && index === messages.length - 1 && isLoading ? (
-                                    <p className="text-sm" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
-                                ) : msg.role === 'model' ? (
-                                    <Typewriter text={msg.content} />
-                                ) : (
-                                    <p className="text-sm" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
-                                )}
+                                <p className="text-sm" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
                             </div>
                         </div>
                     ))}
-                    {isLoading && (
+                    {isLoading && messages[messages.length-1]?.role === 'model' && messages[messages.length-1]?.content === '' && (
                          <div className="flex justify-start">
                              <div className="px-4 py-3 rounded-2xl rounded-bl-lg bg-dark-surface-light w-24">
                                 <div className="flex items-center space-x-2 h-5">
@@ -169,7 +207,7 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
                             className="p-2 rounded-full text-white bg-slate-800/50 border border-primary/30 hover:bg-primary/50 disabled:opacity-50 transition-all"
                             title="Analisar Gastos"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                             </svg>
                         </button>
@@ -188,7 +226,7 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
                                 disabled={isLoading}
                                 className={`p-2 rounded-full transition-all ${isListening ? 'bg-danger/80 text-white animate-pulse-mic' : 'bg-primary text-white'} disabled:opacity-50`}
                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
                            </button>
                         )}
                         <button type="submit" disabled={isLoading || !input.trim() || isListening} className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 transition-opacity">
@@ -199,6 +237,6 @@ const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose, accounts, in
             </div>
         </div>
     );
-};
+});
 
 export default AiChatModal;
