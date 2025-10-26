@@ -5,19 +5,19 @@ import { type User, type Group, Role } from '../types';
 interface UserFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (user: any) => void;
+    onSubmit: (user: any) => boolean;
     user: User | null;
     groups: Group[];
 }
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit, user, groups }) => {
-    const [formData, setFormData] = useState({ name: '', username: '', groupIds: [] as string[], role: Role.USER, password: '' });
+    const [formData, setFormData] = useState({ name: '', username: '', groupIds: [] as string[], role: Role.USER, password: '', mustChangePassword: false });
 
     useEffect(() => {
         if (user) {
-            setFormData({ name: user.name, username: user.username, groupIds: user.groupIds, role: user.role, password: '' });
+            setFormData({ name: user.name, username: user.username, groupIds: user.groupIds, role: user.role, password: '', mustChangePassword: !!user.mustChangePassword });
         } else {
-            setFormData({ name: '', username: '', groupIds: [], role: Role.USER, password: '' });
+            setFormData({ name: '', username: '', groupIds: [], role: Role.USER, password: '', mustChangePassword: false });
         }
     }, [user, isOpen]);
     
@@ -32,7 +32,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        if (onSubmit(formData)) {
+            onClose();
+        }
     }
 
     if (!isOpen) return null;
@@ -68,6 +70,18 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit
                         <option value={Role.USER}>Usuário</option>
                         <option value={Role.ADMIN}>Admin</option>
                     </select>
+                    <div className="flex items-center">
+                        <input
+                            id="mustChangePassword"
+                            type="checkbox"
+                            checked={formData.mustChangePassword}
+                            onChange={(e) => setFormData({ ...formData, mustChangePassword: e.target.checked })}
+                            className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <label htmlFor="mustChangePassword" className="ml-2 block text-sm text-text-secondary dark:text-dark-text-secondary">
+                            Exigir troca de senha no primeiro login
+                        </label>
+                    </div>
                     <div className="flex justify-end space-x-2 pt-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">Cancelar</button>
                         <button type="submit" className="px-4 py-2 rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-opacity">{user ? 'Salvar' : 'Adicionar'}</button>
@@ -111,8 +125,8 @@ const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose, onSubm
 interface AdminPanelProps {
     users: User[];
     groups: Group[];
-    onAddUser: (user: Omit<User, 'id'>) => void;
-    onUpdateUser: (user: User) => void;
+    onAddUser: (user: Omit<User, 'id'>) => boolean;
+    onUpdateUser: (user: User) => boolean;
     onDeleteUser: (userId: string) => void;
     onAddGroup: (group: Omit<Group, 'id'>) => void;
     onUpdateGroup: (group: Group) => void;
@@ -129,13 +143,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
     const openUserModal = (user: User | null = null) => { setUserToEdit(user); setIsUserModalOpen(true); }
     const openGroupModal = (group: Group | null = null) => { setGroupToEdit(group); setIsGroupModalOpen(true); }
 
-    const handleUserSubmit = (userData: any) => {
+    const handleUserSubmit = (userData: any): boolean => {
         if (userToEdit) {
-            onUpdateUser({ ...userToEdit, ...userData, password: userData.password || userToEdit.password });
+            const updatedUser = {
+                ...userToEdit,
+                ...userData,
+                password: userData.password || userToEdit.password,
+            };
+            return onUpdateUser(updatedUser);
         } else {
-            onAddUser(userData);
+            return onAddUser(userData);
         }
-        setIsUserModalOpen(false);
     }
 
     const handleGroupSubmit = (groupData: any) => {

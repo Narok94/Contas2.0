@@ -17,6 +17,7 @@ export interface User {
   password: string; // Plaintext for this mock app
   role: Role;
   groupIds: string[];
+  mustChangePassword?: boolean;
 }
 
 export interface Group {

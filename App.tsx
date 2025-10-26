@@ -17,6 +17,7 @@ import FloatingAiButton from './components/FloatingAiButton';
 import { useTheme } from './hooks/useTheme';
 import { ParsedCommand, analyzeSpending } from './services/geminiService';
 import IncomeManagement from './components/IncomeManagement';
+import ChangePasswordModal from './components/ChangePasswordModal';
 
 interface ManageCategoriesModalProps {
     isOpen: boolean;
@@ -150,6 +151,10 @@ const App: React.FC = () => {
   const constraintsRef = useRef<HTMLDivElement>(null);
   const chatModalRef = useRef<AiChatModalRef>(null);
 
+  const saveData = useCallback(<T,>(key: string, data: T) => {
+    localStorage.setItem(key, JSON.stringify(data));
+  }, []);
+
   const loadData = useCallback(() => {
     setIsLoading(true);
     try {
@@ -213,20 +218,18 @@ const App: React.FC = () => {
       return incomes.filter(inc => currentUser.groupIds.includes(inc.groupId));
   }, [incomes, currentUser]);
 
-  const saveData = useCallback(<T,>(key: string, data: T) => {
-    localStorage.setItem(key, JSON.stringify(data));
-  }, []);
-
-  const handleLogin = (username: string, password: string): boolean => {
+  const handleLogin = useCallback((username: string, password: string): boolean => {
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (user) {
       setCurrentUser(user);
       sessionStorage.setItem('app_currentUser', JSON.stringify(user));
-      setView('dashboard');
+      if (!user.mustChangePassword) {
+        setView('dashboard');
+      }
       return true;
     }
     return false;
-  };
+  }, [users]);
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -347,21 +350,58 @@ const App: React.FC = () => {
   };
 
   // User CRUD
-  const handleAddUser = (user: Omit<User, 'id'>) => {
+  const handleAddUser = useCallback((user: Omit<User, 'id'>): boolean => {
+    if (users.some(u => u.username.toLowerCase() === user.username.toLowerCase())) {
+        alert('Este nome de usuário já está em uso. Por favor, escolha outro.');
+        return false;
+    }
+    if (!user.password || user.password.trim() === '') {
+        alert('A senha é obrigatória para novos usuários.');
+        return false;
+    }
     const newUser = { ...user, id: `user-${Date.now()}` };
     const newUsers = [...users, newUser];
     setUsers(newUsers);
     saveData('app_users', newUsers);
-  };
-  const handleUpdateUser = (updatedUser: User) => {
+    return true;
+  }, [users, saveData]);
+
+  const handleUpdateUser = useCallback((updatedUser: User): boolean => {
+    const originalUser = users.find(u => u.id === updatedUser.id);
+    if (originalUser && originalUser.username.toLowerCase() !== updatedUser.username.toLowerCase()) {
+        if (users.some(u => u.id !== updatedUser.id && u.username.toLowerCase() === updatedUser.username.toLowerCase())) {
+            alert('Este nome de usuário já está em uso. Por favor, escolha outro.');
+            return false;
+        }
+    }
     const newUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
     setUsers(newUsers);
     saveData('app_users', newUsers);
-  };
+    return true;
+  }, [users, saveData]);
+
   const handleDeleteUser = (userId: string) => {
     const newUsers = users.filter(u => u.id !== userId);
     setUsers(newUsers);
     saveData('app_users', newUsers);
+  };
+
+  const handleChangePassword = (userId: string, newPassword: string) => {
+    const newUsers = users.map(u => {
+      if (u.id === userId) {
+        return { ...u, password: newPassword, mustChangePassword: false };
+      }
+      return u;
+    });
+    setUsers(newUsers);
+    saveData('app_users', newUsers);
+
+    if (currentUser && currentUser.id === userId) {
+      const updatedCurrentUser = { ...currentUser, password: newPassword, mustChangePassword: false };
+      setCurrentUser(updatedCurrentUser);
+      sessionStorage.setItem('app_currentUser', JSON.stringify(updatedCurrentUser));
+      setView('dashboard');
+    }
   };
 
   // Group CRUD
@@ -623,6 +663,16 @@ const App: React.FC = () => {
         return a.name.localeCompare(b.name);
     });
   }, [userAccounts, searchTerm, filterStatus]);
+
+  if (currentUser?.mustChangePassword) {
+    return (
+      <ChangePasswordModal 
+        user={currentUser}
+        onSubmit={handleChangePassword}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   if (!currentUser) {
     return <LoginScreen onLogin={handleLogin} />;
