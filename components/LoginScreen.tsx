@@ -61,6 +61,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                         name="username"
                         type="text"
                         autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
                         required
                         className="appearance-none relative block w-full px-3 py-2.5 border border-slate-300 bg-slate-50/80 text-text-primary placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary focus:z-10 text-sm rounded-t-lg dark:bg-dark-surface/80 dark:border-slate-700 dark:text-dark-text-primary dark:placeholder-slate-400 dark:focus:ring-4 dark:focus:ring-secondary/20 dark:focus:border-secondary transition-all duration-300"
                         placeholder="Usuário"
@@ -74,6 +76,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                         name="password"
                         type="password"
                         autoComplete="current-password"
+                        autoCapitalize="none"
+                        autoCorrect="off"
                         required
                         className="appearance-none relative block w-full px-3 py-2.5 border border-slate-300 bg-slate-50/80 text-text-primary placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary focus:z-10 text-sm rounded-b-lg dark:bg-dark-surface/80 dark:border-slate-700 dark:text-dark-text-primary dark:placeholder-slate-400 dark:focus:ring-4 dark:focus:ring-secondary/20 dark:focus:border-secondary transition-all duration-300"
                         placeholder="Senha"
