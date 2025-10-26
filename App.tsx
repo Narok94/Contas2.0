@@ -17,6 +17,7 @@ import FloatingAiButton from './components/FloatingAiButton';
 import { useTheme } from './hooks/useTheme';
 import { ParsedCommand, analyzeSpending } from './services/geminiService';
 import * as dataService from './services/dataService';
+import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
 import ChangePasswordModal from './components/ChangePasswordModal';
 
@@ -152,37 +153,37 @@ const App: React.FC = () => {
   const constraintsRef = useRef<HTMLDivElement>(null);
   const chatModalRef = useRef<AiChatModalRef>(null);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
+    useEffect(() => {
         setIsLoading(true);
-        try {
-            const [usersData, groupsData, accountsData, categoriesData, incomesData] = await Promise.all([
-                dataService.getUsers(),
-                dataService.getGroups(),
-                dataService.getAccounts(),
-                dataService.getCategories(),
-                dataService.getIncomes(),
-            ]);
-            setUsers(usersData);
-            setGroups(groupsData);
-            setAccounts(accountsData);
-            setCategories(categoriesData);
-            setIncomes(incomesData);
 
-            const storedUser = sessionStorage.getItem('app_currentUser');
-            if (storedUser) {
-                setCurrentUser(JSON.parse(storedUser));
-                setView('dashboard');
-            }
-        } catch (error) {
-            console.error("Failed to load data", error);
-        } finally {
-            setTimeout(() => setIsLoading(false), 500);
+        const handleUsersUpdate = (data: User[]) => setUsers(data);
+        const handleGroupsUpdate = (data: Group[]) => setGroups(data);
+        const handleAccountsUpdate = (data: Account[]) => setAccounts(data);
+        const handleIncomesUpdate = (data: Income[]) => setIncomes(data);
+        const handleCategoriesUpdate = (data: string[]) => setCategories(data);
+        
+        realtimeService.subscribe('users', handleUsersUpdate);
+        realtimeService.subscribe('groups', handleGroupsUpdate);
+        realtimeService.subscribe('accounts', handleAccountsUpdate);
+        realtimeService.subscribe('incomes', handleIncomesUpdate);
+        realtimeService.subscribe('categories', handleCategoriesUpdate);
+        
+        const storedUser = sessionStorage.getItem('app_currentUser');
+        if (storedUser) {
+            setCurrentUser(JSON.parse(storedUser));
+            setView('dashboard');
         }
-    };
-    
-    loadInitialData();
-  }, []);
+
+        setTimeout(() => setIsLoading(false), 500); 
+
+        return () => {
+            realtimeService.unsubscribe('users', handleUsersUpdate);
+            realtimeService.unsubscribe('groups', handleGroupsUpdate);
+            realtimeService.unsubscribe('accounts', handleAccountsUpdate);
+            realtimeService.unsubscribe('incomes', handleIncomesUpdate);
+            realtimeService.unsubscribe('categories', handleCategoriesUpdate);
+        };
+    }, []);
   
   const userAccounts = useMemo(() => {
     if (!currentUser) return [];
@@ -221,8 +222,7 @@ const App: React.FC = () => {
         if (!existingAccount) return;
         
         const updatedAccountData = { ...existingAccount, ...accountData };
-        const updatedAccount = await dataService.updateAccount(updatedAccountData);
-        setAccounts(prev => prev.map(acc => acc.id === accountData.id ? updatedAccount : acc));
+        await dataService.updateAccount(updatedAccountData);
     } else {
         // Add
         if (!currentUser) return;
@@ -232,8 +232,7 @@ const App: React.FC = () => {
             status: AccountStatus.PENDING,
             ...(accountData.isInstallment && { currentInstallment: 1 }),
         };
-        const newAccount = await dataService.addAccount(newAccountData);
-        setAccounts(prev => [...prev, newAccount]);
+        await dataService.addAccount(newAccountData);
     }
   };
   
@@ -248,8 +247,7 @@ const App: React.FC = () => {
           paymentDate: isNowPaid ? new Date().toISOString() : undefined,
       };
 
-      const updatedAccount = await dataService.updateAccount(updatedAccountData);
-      setAccounts(prevAccounts => prevAccounts.map(acc => acc.id === accountId ? updatedAccount : acc));
+      await dataService.updateAccount(updatedAccountData);
   };
   
   const handleToggleAccountStatusByName = async (accountName: string): Promise<boolean> => {
@@ -263,7 +261,6 @@ const App: React.FC = () => {
 
   const handleDeleteAccount = async (accountId: string) => {
       await dataService.deleteAccount(accountId);
-      setAccounts(prev => prev.filter(acc => acc.id !== accountId));
   };
   
   const handleEditAccountByName = async (editData: { original_name: string; new_name?: string; new_value?: number; new_category?: string }): Promise<boolean> => {
@@ -275,8 +272,7 @@ const App: React.FC = () => {
             value: editData.new_value || accountToEdit.value,
             category: editData.new_category || accountToEdit.category,
         };
-        const updatedAccount = await dataService.updateAccount(updatedAccountData);
-        setAccounts(prev => prev.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc));
+        await dataService.updateAccount(updatedAccountData);
         return true;
     }
     return false;
@@ -289,8 +285,7 @@ const App: React.FC = () => {
         const existingIncome = incomes.find(inc => inc.id === incomeData.id);
         if (!existingIncome) return;
         const updatedIncomeData = { ...existingIncome, ...incomeData };
-        const updatedIncome = await dataService.updateIncome(updatedIncomeData);
-        setIncomes(prev => prev.map(inc => inc.id === incomeData.id ? updatedIncome : inc));
+        await dataService.updateIncome(updatedIncomeData);
     } else {
         // Add
         if (!currentUser) return;
@@ -299,14 +294,12 @@ const App: React.FC = () => {
             id: `inc-${Date.now()}`,
             date: new Date().toISOString(),
         };
-        const newIncome = await dataService.addIncome(newIncomeData);
-        setIncomes(prev => [...prev, newIncome]);
+        await dataService.addIncome(newIncomeData);
     }
   };
 
   const handleDeleteIncome = async (incomeId: string) => {
       await dataService.deleteIncome(incomeId);
-      setIncomes(prev => prev.filter(inc => inc.id !== incomeId));
   };
   
    const handleEditIncomeByName = async (editData: { original_name: string; new_name?: string; new_value?: number }): Promise<boolean> => {
@@ -317,8 +310,7 @@ const App: React.FC = () => {
             name: editData.new_name || incomeToEdit.name,
             value: editData.new_value || incomeToEdit.value,
         };
-        const updatedIncome = await dataService.updateIncome(updatedIncomeData);
-        setIncomes(prev => prev.map(inc => inc.id === updatedIncome.id ? updatedIncome : inc));
+        await dataService.updateIncome(updatedIncomeData);
         return true;
     }
     return false;
@@ -334,8 +326,7 @@ const App: React.FC = () => {
         alert('A senha é obrigatória para novos usuários.');
         return false;
     }
-    const newUser = await dataService.addUser(user);
-    setUsers(prevUsers => [...prevUsers, newUser]);
+    await dataService.addUser(user);
     return true;
   };
 
@@ -347,14 +338,12 @@ const App: React.FC = () => {
             return false;
         }
     }
-    const user = await dataService.updateUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === user.id ? user : u));
+    await dataService.updateUser(updatedUser);
     return true;
   };
 
   const handleDeleteUser = async (userId: string) => {
     await dataService.deleteUser(userId);
-    setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
   const handleChangePassword = async (userId: string, newPassword: string) => {
@@ -363,7 +352,6 @@ const App: React.FC = () => {
 
     const updatedUserData = { ...user, password: newPassword, mustChangePassword: false };
     const updatedUser = await dataService.updateUser(updatedUserData);
-    setUsers(prev => prev.map(u => (u.id === userId ? updatedUser : u)));
     
     if (currentUser && currentUser.id === userId) {
       setCurrentUser(updatedUser);
@@ -374,12 +362,10 @@ const App: React.FC = () => {
 
   // Group CRUD
   const handleAddGroup = async (group: Omit<Group, 'id'>) => {
-    const newGroup = await dataService.addGroup(group);
-    setGroups(prev => [...prev, newGroup]);
+    await dataService.addGroup(group);
   };
   const handleUpdateGroup = async (updatedGroup: Group) => {
-    const group = await dataService.updateGroup(updatedGroup);
-    setGroups(prev => prev.map(g => g.id === group.id ? group : g));
+    await dataService.updateGroup(updatedGroup);
   };
   const handleDeleteGroup = async (groupId: string) => {
     if (users.some(u => u.groupIds.includes(groupId))) {
@@ -387,7 +373,6 @@ const App: React.FC = () => {
       return;
     }
     await dataService.deleteGroup(groupId);
-    setGroups(prev => prev.filter(g => g.id !== groupId));
   };
 
   // Category CRUD
@@ -395,7 +380,6 @@ const App: React.FC = () => {
         if (name && !categories.find(c => c.toLowerCase() === name.toLowerCase())) {
             const newCategories = [...categories, name].sort((a, b) => a.localeCompare(b));
             await dataService.saveCategories(newCategories);
-            setCategories(newCategories);
             return true;
         }
         return false;
@@ -405,11 +389,9 @@ const App: React.FC = () => {
         if (newName && oldName !== newName && !categories.find(c => c.toLowerCase() === newName.toLowerCase())) {
             const newCategories = categories.map(c => (c === oldName ? newName : c)).sort((a, b) => a.localeCompare(b));
             await dataService.saveCategories(newCategories);
-            setCategories(newCategories);
 
             const newAccounts = accounts.map(acc => (acc.category === oldName ? { ...acc, category: newName } : acc));
             await dataService.updateMultipleAccounts(newAccounts);
-            setAccounts(newAccounts);
             return true;
         }
         return false;
@@ -427,7 +409,6 @@ const App: React.FC = () => {
         }
         const newCategories = categories.filter(c => c !== name);
         await dataService.saveCategories(newCategories);
-        setCategories(newCategories);
         return true;
     };
   
