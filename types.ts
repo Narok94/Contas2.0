@@ -16,7 +16,7 @@ export interface User {
   username: string;
   password: string; // Plaintext for this mock app
   role: Role;
-  groupId: string;
+  groupIds: string[];
 }
 
 export interface Group {

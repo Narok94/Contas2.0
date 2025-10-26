@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { type Account } from '../types';
+import { type Account, type User, type Group } from '../types';
 
 interface AccountFormModalProps {
   isOpen: boolean;
@@ -9,6 +9,8 @@ interface AccountFormModalProps {
   account: Account | null;
   categories: string[];
   onManageCategories: () => void;
+  currentUser: User | null;
+  groups: Group[];
 }
 
 // Define a specific type for the form's state to improve type safety.
@@ -19,9 +21,10 @@ type AccountFormData = {
   isRecurrent: boolean;
   isInstallment: boolean;
   totalInstallments: string;
+  groupId: string;
 };
 
-const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, onSubmit, account, categories, onManageCategories }) => {
+const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, onSubmit, account, categories, onManageCategories, currentUser, groups }) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [value, setValue] = useState('');
@@ -29,11 +32,15 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
   const [isInstallment, setIsInstallment] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState('2');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [groupId, setGroupId] = useState('');
   
   const initialStateRef = useRef<AccountFormData | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      const initialGroupId = account?.groupId || (currentUser?.groupIds?.[0] || '');
+      setGroupId(initialGroupId);
+
       const initialState: AccountFormData = account
         ? {
             name: account.name,
@@ -42,6 +49,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             isRecurrent: account.isRecurrent,
             isInstallment: account.isInstallment,
             totalInstallments: String(account.totalInstallments || 2),
+            groupId: initialGroupId,
           }
         : {
             name: '',
@@ -50,6 +58,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             isRecurrent: false,
             isInstallment: false,
             totalInstallments: '2',
+            groupId: initialGroupId,
           };
       
       initialStateRef.current = initialState;
@@ -62,7 +71,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       setTotalInstallments(initialState.totalInstallments);
       setShowConfirmDialog(false); // Reset confirmation on open
     }
-  }, [isOpen, account, categories]);
+  }, [isOpen, account, categories, currentUser]);
 
   const hasUnsavedChanges = () => {
     if (!isOpen || !initialStateRef.current) {
@@ -75,6 +84,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
     if (initialStateRef.current.isRecurrent !== isRecurrent) return true;
     if (initialStateRef.current.isInstallment !== isInstallment) return true;
     if (isInstallment && initialStateRef.current.totalInstallments !== totalInstallments) return true;
+    if (initialStateRef.current.groupId !== groupId) return true;
     
     return false;
   };
@@ -98,7 +108,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !value || !category) return;
+    if (!name || !value || !category || !groupId) return;
 
     onSubmit({
       id: account?.id,
@@ -110,6 +120,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       totalInstallments: isInstallment ? parseInt(totalInstallments, 10) : undefined,
       currentInstallment: account?.currentInstallment,
       installmentId: account?.installmentId,
+      groupId,
     });
     onClose(); 
   };
@@ -165,6 +176,17 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
               <input id="account-value" type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary" />
             </div>
           </div>
+           {currentUser && currentUser.groupIds.length > 1 && (
+                <div>
+                    <label htmlFor="account-group" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Grupo</label>
+                    <select id="account-group" value={groupId} onChange={e => setGroupId(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary">
+                        {currentUser.groupIds.map(gid => {
+                            const group = groups.find(g => g.id === gid);
+                            return group ? <option key={gid} value={gid}>{group.name}</option> : null;
+                        })}
+                    </select>
+                </div>
+            )}
           <div>
             <label htmlFor="account-category" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Categoria</label>
             <div className="flex items-center space-x-2 mt-1">

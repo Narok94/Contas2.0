@@ -205,12 +205,12 @@ const App: React.FC = () => {
   
   const userAccounts = useMemo(() => {
     if (!currentUser) return [];
-    return accounts.filter(acc => acc.groupId === currentUser.groupId);
+    return accounts.filter(acc => currentUser.groupIds.includes(acc.groupId));
   }, [accounts, currentUser]);
 
   const userIncomes = useMemo(() => {
       if (!currentUser) return [];
-      return incomes.filter(inc => inc.groupId === currentUser.groupId);
+      return incomes.filter(inc => currentUser.groupIds.includes(inc.groupId));
   }, [incomes, currentUser]);
 
   const saveData = useCallback(<T,>(key: string, data: T) => {
@@ -235,7 +235,7 @@ const App: React.FC = () => {
   };
 
   // Account CRUD
-  const handleAddOrUpdateAccount = (accountData: Omit<Account, 'id' | 'groupId' | 'status'> & { id?: string }) => {
+  const handleAddOrUpdateAccount = (accountData: Omit<Account, 'id' | 'status'> & { id?: string }) => {
     if (accountData.id) {
         // Update
         const newAccounts = accounts.map(acc => acc.id === accountData.id ? { ...acc, ...accountData } : acc);
@@ -247,7 +247,6 @@ const App: React.FC = () => {
         const newAccount: Account = {
             ...accountData,
             id: `acc-${Date.now()}`,
-            groupId: currentUser.groupId,
             status: AccountStatus.PENDING,
             ...(accountData.isInstallment && { currentInstallment: 1 }),
         };
@@ -305,7 +304,7 @@ const App: React.FC = () => {
   };
 
   // Income CRUD
-  const handleAddOrUpdateIncome = (incomeData: Omit<Income, 'id' | 'groupId' | 'date'> & { id?: string }) => {
+  const handleAddOrUpdateIncome = (incomeData: Omit<Income, 'id' | 'date'> & { id?: string }) => {
     if (incomeData.id) {
         // Update
         const newIncomes = incomes.map(inc => inc.id === incomeData.id ? { ...inc, ...incomeData } : inc);
@@ -315,9 +314,8 @@ const App: React.FC = () => {
         // Add
         if (!currentUser) return;
         const newIncome: Income = {
-            ...incomeData,
+            ...(incomeData as Omit<Income, 'id'|'date'>),
             id: `inc-${Date.now()}`,
-            groupId: currentUser.groupId,
             date: new Date().toISOString(),
         };
         const newIncomes = [...incomes, newIncome];
@@ -379,7 +377,7 @@ const App: React.FC = () => {
     saveData('app_groups', newGroups);
   };
   const handleDeleteGroup = (groupId: string) => {
-    if (users.some(u => u.groupId === groupId)) {
+    if (users.some(u => u.groupIds.includes(groupId))) {
       alert("Não é possível excluir um grupo que contém usuários.");
       return;
     }
@@ -440,9 +438,14 @@ const App: React.FC = () => {
   };
   
    const handleAiCommand = (command: ParsedCommand): string => {
+        if (!currentUser || currentUser.groupIds.length === 0) {
+            return "Não foi possível processar o comando. Usuário não está em nenhum grupo.";
+        }
+        const defaultGroupId = currentUser.groupIds[0];
+       
         switch (command.intent) {
             case 'add_account':
-                handleAddOrUpdateAccount({ ...command.data, isRecurrent: false, isInstallment: false });
+                handleAddOrUpdateAccount({ ...command.data, groupId: defaultGroupId, isRecurrent: false, isInstallment: false });
                 return `Conta "${command.data.name}" adicionada com sucesso!`;
             case 'pay_account':
                 const paySuccess = handleToggleAccountStatusByName(command.data.name);
@@ -455,7 +458,7 @@ const App: React.FC = () => {
                     ? `Conta "${command.data.original_name}" atualizada com sucesso!`
                     : `Não encontrei a conta "${command.data.original_name}" para editar.`;
             case 'add_income':
-                handleAddOrUpdateIncome({ ...command.data, isRecurrent: false });
+                handleAddOrUpdateIncome({ ...command.data, groupId: defaultGroupId, isRecurrent: false });
                 return `Entrada "${command.data.name}" adicionada com sucesso!`;
             case 'edit_income':
                  const editIncomeSuccess = handleEditIncomeByName(command.data);
@@ -680,6 +683,8 @@ const App: React.FC = () => {
                     incomes={userIncomes}
                     onAddOrUpdate={handleAddOrUpdateIncome}
                     onDelete={handleDeleteIncome}
+                    currentUser={currentUser}
+                    groups={groups}
                 />
             );
         default:
@@ -704,6 +709,8 @@ const App: React.FC = () => {
         account={accountToEdit}
         categories={categories}
         onManageCategories={() => setIsCategoryModalOpen(true)}
+        currentUser={currentUser}
+        groups={groups}
       />
        <ManageCategoriesModal
           isOpen={isCategoryModalOpen}

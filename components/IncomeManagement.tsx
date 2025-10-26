@@ -1,24 +1,36 @@
 
-import React, { useState } from 'react';
-import { type Income } from '../types';
+import React, { useState, useEffect } from 'react';
+import { type Income, type User, type Group } from '../types';
 
 interface IncomeManagementProps {
     incomes: Income[];
-    onAddOrUpdate: (incomeData: Omit<Income, 'id' | 'groupId' | 'date'> & { id?: string }) => void;
+    onAddOrUpdate: (incomeData: Omit<Income, 'id' | 'date'> & { id?: string }) => void;
     onDelete: (incomeId: string) => void;
+    currentUser: User | null;
+    groups: Group[];
 }
 
-const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpdate, onDelete }) => {
+const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpdate, onDelete, currentUser, groups }) => {
     const [name, setName] = useState('');
     const [value, setValue] = useState('');
     const [isRecurrent, setIsRecurrent] = useState(false);
     const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+    const [groupId, setGroupId] = useState(currentUser?.groupIds[0] || '');
+
+    useEffect(() => {
+        if (editingIncome) {
+            setGroupId(editingIncome.groupId);
+        } else if (currentUser?.groupIds.length) {
+            setGroupId(currentUser.groupIds[0]);
+        }
+    }, [editingIncome, currentUser]);
 
     const resetForm = () => {
         setName('');
         setValue('');
         setIsRecurrent(false);
         setEditingIncome(null);
+        setGroupId(currentUser?.groupIds[0] || '');
     };
     
     const handleEditClick = (income: Income) => {
@@ -26,6 +38,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
         setName(income.name);
         setValue(String(income.value));
         setIsRecurrent(income.isRecurrent);
+        setGroupId(income.groupId);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -35,6 +48,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
             name,
             value: parseFloat(value),
             isRecurrent,
+            groupId,
         });
         resetForm();
     };
@@ -72,6 +86,17 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                         <input type="text" placeholder="Nome (ex: Salário)" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 rounded bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color" />
                         <input type="number" placeholder="Valor" value={value} onChange={e => setValue(e.target.value)} required className="w-full p-2 rounded bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color" />
                     </div>
+                     {currentUser && currentUser.groupIds.length > 1 && (
+                        <div>
+                            <label htmlFor="income-group" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Grupo</label>
+                            <select id="income-group" value={groupId} onChange={e => setGroupId(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color">
+                                {currentUser.groupIds.map(gid => {
+                                    const group = groups.find(g => g.id === gid);
+                                    return group ? <option key={gid} value={gid}>{group.name}</option> : null;
+                                })}
+                            </select>
+                        </div>
+                    )}
                      <div className="flex items-center">
                         <input id="income-recurrent" type="checkbox" checked={isRecurrent} onChange={e => setIsRecurrent(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded" />
                         <label htmlFor="income-recurrent" className="ml-2 block text-sm text-text-secondary dark:text-dark-text-secondary">Entrada Recorrente</label>

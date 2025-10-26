@@ -11,15 +11,24 @@ interface UserFormModalProps {
 }
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit, user, groups }) => {
-    const [formData, setFormData] = useState({ name: '', username: '', groupId: groups[0]?.id || '', role: Role.USER, password: '' });
+    const [formData, setFormData] = useState({ name: '', username: '', groupIds: [] as string[], role: Role.USER, password: '' });
 
     useEffect(() => {
         if (user) {
-            setFormData({ name: user.name, username: user.username, groupId: user.groupId, role: user.role, password: '' });
+            setFormData({ name: user.name, username: user.username, groupIds: user.groupIds, role: user.role, password: '' });
         } else {
-            setFormData({ name: '', username: '', groupId: groups[0]?.id || '', role: Role.USER, password: '' });
+            setFormData({ name: '', username: '', groupIds: [], role: Role.USER, password: '' });
         }
-    }, [user, isOpen, groups]);
+    }, [user, isOpen]);
+    
+    const handleGroupChange = (groupId: string) => {
+        setFormData(prev => {
+            const newGroupIds = prev.groupIds.includes(groupId)
+                ? prev.groupIds.filter(id => id !== groupId)
+                : [...prev.groupIds, groupId];
+            return { ...prev, groupIds: newGroupIds };
+        });
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,13 +42,28 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit
             <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-lg animate-fade-in-up">
                 <h2 className="text-2xl font-bold mb-4">{user ? 'Editar Usuário' : 'Adicionar Usuário'}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Form fields for user */}
                     <input type="text" placeholder="Nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
                     <input type="text" placeholder="Usuário" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
                     <input type="password" placeholder="Senha (deixe em branco para não alterar)" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!user} className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
-                    <select value={formData.groupId} onChange={e => setFormData({...formData, groupId: e.target.value})} className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color">
-                        {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                    </select>
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary mb-2">Grupos</label>
+                        <div className="space-y-2 max-h-32 overflow-y-auto p-2 border border-border-color dark:border-dark-border-color rounded-md">
+                            {groups.map(g => (
+                                <div key={g.id} className="flex items-center">
+                                    <input
+                                        id={`group-${g.id}`}
+                                        type="checkbox"
+                                        checked={formData.groupIds.includes(g.id)}
+                                        onChange={() => handleGroupChange(g.id)}
+                                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                    />
+                                    <label htmlFor={`group-${g.id}`} className="ml-2 block text-sm">
+                                        {g.name}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                      <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as Role})} className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color">
                         <option value={Role.USER}>Usuário</option>
                         <option value={Role.ADMIN}>Admin</option>
@@ -155,7 +179,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                                     <tr key={user.id}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{user.name}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">{user.username}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{groups.find(g => g.id === user.groupId)?.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{user.groupIds.map(gid => groups.find(g => g.id === gid)?.name).filter(Boolean).join(', ')}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                             <button onClick={() => openUserModal(user)} className="text-primary-light hover:text-primary transition-colors">Editar</button>
                                             <button onClick={() => onDeleteUser(user.id)} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
@@ -187,7 +211,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                                 {groups.map(group => (
                                     <tr key={group.id}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{group.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{users.filter(u => u.groupId === group.id).length}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{users.filter(u => u.groupIds.includes(group.id)).length}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                             <button onClick={() => openGroupModal(group)} className="text-primary-light hover:text-primary transition-colors">Editar</button>
                                             <button onClick={() => onDeleteGroup(group.id)} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
