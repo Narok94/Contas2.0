@@ -1,4 +1,4 @@
-export type View = 'login' | 'dashboard' | 'admin' | 'history' | 'income';
+export type View = 'login' | 'dashboard' | 'admin' | 'history' | 'income' | 'groupSelection';
 
 export enum Role {
   ADMIN = 'ADMIN',
@@ -23,6 +23,7 @@ export interface User {
 export interface Group {
   id:string;
   name: string;
+  password?: string;
 }
 
 export interface Account {

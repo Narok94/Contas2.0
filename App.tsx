@@ -20,6 +20,7 @@ import * as dataService from './services/dataService';
 import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
 import ChangePasswordModal from './components/ChangePasswordModal';
+import GroupSelectionScreen from './components/GroupSelectionScreen';
 
 interface ManageCategoriesModalProps {
     isOpen: boolean;
@@ -131,12 +132,13 @@ const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [view, setView] = useState<View>('dashboard');
+  const [view, setView] = useState<View>('login');
 
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
@@ -168,13 +170,29 @@ const App: React.FC = () => {
         realtimeService.subscribe('incomes', handleIncomesUpdate);
         realtimeService.subscribe('categories', handleCategoriesUpdate);
         
-        const storedUser = sessionStorage.getItem('app_currentUser');
-        if (storedUser) {
-            setCurrentUser(JSON.parse(storedUser));
-            setView('dashboard');
-        }
+        const initAuth = async () => {
+            const storedUserStr = sessionStorage.getItem('app_currentUser');
+            if (storedUserStr) {
+                const storedUser = JSON.parse(storedUserStr);
+                const storedGroupId = sessionStorage.getItem('app_activeGroupId');
+                setCurrentUser(storedUser);
 
-        setTimeout(() => setIsLoading(false), 500); 
+                if (storedGroupId) {
+                    setActiveGroupId(storedGroupId);
+                    setView('dashboard');
+                } else if (storedUser.groupIds.length > 1) {
+                    setView('groupSelection');
+                } else {
+                    // Invalid state, log out
+                    handleLogout();
+                }
+            } else {
+                setView('login');
+            }
+            setIsLoading(false);
+        };
+
+        initAuth();
 
         return () => {
             realtimeService.unsubscribe('users', handleUsersUpdate);
@@ -186,32 +204,52 @@ const App: React.FC = () => {
     }, []);
   
   const userAccounts = useMemo(() => {
-    if (!currentUser) return [];
-    return accounts.filter(acc => currentUser.groupIds.includes(acc.groupId));
-  }, [accounts, currentUser]);
+    if (!currentUser || !activeGroupId) return [];
+    return accounts.filter(acc => acc.groupId === activeGroupId);
+  }, [accounts, currentUser, activeGroupId]);
 
   const userIncomes = useMemo(() => {
-      if (!currentUser) return [];
-      return incomes.filter(inc => currentUser.groupIds.includes(inc.groupId));
-  }, [incomes, currentUser]);
+      if (!currentUser || !activeGroupId) return [];
+      return incomes.filter(inc => inc.groupId === activeGroupId);
+  }, [incomes, currentUser, activeGroupId]);
 
-  const handleLogin = (username: string, password: string): boolean => {
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      sessionStorage.setItem('app_currentUser', JSON.stringify(user));
-      if (!user.mustChangePassword) {
-        setView('dashboard');
-      }
-      return true;
+  const handleLogin = async (username: string, password: string): Promise<boolean> => {
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user || user.password !== password) {
+        return false;
     }
-    return false;
+    
+    setCurrentUser(user);
+    sessionStorage.setItem('app_currentUser', JSON.stringify(user));
+
+    if (user.mustChangePassword) {
+        // Will be handled by re-render
+    } else if (user.groupIds.length === 1) {
+        handleGroupSelect(user.groupIds[0]);
+    } else if (user.groupIds.length > 1) {
+        setView('groupSelection');
+    } else {
+        // User with no groups, treat as an error for now
+        alert("Você não pertence a nenhum grupo.");
+        handleLogout(); // Clear partial login state
+        return false;
+    }
+
+    return true;
+  };
+  
+  const handleGroupSelect = (groupId: string) => {
+    setActiveGroupId(groupId);
+    sessionStorage.setItem('app_activeGroupId', groupId);
+    setView('dashboard');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setActiveGroupId(null);
     sessionStorage.removeItem('app_currentUser');
-    setView('dashboard'); // Will be redirected to login screen
+    sessionStorage.removeItem('app_activeGroupId');
+    setView('login');
   };
 
   // Account CRUD
@@ -225,9 +263,10 @@ const App: React.FC = () => {
         await dataService.updateAccount(updatedAccountData);
     } else {
         // Add
-        if (!currentUser) return;
+        if (!currentUser || !activeGroupId) return;
         const newAccountData: Account = {
             ...accountData,
+            groupId: activeGroupId, // Ensure it's added to the active group
             id: `acc-${Date.now()}`,
             status: AccountStatus.PENDING,
             ...(accountData.isInstallment && { currentInstallment: 1 }),
@@ -288,9 +327,10 @@ const App: React.FC = () => {
         await dataService.updateIncome(updatedIncomeData);
     } else {
         // Add
-        if (!currentUser) return;
+        if (!currentUser || !activeGroupId) return;
         const newIncomeData: Income = {
             ...(incomeData as Omit<Income, 'id'|'date'>),
+            groupId: activeGroupId, // Ensure it's added to the active group
             id: `inc-${Date.now()}`,
             date: new Date().toISOString(),
         };
@@ -356,7 +396,12 @@ const App: React.FC = () => {
     if (currentUser && currentUser.id === userId) {
       setCurrentUser(updatedUser);
       sessionStorage.setItem('app_currentUser', JSON.stringify(updatedUser));
-      setView('dashboard');
+      // After password change, we need to decide where to go
+      if (updatedUser.groupIds.length === 1) {
+          handleGroupSelect(updatedUser.groupIds[0]);
+      } else {
+          setView('groupSelection');
+      }
     }
   };
 
@@ -423,14 +468,13 @@ const App: React.FC = () => {
   };
   
    const handleAiCommand = (command: ParsedCommand): string => {
-        if (!currentUser || currentUser.groupIds.length === 0) {
-            return "Não foi possível processar o comando. Usuário não está em nenhum grupo.";
+        if (!currentUser || !activeGroupId) {
+            return "Não foi possível processar o comando. Usuário não está em nenhum grupo ativo.";
         }
-        const defaultGroupId = currentUser.groupIds[0];
        
         switch (command.intent) {
             case 'add_account':
-                handleAddOrUpdateAccount({ ...command.data, groupId: defaultGroupId, isRecurrent: false, isInstallment: false });
+                handleAddOrUpdateAccount({ ...command.data, groupId: activeGroupId, isRecurrent: false, isInstallment: false });
                 return `Conta "${command.data.name}" adicionada com sucesso!`;
             case 'pay_account':
                 handleToggleAccountStatusByName(command.data.name).then(success => {
@@ -443,7 +487,7 @@ const App: React.FC = () => {
                 });
                 return `Conta "${command.data.original_name}" atualizada com sucesso!`;
             case 'add_income':
-                handleAddOrUpdateIncome({ ...command.data, groupId: defaultGroupId, isRecurrent: false });
+                handleAddOrUpdateIncome({ ...command.data, groupId: activeGroupId, isRecurrent: false });
                 return `Entrada "${command.data.name}" adicionada com sucesso!`;
             case 'edit_income':
                 handleEditIncomeByName(command.data).then(success => {
@@ -488,7 +532,8 @@ const App: React.FC = () => {
                 return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
             });
 
-            const previousMonthAccounts = userAccounts.filter(acc => {
+            const previousMonthAccounts = accounts.filter(acc => { // Check all accounts, not just userAccounts for previous month data
+                if (acc.groupId !== activeGroupId) return false;
                 if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
                 const paymentDate = new Date(acc.paymentDate);
                 return paymentDate.getMonth() === prevMonth && paymentDate.getFullYear() === prevYear;
@@ -596,7 +641,16 @@ const App: React.FC = () => {
     });
   }, [userAccounts, searchTerm, filterStatus]);
 
-  if (currentUser?.mustChangePassword) {
+  if (view === 'login') {
+      return <LoginScreen onLogin={handleLogin} />;
+  }
+
+  if (!currentUser) {
+    // Should be redirected to login, but as a fallback:
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+  
+  if (currentUser.mustChangePassword) {
     return (
       <ChangePasswordModal 
         user={currentUser}
@@ -606,12 +660,12 @@ const App: React.FC = () => {
     );
   }
 
-  if (!currentUser) {
-    return <LoginScreen onLogin={handleLogin} />;
+  if (view === 'groupSelection') {
+      return <GroupSelectionScreen user={currentUser} groups={groups} onSelectGroup={handleGroupSelect} onLogout={handleLogout} />;
   }
 
   const renderContent = () => {
-      if (isLoading) {
+      if (isLoading || !activeGroupId) { // Also check for activeGroupId
         return (
              <div className="space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -658,15 +712,14 @@ const App: React.FC = () => {
             />
           ) : <p>Acesso negado.</p>;
         case 'history':
-          return <AccountHistory accounts={userAccounts} />;
+          return <AccountHistory accounts={accounts.filter(acc => acc.groupId === activeGroupId)} />;
         case 'income':
             return (
                 <IncomeManagement
                     incomes={userIncomes}
                     onAddOrUpdate={handleAddOrUpdateIncome}
                     onDelete={handleDeleteIncome}
-                    currentUser={currentUser}
-                    groups={groups}
+                    activeGroupId={activeGroupId}
                 />
             );
         default:
@@ -691,8 +744,7 @@ const App: React.FC = () => {
         account={accountToEdit}
         categories={categories}
         onManageCategories={() => setIsCategoryModalOpen(true)}
-        currentUser={currentUser}
-        groups={groups}
+        activeGroupId={activeGroupId}
       />
        <ManageCategoriesModal
           isOpen={isCategoryModalOpen}

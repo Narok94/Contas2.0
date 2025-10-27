@@ -101,7 +101,12 @@ interface GroupFormModalProps {
 
 const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose, onSubmit, group }) => {
     const [name, setName] = useState('');
-    useEffect(() => setName(group ? group.name : ''), [group, isOpen]);
+    const [password, setPassword] = useState('');
+
+    useEffect(() => {
+        setName(group?.name || '');
+        setPassword(group?.password || '');
+    }, [group, isOpen]);
     
     if(!isOpen) return null;
 
@@ -109,8 +114,9 @@ const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose, onSubm
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
              <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-lg animate-fade-in-up">
                 <h2 className="text-2xl font-bold mb-4">{group ? 'Editar Grupo' : 'Adicionar Grupo'}</h2>
-                <form onSubmit={(e) => { e.preventDefault(); onSubmit({ name })}} className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); onSubmit({ name, password })}} className="space-y-4">
                     <input type="text" placeholder="Nome do Grupo" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
+                    <input type="password" placeholder="Senha do Grupo" value={password} onChange={e => setPassword(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
                     <div className="flex justify-end space-x-2 pt-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">Cancelar</button>
                         <button type="submit" className="px-4 py-2 rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-opacity">{group ? 'Salvar' : 'Adicionar'}</button>

@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, FunctionDeclaration, Content, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Type, FunctionDeclaration, Content, GenerateContentResponse, Modality } from "@google/genai";
 import { Account, ChatMessage, AccountStatus, Income } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -202,4 +202,29 @@ export const analyzeSpending = async (
     console.error("Error analyzing spending with Gemini:", error);
     return "Desculpe, não consegui analisar seus gastos no momento.";
   }
+};
+
+export const generateSpeech = async (text: string): Promise<string | null> => {
+    if (!text.trim()) {
+        return null;
+    }
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: text }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: 'Kore' },
+                    },
+                },
+            },
+        });
+        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        return base64Audio || null;
+    } catch (error) {
+        console.error("Error generating speech:", error);
+        return null;
+    }
 };

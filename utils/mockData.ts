@@ -8,9 +8,9 @@ const twoMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 10);
 
 
 export const MOCK_GROUPS: Group[] = [
-  { id: 'group-1', name: 'Família Silva' },
-  { id: 'group-2', name: 'República Coders' },
-  { id: 'group-3', name: 'Família Tatu' },
+  { id: 'group-1', name: 'Família Silva', password: 'silva' },
+  { id: 'group-2', name: 'República Coders', password: 'coders' },
+  { id: 'group-3', name: 'Família Tatu', password: 'tatu' },
 ];
 
 export const MOCK_USERS: User[] = [

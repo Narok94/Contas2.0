@@ -21,6 +21,21 @@ class RealtimeService {
 
   constructor() {
     this.loadDb();
+    window.addEventListener('storage', this.handleStorageChange);
+  }
+
+  private handleStorageChange = (event: StorageEvent) => {
+    if (event.key === DB_STORAGE_KEY && event.newValue && event.oldValue !== event.newValue) {
+        try {
+            this.db = JSON.parse(event.newValue);
+            // Notify all listeners about the change from another tab
+            (Object.keys(this.listeners) as CollectionKey[]).forEach(collection => {
+                this.notify(collection);
+            });
+        } catch (error) {
+            console.error("Failed to parse storage update:", error);
+        }
+    }
   }
 
   private loadDb() {
@@ -95,7 +110,7 @@ class RealtimeService {
     this.notify('users');
     return this.simulateApiCall(updatedUser);
   };
-  addUser = async (newUser: Omit<User, 'id'>) => {
+  addUser = async (newUser: Omit<User, 'id'>): Promise<User> => {
     const userWithId = { ...newUser, id: `user-${Date.now()}` };
     this.db.users.push(userWithId);
     this._saveDb();
@@ -117,7 +132,7 @@ class RealtimeService {
     this.notify('groups');
     return this.simulateApiCall(updatedGroup);
   };
-  addGroup = async (newGroup: Omit<Group, 'id'>) => {
+  addGroup = async (newGroup: Omit<Group, 'id'>): Promise<Group> => {
     const groupWithId = { ...newGroup, id: `group-${Date.now()}` };
     this.db.groups.push(groupWithId);
     this._saveDb();

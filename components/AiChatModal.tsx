@@ -1,8 +1,8 @@
-
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { type Account, type ChatMessage, type Income, type User } from '../types';
-import { generateResponseStream, ParsedCommand } from '../services/geminiService';
+import { generateResponseStream, ParsedCommand, generateSpeech } from '../services/geminiService';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
+import { playAudio } from '../utils/audioUtils';
 
 interface AiChatModalProps {
   isOpen: boolean;
@@ -45,6 +45,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
             const stream = generateResponseStream(content, historyForApi, accounts, categories, incomes);
             
             let fullResponse = "";
+            let textToSpeak = "";
             const allFunctionCalls = [];
 
             for await (const chunk of stream) {
@@ -61,6 +62,8 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                 }
             }
             
+            textToSpeak = fullResponse;
+
             if (allFunctionCalls.length > 0) {
                 let commandResultText = "";
                 for (const functionCall of allFunctionCalls) {
@@ -84,14 +87,28 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                         newMessages[newMessages.length - 1].content = commandResultText;
                         return newMessages;
                     });
+                    textToSpeak = commandResultText;
                 } else if (!fullResponse) {
                      setMessages(prev => {
                         const newMessages = [...prev];
                         newMessages[newMessages.length - 1].content = "Ação concluída.";
                         return newMessages;
                     });
+                    textToSpeak = "Ação concluída.";
                 }
             }
+
+            if (textToSpeak) {
+                try {
+                    const audioData = await generateSpeech(textToSpeak);
+                    if (audioData) {
+                        await playAudio(audioData);
+                    }
+                } catch (audioError) {
+                    console.error("Could not play AI response audio:", audioError);
+                }
+            }
+
         } catch (error) {
              setMessages(prev => {
                 const newMessages = [...prev];
@@ -125,6 +142,17 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
         const modelMessage: ChatMessage = { role: 'model', content: analysisResult };
         setMessages(prev => [...prev, modelMessage]);
         setIsLoading(false);
+        
+        if (analysisResult) {
+            try {
+                const audioData = await generateSpeech(analysisResult);
+                if (audioData) {
+                    await playAudio(audioData);
+                }
+            } catch (audioError) {
+                console.error("Could not play AI analysis audio:", audioError);
+            }
+        }
     };
 
     useEffect(() => {
@@ -136,6 +164,11 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
              const userName = currentUser?.name?.split(' ')[0] || 'você';
              const greeting = `E aí, ${userName}! Beleza? Sou a Ricka, sua nova parceira financeira. 💰✨<br/>Me diga o que você precisa: adicionar uma conta, pagar um boleto, ou só bater um papo sobre como ficar rico. Manda a ver!`;
              setMessages([{ role: 'model', content: greeting }]);
+             
+             generateSpeech(greeting.replace(/<br\/>/g, ' ')).then(audioData => {
+                 if(audioData) playAudio(audioData);
+             });
+
              setInput('');
              initialVoiceStartHandled.current = false; // Reset on open
         } else {
