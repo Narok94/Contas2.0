@@ -31,8 +31,13 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
   const accountsForMonth = useMemo(() => {
     const selectedYear = selectedDate.getFullYear();
     const selectedMonth = selectedDate.getMonth();
+    
     const today = new Date();
-    const isCurrentMonthView = selectedYear === today.getFullYear() && selectedMonth === today.getMonth();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    const isFutureView = selectedYear > currentYear || (selectedYear === currentYear && selectedMonth > currentMonth);
+    const isCurrentMonthView = selectedYear === currentYear && selectedMonth === currentMonth;
 
     // This Map will store the definitive version of an account for the selected month.
     const monthlyAccountMap = new Map<string, Account>();
@@ -51,11 +56,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     // Now, add recurring accounts that haven't been paid this month as PENDING.
     for (const account of accounts) {
         if (account.isRecurrent && !monthlyAccountMap.has(account.id)) {
-            // If it's not already in the map (as PAID for this month), add a virtual PENDING version.
+            // For future months, zero out variable bills, but keep fixed ones.
+            const accountsToZero = ['cartão', 'cemig', 'copasa'];
+            const shouldZeroOut = isFutureView && accountsToZero.includes(account.name.toLowerCase());
+            
             monthlyAccountMap.set(account.id, {
                 ...account,
                 status: AccountStatus.PENDING,
-                paymentDate: undefined, // It's not paid this month, so it shouldn't have a payment date for this view.
+                value: shouldZeroOut ? 0 : account.value,
+                paymentDate: undefined,
             });
         }
     }
@@ -69,20 +78,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         }
     }
 
-    const resultingAccounts = Array.from(monthlyAccountMap.values());
-
-    // User's requested rule: Zero out recurring accounts from October 2025 onwards.
-    const ruleActivationDate = new Date('2025-10-01T00:00:00Z');
-    if (selectedDate >= ruleActivationDate) {
-        return resultingAccounts.map(acc => {
-            if (acc.isRecurrent) {
-                return { ...acc, value: 0 };
-            }
-            return acc;
-        });
-    }
-
-    return resultingAccounts;
+    return Array.from(monthlyAccountMap.values());
   }, [accounts, selectedDate]);
   
   const filteredAccountsForDisplay = useMemo(() => {
@@ -116,25 +112,17 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
 
     const balance = totalIncome - paidInMonthValue;
     
-    // Total pending value respects the new rule based on the *current* date.
-    const ruleActivationDate = new Date('2025-10-01T00:00:00Z');
-    const today = new Date();
-    const pendingValue = accounts
+    const pendingInMonth = accountsForMonth
         .filter(acc => acc.status === AccountStatus.PENDING)
-        .reduce((sum, acc) => {
-            if (acc.isRecurrent && today >= ruleActivationDate) {
-                return sum; // Value is considered 0 for the total pending sum
-            }
-            return sum + acc.value;
-        }, 0);
+        .reduce((sum, acc) => sum + acc.value, 0);
 
     return {
         totalIncome,
         paidThisMonth: paidInMonthValue,
         balance,
-        pending: pendingValue,
+        pending: pendingInMonth,
     };
-  }, [accounts, incomes, selectedDate, accountsForMonth]);
+  }, [incomes, selectedDate, accountsForMonth]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -230,7 +218,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                     <StatCard title="Entradas no Mês" value={formatCurrency(stats.totalIncome)} colorClass="border-success" />
                     <StatCard title="Pago no Mês" value={formatCurrency(stats.paidThisMonth)} colorClass="border-accent" />
                     <StatCard title="Saldo do Mês" value={formatCurrency(stats.balance)} colorClass={stats.balance >= 0 ? "border-primary" : "border-danger"} />
-                    <StatCard title="Pendente (Total)" value={formatCurrency(stats.pending)} colorClass="border-warning" />
+                    <StatCard title="Pendente no Mês" value={formatCurrency(stats.pending)} colorClass="border-warning" />
                 </div>
             </motion.div>
         )}
