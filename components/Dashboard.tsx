@@ -11,10 +11,8 @@ interface DashboardProps {
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (accountId: string) => void;
   onToggleStatus: (accountId: string) => void;
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  filterStatus: AccountStatus | 'ALL';
-  setFilterStatus: (status: AccountStatus | 'ALL') => void;
+  selectedDate: Date;
+  setSelectedDate: (date: Date) => void;
 }
 
 const StatCard: React.FC<{ title: string; value: string | number; colorClass: string; }> = ({ title, value, colorClass }) => (
@@ -25,42 +23,118 @@ const StatCard: React.FC<{ title: string; value: string | number; colorClass: st
 );
 
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, searchTerm, setSearchTerm, filterStatus, setFilterStatus }) => {
-  
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const [isStatsVisible, setIsStatsVisible] = useState(true);
+
+  const accountsForMonth = useMemo(() => {
+    const selectedYear = selectedDate.getFullYear();
+    const selectedMonth = selectedDate.getMonth();
+    const today = new Date();
+    const isCurrentMonthView = selectedYear === today.getFullYear() && selectedMonth === today.getMonth();
+
+    // This Map will store the definitive version of an account for the selected month.
+    const monthlyAccountMap = new Map<string, Account>();
+
+    // First, add all paid accounts that match the selected month.
+    // This also handles recurring accounts that were paid in this month.
+    for (const account of accounts) {
+        if (account.status === AccountStatus.PAID && account.paymentDate) {
+            const paymentDate = new Date(account.paymentDate);
+            if (paymentDate.getFullYear() === selectedYear && paymentDate.getMonth() === selectedMonth) {
+                monthlyAccountMap.set(account.id, account);
+            }
+        }
+    }
+
+    // Now, add recurring accounts that haven't been paid this month as PENDING.
+    for (const account of accounts) {
+        if (account.isRecurrent && !monthlyAccountMap.has(account.id)) {
+            // If it's not already in the map (as PAID for this month), add a virtual PENDING version.
+            monthlyAccountMap.set(account.id, {
+                ...account,
+                status: AccountStatus.PENDING,
+                paymentDate: undefined, // It's not paid this month, so it shouldn't have a payment date for this view.
+            });
+        }
+    }
+
+    // Finally, add one-off PENDING accounts ONLY if viewing the current month.
+    if (isCurrentMonthView) {
+        for (const account of accounts) {
+            if (!account.isRecurrent && account.status === AccountStatus.PENDING && !monthlyAccountMap.has(account.id)) {
+                monthlyAccountMap.set(account.id, account);
+            }
+        }
+    }
+
+    const resultingAccounts = Array.from(monthlyAccountMap.values());
+
+    // User's requested rule: Zero out recurring accounts from October 2025 onwards.
+    const ruleActivationDate = new Date('2025-10-01T00:00:00Z');
+    if (selectedDate >= ruleActivationDate) {
+        return resultingAccounts.map(acc => {
+            if (acc.isRecurrent) {
+                return { ...acc, value: 0 };
+            }
+            return acc;
+        });
+    }
+
+    return resultingAccounts;
+  }, [accounts, selectedDate]);
+  
+  const filteredAccountsForDisplay = useMemo(() => {
+    return accountsForMonth
+      .filter(acc => {
+        const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
+        const matchesSearch = searchTerm === '' || acc.name.toLowerCase().includes(searchTerm.toLowerCase()) || acc.category.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesStatus && matchesSearch;
+      })
+      .sort((a, b) => {
+        if (a.status === AccountStatus.PENDING && b.status !== AccountStatus.PENDING) return -1;
+        if (a.status !== AccountStatus.PENDING && b.status === AccountStatus.PENDING) return 1;
+        return a.name.localeCompare(b.name);
+    });
+  }, [accountsForMonth, searchTerm, filterStatus]);
   
   const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const selectedMonth = selectedDate.getMonth();
+    const selectedYear = selectedDate.getFullYear();
 
-    const currentMonthIncomes = incomes.filter(inc => {
+    const monthIncomes = incomes.filter(inc => {
         const incomeDate = new Date(inc.date);
-        return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
+        return incomeDate.getMonth() === selectedMonth && incomeDate.getFullYear() === selectedYear;
     });
-    const totalIncome = currentMonthIncomes.reduce((sum, inc) => sum + inc.value, 0);
+    const totalIncome = monthIncomes.reduce((sum, inc) => sum + inc.value, 0);
 
-    const paidThisMonthValue = accounts
-        .filter(acc => {
-            if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
-            const paymentDate = new Date(acc.paymentDate);
-            return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
-        })
+    // Use the processed accountsForMonth list for month-specific stats
+    const paidInMonthValue = accountsForMonth
+        .filter(acc => acc.status === AccountStatus.PAID)
         .reduce((sum, acc) => sum + acc.value, 0);
 
-    const balance = totalIncome - paidThisMonthValue;
+    const balance = totalIncome - paidInMonthValue;
     
+    // Total pending value respects the new rule based on the *current* date.
+    const ruleActivationDate = new Date('2025-10-01T00:00:00Z');
+    const today = new Date();
     const pendingValue = accounts
         .filter(acc => acc.status === AccountStatus.PENDING)
-        .reduce((sum, acc) => sum + acc.value, 0);
+        .reduce((sum, acc) => {
+            if (acc.isRecurrent && today >= ruleActivationDate) {
+                return sum; // Value is considered 0 for the total pending sum
+            }
+            return sum + acc.value;
+        }, 0);
 
     return {
         totalIncome,
-        paidThisMonth: paidThisMonthValue,
+        paidThisMonth: paidInMonthValue,
         balance,
         pending: pendingValue,
     };
-  }, [accounts, incomes]);
+  }, [accounts, incomes, selectedDate, accountsForMonth]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -71,28 +145,72 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     closed: { rotate: 180 },
   };
 
+  const handlePrevMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(1); // Avoid issues with different month lengths
+    newDate.setMonth(newDate.getMonth() - 1);
+    setSelectedDate(newDate);
+  };
+
+  const handleNextMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(1);
+    newDate.setMonth(newDate.getMonth() + 1);
+    setSelectedDate(newDate);
+  };
+
+  const isNextMonthDisabled = useMemo(() => {
+    const today = new Date();
+    return selectedDate.getFullYear() >= today.getFullYear() && selectedDate.getMonth() >= today.getMonth();
+  }, [selectedDate]);
+
+  const MonthNavigator = () => (
+    <div className="flex items-center justify-center gap-2 sm:gap-4">
+        <button 
+            onClick={handlePrevMonth}
+            className="p-2 rounded-full bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors"
+            aria-label="Mês anterior"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+        </button>
+        <h3 className="text-lg sm:text-xl font-bold text-center w-36 sm:w-48 capitalize">
+            {selectedDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+        </h3>
+        <button 
+            onClick={handleNextMonth} 
+            disabled={isNextMonthDisabled}
+            className="p-2 rounded-full bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Próximo mês"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
+        </button>
+    </div>
+  );
+
+
   return (
     <div className="space-y-6">
-       <button
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <MonthNavigator />
+        <button
             onClick={() => setIsStatsVisible(!isStatsVisible)}
-            className="w-full flex justify-between items-center px-2 py-1 rounded-lg hover:bg-surface-light/50 dark:hover:bg-dark-surface-light/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-light/50 dark:hover:bg-dark-surface-light/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-expanded={isStatsVisible}
             aria-controls="stats-content"
             title={isStatsVisible ? 'Esconder resumo' : 'Mostrar resumo'}
         >
-            <h2 className="text-2xl font-bold">Resumo</h2>
-            <div className="p-1.5 text-text-muted dark:text-dark-text-muted">
-                 <motion.div
-                    variants={iconVariants}
-                    animate={isStatsVisible ? 'open' : 'closed'}
-                    transition={{ duration: 0.2 }}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                    </svg>
-                </motion.div>
-            </div>
+            <span className="font-semibold text-sm">Resumo</span>
+            <motion.div
+                variants={iconVariants}
+                animate={isStatsVisible ? 'open' : 'closed'}
+                transition={{ duration: 0.2 }}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </motion.div>
         </button>
+      </div>
       <AnimatePresence initial={false}>
         {isStatsVisible && (
             <motion.div
@@ -109,9 +227,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                  className="overflow-hidden"
             >
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title="Entradas (Mês)" value={formatCurrency(stats.totalIncome)} colorClass="border-success" />
-                    <StatCard title="Despesas Pagas (Mês)" value={formatCurrency(stats.paidThisMonth)} colorClass="border-accent" />
-                    <StatCard title="Saldo (Mês)" value={formatCurrency(stats.balance)} colorClass={stats.balance >= 0 ? "border-primary" : "border-danger"} />
+                    <StatCard title="Entradas no Mês" value={formatCurrency(stats.totalIncome)} colorClass="border-success" />
+                    <StatCard title="Pago no Mês" value={formatCurrency(stats.paidThisMonth)} colorClass="border-accent" />
+                    <StatCard title="Saldo do Mês" value={formatCurrency(stats.balance)} colorClass={stats.balance >= 0 ? "border-primary" : "border-danger"} />
                     <StatCard title="Pendente (Total)" value={formatCurrency(stats.pending)} colorClass="border-warning" />
                 </div>
             </motion.div>
@@ -125,9 +243,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}
         />
-        {accounts.length > 0 ? (
+        {filteredAccountsForDisplay.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 mt-4">
-            {accounts.map(acc => (
+            {filteredAccountsForDisplay.map(acc => (
               <AccountCard 
                 key={acc.id} 
                 account={acc} 
@@ -143,7 +261,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <h3 className="text-xl font-semibold text-text-primary dark:text-dark-text-primary">Nenhuma conta encontrada</h3>
-            <p className="mt-2 max-w-sm">Tente ajustar seus filtros de busca ou adicione uma nova conta para começar.</p>
+            <p className="mt-2 max-w-sm">
+                Não há contas para o mês selecionado. Tente ajustar seus filtros ou adicione uma nova conta.
+            </p>
           </div>
         )}
       </div>

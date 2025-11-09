@@ -139,6 +139,7 @@ const App: React.FC = () => {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [view, setView] = useState<View>('login');
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
@@ -150,8 +151,6 @@ const App: React.FC = () => {
   const [startVoiceOnChatOpen, setStartVoiceOnChatOpen] = useState(false);
   const [isAiListening, setIsAiListening] = useState(false);
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const constraintsRef = useRef<HTMLDivElement>(null);
   const chatModalRef = useRef<AiChatModalRef>(null);
 
@@ -627,20 +626,6 @@ const App: React.FC = () => {
         }
     };
 
-  const filteredDashboardAccounts = useMemo(() => {
-    return userAccounts
-      .filter(acc => {
-        const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
-        const matchesSearch = searchTerm === '' || acc.name.toLowerCase().includes(searchTerm.toLowerCase()) || acc.category.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesStatus && matchesSearch;
-      })
-      .sort((a, b) => {
-        if (a.status === AccountStatus.PENDING && b.status !== AccountStatus.PENDING) return -1;
-        if (a.status !== AccountStatus.PENDING && b.status === AccountStatus.PENDING) return 1;
-        return a.name.localeCompare(b.name);
-    });
-  }, [userAccounts, searchTerm, filterStatus]);
-
   if (view === 'login') {
       return <LoginScreen onLogin={handleLogin} />;
   }
@@ -687,15 +672,13 @@ const App: React.FC = () => {
         case 'dashboard':
           return (
             <Dashboard 
-              accounts={filteredDashboardAccounts} 
+              accounts={userAccounts} 
               incomes={userIncomes}
               onEditAccount={openAccountModal} 
               onDeleteAccount={handleDeleteAccount} 
-              onToggleStatus={handleToggleAccountStatus} 
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              filterStatus={filterStatus}
-              setFilterStatus={setFilterStatus}
+              onToggleStatus={handleToggleAccountStatus}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
             />
           );
         case 'admin':
