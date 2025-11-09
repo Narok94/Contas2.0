@@ -259,6 +259,15 @@ const App: React.FC = () => {
         if (!existingAccount) return;
         
         const updatedAccountData = { ...existingAccount, ...accountData };
+
+        // FIX: When a recurring account is changed to be non-recurring,
+        // it should become a regular pending bill for the current period,
+        // not disappear because its original state was 'PAID' in the future.
+        if (existingAccount.isRecurrent && !updatedAccountData.isRecurrent) {
+            updatedAccountData.status = AccountStatus.PENDING;
+            updatedAccountData.paymentDate = undefined;
+        }
+
         await dataService.updateAccount(updatedAccountData);
     } else {
         // Add
