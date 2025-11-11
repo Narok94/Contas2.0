@@ -13,6 +13,7 @@ type Db = {
 
 type ListenerCallback<T> = (data: T) => void;
 
+const DB_VERSION = '1.1'; // Increment this string to force a cache refresh for all users.
 const DB_STORAGE_KEY = 'controle_contas_db';
 
 class RealtimeService {
@@ -27,11 +28,14 @@ class RealtimeService {
   private handleStorageChange = (event: StorageEvent) => {
     if (event.key === DB_STORAGE_KEY && event.newValue && event.oldValue !== event.newValue) {
         try {
-            this.db = JSON.parse(event.newValue);
-            // Notify all listeners about the change from another tab
-            (Object.keys(this.listeners) as CollectionKey[]).forEach(collection => {
-                this.notify(collection);
-            });
+            const parsedData = JSON.parse(event.newValue);
+            if (parsedData.version && parsedData.db) {
+                this.db = parsedData.db;
+                // Notify all listeners about the change from another tab
+                (Object.keys(this.listeners) as CollectionKey[]).forEach(collection => {
+                    this.notify(collection);
+                });
+            }
         } catch (error) {
             console.error("Failed to parse storage update:", error);
         }
@@ -40,20 +44,28 @@ class RealtimeService {
 
   private loadDb() {
     try {
-      const storedDb = localStorage.getItem(DB_STORAGE_KEY);
-      if (storedDb) {
-        this.db = JSON.parse(storedDb);
-      } else {
-        // Initialize with mock data if nothing is in storage
-        this.db = {
-          users: MOCK_USERS,
-          groups: MOCK_GROUPS,
-          accounts: MOCK_ACCOUNTS,
-          categories: ACCOUNT_CATEGORIES,
-          incomes: MOCK_INCOMES,
-        };
-        this._saveDb();
+      const storedDataString = localStorage.getItem(DB_STORAGE_KEY);
+      if (storedDataString) {
+        const storedData = JSON.parse(storedDataString);
+        // Check if the stored data has the correct version
+        if (storedData.version === DB_VERSION && storedData.db) {
+          this.db = storedData.db;
+          return; // Data is fresh, no need to re-initialize
+        }
       }
+
+      // If we reach here, either there's no data, it's malformed, or it's an old version.
+      // Re-initialize with fresh mock data.
+      console.log(`Cache is old or missing. Initializing with fresh data version: ${DB_VERSION}.`);
+      this.db = {
+        users: MOCK_USERS,
+        groups: MOCK_GROUPS,
+        accounts: MOCK_ACCOUNTS,
+        categories: ACCOUNT_CATEGORIES,
+        incomes: MOCK_INCOMES,
+      };
+      this._saveDb();
+
     } catch (error) {
       console.error("Failed to load database from localStorage, initializing with mock data.", error);
       // Fallback to mock data on parsing error
@@ -69,7 +81,11 @@ class RealtimeService {
 
   private _saveDb() {
     try {
-      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(this.db));
+      const dataToStore = {
+        version: DB_VERSION,
+        db: this.db,
+      };
+      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(dataToStore));
     } catch (error) {
       console.error("Failed to save database to localStorage.", error);
     }
