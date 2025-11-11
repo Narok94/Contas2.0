@@ -8,8 +8,8 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('jessica');
-  const [password, setPassword] = useState('12345');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { theme, toggleTheme } = useTheme();
