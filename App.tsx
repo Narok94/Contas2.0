@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
@@ -8,6 +7,8 @@ import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
 import AccountHistory from './components/AccountHistory';
 import AccountFormModal from './components/AccountFormModal';
+import BatchAccountModal from './components/BatchAccountModal';
+import AddSelectionModal from './components/AddSelectionModal';
 import BottomNavBar from './components/BottomNavBar';
 import AiChatModal, { AiChatModalRef } from './components/AiChatModal';
 import SettingsModal from './components/SettingsModal';
@@ -142,6 +143,8 @@ const App: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
   
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -281,6 +284,24 @@ const App: React.FC = () => {
         };
         await dataService.addAccount(newAccountData);
     }
+  };
+
+  const handleBatchAddAccounts = async (accountsData: any[]) => {
+      if (!currentUser || !activeGroupId) return;
+
+      const newAccounts: Account[] = accountsData.map((data, index) => ({
+          ...data,
+          groupId: activeGroupId,
+          id: `acc-${Date.now()}-${index}`,
+          status: AccountStatus.PENDING,
+          ...(data.isInstallment && { currentInstallment: 1 }),
+      }));
+
+      // We can use a loop or add a batch method to dataService if performance is critical.
+      // For now, looping is fine for small batches.
+      for (const acc of newAccounts) {
+          await dataService.addAccount(acc);
+      }
   };
   
   const handleToggleAccountStatus = async (accountId: string) => {
@@ -688,6 +709,7 @@ const App: React.FC = () => {
               onToggleStatus={handleToggleAccountStatus}
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
+              onOpenBatchModal={() => setIsBatchModalOpen(true)}
             />
           );
         case 'admin':
@@ -726,7 +748,7 @@ const App: React.FC = () => {
         onSettingsClick={() => setIsSettingsModalOpen(true)}
         onLogout={handleLogout}
       />
-      <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto pb-24">
+      <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-24">
         {renderContent()}
       </main>
       <AccountFormModal
@@ -737,6 +759,18 @@ const App: React.FC = () => {
         categories={categories}
         onManageCategories={() => setIsCategoryModalOpen(true)}
         activeGroupId={activeGroupId}
+      />
+      <BatchAccountModal
+          isOpen={isBatchModalOpen}
+          onClose={() => setIsBatchModalOpen(false)}
+          onSubmit={handleBatchAddAccounts}
+          categories={categories}
+      />
+      <AddSelectionModal
+          isOpen={isSelectionModalOpen}
+          onClose={() => setIsSelectionModalOpen(false)}
+          onSelectSingle={() => openAccountModal()}
+          onSelectBatch={() => setIsBatchModalOpen(true)}
       />
        <ManageCategoriesModal
           isOpen={isCategoryModalOpen}
@@ -781,7 +815,7 @@ const App: React.FC = () => {
        <BottomNavBar
           activeView={view}
           onViewChange={setView}
-          onAddClick={() => openAccountModal()}
+          onAddClick={() => setIsSelectionModalOpen(true)}
           isAdmin={currentUser.role === Role.ADMIN}
        />
     </div>

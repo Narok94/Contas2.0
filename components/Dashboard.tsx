@@ -13,6 +13,7 @@ interface DashboardProps {
   onToggleStatus: (accountId: string) => void;
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
+  onOpenBatchModal: () => void;
 }
 
 const CompactStat: React.FC<{ label: string; value: string; color: string; icon: React.ReactNode }> = ({ label, value, color, icon }) => (
@@ -22,12 +23,12 @@ const CompactStat: React.FC<{ label: string; value: string; color: string; icon:
         </div>
         <div>
             <p className="text-xs text-text-muted dark:text-dark-text-muted font-medium uppercase tracking-wider">{label}</p>
-            <p className="text-lg font-bold text-text-primary dark:text-dark-text-primary leading-tight">{value}</p>
+            <p className="text-xl font-bold text-text-primary dark:text-dark-text-primary leading-tight">{value}</p>
         </div>
     </div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, onOpenBatchModal }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const [isStatsVisible, setIsStatsVisible] = useState(true);
@@ -179,15 +180,17 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             />
           </div>
           
-           <button
-            onClick={() => setIsStatsVisible(!isStatsVisible)}
-            className={`p-2 rounded-xl transition-all ${isStatsVisible ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-surface-light dark:bg-dark-surface-light text-text-secondary'}`}
-            title="Toggle Resumo"
+          <div className="flex items-center gap-2">
+            <button
+                onClick={() => setIsStatsVisible(!isStatsVisible)}
+                className={`p-2 rounded-xl transition-all ${isStatsVisible ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-surface-light dark:bg-dark-surface-light text-text-secondary'}`}
+                title="Toggle Resumo"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
             </button>
+          </div>
       </div>
 
       <AnimatePresence initial={false}>
