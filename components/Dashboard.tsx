@@ -15,13 +15,17 @@ interface DashboardProps {
   setSelectedDate: (date: Date) => void;
 }
 
-const StatCard: React.FC<{ title: string; value: string | number; colorClass: string; }> = ({ title, value, colorClass }) => (
-    <div className={`bg-surface dark:bg-dark-surface p-4 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 active:scale-95 border-t-4 ${colorClass}`}>
-        <p className="text-2xl lg:text-3xl font-bold text-text-primary dark:text-dark-text-primary truncate">{value}</p>
-        <p className="text-sm text-text-muted dark:text-dark-text-muted mt-1">{title}</p>
+const CompactStat: React.FC<{ label: string; value: string; color: string; icon: React.ReactNode }> = ({ label, value, color, icon }) => (
+    <div className="flex items-center gap-3 bg-surface dark:bg-dark-surface p-3 rounded-xl shadow-sm border border-border-color/50 dark:border-dark-border-color/50">
+        <div className={`p-2 rounded-lg ${color} bg-opacity-10 text-opacity-100`}>
+            {React.cloneElement(icon as React.ReactElement, { className: `w-5 h-5 ${color.replace('bg-', 'text-')}` })}
+        </div>
+        <div>
+            <p className="text-xs text-text-muted dark:text-dark-text-muted font-medium uppercase tracking-wider">{label}</p>
+            <p className="text-lg font-bold text-text-primary dark:text-dark-text-primary leading-tight">{value}</p>
+        </div>
     </div>
 );
-
 
 const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,11 +43,8 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const isFutureView = selectedYear > currentYear || (selectedYear === currentYear && selectedMonth > currentMonth);
     const isCurrentMonthView = selectedYear === currentYear && selectedMonth === currentMonth;
 
-    // This Map will store the definitive version of an account for the selected month.
     const monthlyAccountMap = new Map<string, Account>();
 
-    // First, add all paid accounts that match the selected month.
-    // This also handles recurring accounts that were paid in this month.
     for (const account of accounts) {
         if (account.status === AccountStatus.PAID && account.paymentDate) {
             const paymentDate = new Date(account.paymentDate);
@@ -53,10 +54,8 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         }
     }
 
-    // Now, add recurring accounts that haven't been paid this month as PENDING.
     for (const account of accounts) {
         if (account.isRecurrent && !monthlyAccountMap.has(account.id)) {
-            // For future months, zero out variable bills, but keep fixed ones.
             const accountsToZero = ['cartão', 'cemig', 'copasa'];
             const shouldZeroOut = isFutureView && accountsToZero.includes(account.name.toLowerCase());
             
@@ -69,7 +68,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         }
     }
 
-    // Finally, add one-off PENDING accounts ONLY if viewing the current month.
     if (isCurrentMonthView) {
         for (const account of accounts) {
             if (!account.isRecurrent && account.status === AccountStatus.PENDING && !monthlyAccountMap.has(account.id)) {
@@ -105,7 +103,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     });
     const totalIncome = monthIncomes.reduce((sum, inc) => sum + inc.value, 0);
 
-    // Use the processed accountsForMonth list for month-specific stats
     const paidInMonthValue = accountsForMonth
         .filter(acc => acc.status === AccountStatus.PAID)
         .reduce((sum, acc) => sum + acc.value, 0);
@@ -128,14 +125,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
   
-  const iconVariants = {
-    open: { rotate: 0 },
-    closed: { rotate: 180 },
-  };
-
   const handlePrevMonth = () => {
     const newDate = new Date(selectedDate);
-    newDate.setDate(1); // Avoid issues with different month lengths
+    newDate.setDate(1);
     newDate.setMonth(newDate.getMonth() - 1);
     setSelectedDate(newDate);
   };
@@ -152,87 +144,94 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     return selectedDate.getFullYear() >= today.getFullYear() && selectedDate.getMonth() >= today.getMonth();
   }, [selectedDate]);
 
-  const MonthNavigator = () => (
-    <div className="flex items-center justify-center gap-2 sm:gap-4">
-        <button 
-            onClick={handlePrevMonth}
-            className="p-2 rounded-full bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors"
-            aria-label="Mês anterior"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-        </button>
-        <h3 className="text-lg sm:text-xl font-bold text-center w-36 sm:w-48 capitalize">
-            {selectedDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
-        </h3>
-        <button 
-            onClick={handleNextMonth} 
-            disabled={isNextMonthDisabled}
-            className="p-2 rounded-full bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Próximo mês"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
-        </button>
-    </div>
-  );
-
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <MonthNavigator />
-        <button
-            onClick={() => setIsStatsVisible(!isStatsVisible)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-light/50 dark:hover:bg-dark-surface-light/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-expanded={isStatsVisible}
-            aria-controls="stats-content"
-            title={isStatsVisible ? 'Esconder resumo' : 'Mostrar resumo'}
-        >
-            <span className="font-semibold text-sm">Resumo</span>
-            <motion.div
-                variants={iconVariants}
-                animate={isStatsVisible ? 'open' : 'closed'}
-                transition={{ duration: 0.2 }}
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Control Bar: Month & Search */}
+      <div className="bg-surface dark:bg-dark-surface p-3 rounded-2xl shadow-sm border border-border-color/50 dark:border-dark-border-color/50 flex flex-col md:flex-row gap-4 justify-between items-center sticky top-20 z-20 backdrop-blur-md bg-opacity-90 dark:bg-opacity-90">
+          
+          {/* Month Navigator */}
+          <div className="flex items-center gap-2 bg-surface-light dark:bg-dark-surface-light p-1 rounded-xl w-full md:w-auto justify-between md:justify-start">
+             <button 
+                onClick={handlePrevMonth}
+                className="p-2 rounded-lg hover:bg-white dark:hover:bg-dark-surface shadow-sm transition-all text-text-secondary"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <span className="text-sm font-bold capitalize w-32 text-center text-text-primary dark:text-dark-text-primary">
+                {selectedDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+            </span>
+            <button 
+                onClick={handleNextMonth} 
+                disabled={isNextMonthDisabled}
+                className="p-2 rounded-lg hover:bg-white dark:hover:bg-dark-surface shadow-sm transition-all text-text-secondary disabled:opacity-30 disabled:shadow-none"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="flex-1 w-full md:w-auto">
+             <SearchBar 
+                searchTerm={searchTerm} 
+                setSearchTerm={setSearchTerm} 
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+            />
+          </div>
+          
+           <button
+            onClick={() => setIsStatsVisible(!isStatsVisible)}
+            className={`p-2 rounded-xl transition-all ${isStatsVisible ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-surface-light dark:bg-dark-surface-light text-text-secondary'}`}
+            title="Toggle Resumo"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-            </motion.div>
-        </button>
+            </button>
       </div>
+
       <AnimatePresence initial={false}>
         {isStatsVisible && (
             <motion.div
-                 id="stats-content"
-                 key="stats-grid"
-                 initial="collapsed"
-                 animate="open"
-                 exit="collapsed"
-                 variants={{
-                     open: { opacity: 1, height: 'auto', y: 0 },
-                     collapsed: { opacity: 0, height: 0, y: -20 }
-                 }}
+                 initial={{ opacity: 0, height: 0 }}
+                 animate={{ opacity: 1, height: 'auto' }}
+                 exit={{ opacity: 0, height: 0 }}
                  transition={{ duration: 0.3, ease: 'easeInOut' }}
                  className="overflow-hidden"
             >
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title="Entradas no Mês" value={formatCurrency(stats.totalIncome)} colorClass="border-success" />
-                    <StatCard title="Pago no Mês" value={formatCurrency(stats.paidThisMonth)} colorClass="border-accent" />
-                    <StatCard title="Saldo do Mês" value={formatCurrency(stats.balance)} colorClass={stats.balance >= 0 ? "border-primary" : "border-danger"} />
-                    <StatCard title="Pendente no Mês" value={formatCurrency(stats.pending)} colorClass="border-warning" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-2">
+                    <CompactStat 
+                        label="Entradas" 
+                        value={formatCurrency(stats.totalIncome)} 
+                        color="bg-success" 
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" /></svg>}
+                    />
+                    <CompactStat 
+                        label="Pago" 
+                        value={formatCurrency(stats.paidThisMonth)} 
+                        color="bg-accent" 
+                         icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    />
+                    <CompactStat 
+                        label="Saldo" 
+                        value={formatCurrency(stats.balance)} 
+                        color={stats.balance >= 0 ? "bg-primary" : "bg-danger"} 
+                         icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    />
+                    <CompactStat 
+                        label="Pendente" 
+                        value={formatCurrency(stats.pending)} 
+                        color="bg-warning" 
+                         icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    />
                 </div>
             </motion.div>
         )}
       </AnimatePresence>
 
       <div>
-        <SearchBar 
-            searchTerm={searchTerm} 
-            setSearchTerm={setSearchTerm} 
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
-        />
         {filteredAccountsForDisplay.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-20">
             {filteredAccountsForDisplay.map(acc => (
               <AccountCard 
                 key={acc.id} 
@@ -244,14 +243,14 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             ))}
           </div>
         ) : (
-          <div className="bg-surface dark:bg-dark-surface p-8 rounded-2xl text-center text-text-muted dark:text-dark-text-muted flex flex-col items-center justify-center min-h-[300px] mt-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400 dark:text-dark-text-muted mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <h3 className="text-xl font-semibold text-text-primary dark:text-dark-text-primary">Nenhuma conta encontrada</h3>
-            <p className="mt-2 max-w-sm">
-                Não há contas para o mês selecionado. Tente ajustar seus filtros ou adicione uma nova conta.
-            </p>
+          <div className="flex flex-col items-center justify-center min-h-[40vh] bg-surface/50 dark:bg-dark-surface/50 rounded-3xl border-2 border-dashed border-border-color dark:border-dark-border-color m-4 animate-fade-in">
+            <div className="p-4 bg-surface-light dark:bg-dark-surface-light rounded-full mb-4">
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </div>
+            <h3 className="text-lg font-bold text-text-primary dark:text-dark-text-primary">Tudo limpo por aqui!</h3>
+            <p className="text-sm text-text-secondary dark:text-dark-text-secondary mt-1">Nenhuma conta encontrada para os filtros atuais.</p>
           </div>
         )}
       </div>

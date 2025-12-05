@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 
@@ -18,25 +17,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    
+    // Pequeno delay para melhorar a sensação de feedback tátil da UI
+    await new Promise(resolve => setTimeout(resolve, 600));
+
     const success = await onLogin(username, password);
     if (!success) {
-      setError('Credenciais inválidas. Verifique os dados e tente novamente.');
+      setError('Usuário ou senha incorretos.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] bg-[length:200%_200%] bg-gradient-to-br from-slate-100 via-sky-100 to-slate-200 dark:from-slate-900 dark:via-secondary-dark dark:to-slate-800 animate-gradient-pan relative overflow-hidden p-4">
-        {/* Decorative Blobs */}
-        <div className="absolute top-10 -left-20 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-float-blob"></div>
-        <div className="absolute bottom-10 -right-20 w-72 h-72 bg-secondary/20 rounded-full filter blur-3xl opacity-50 animate-float-blob" style={{animationDelay: '5s'}}></div>
+    <div className="flex items-center justify-center min-h-[100dvh] bg-background dark:bg-dark-background relative overflow-hidden transition-colors duration-500 selection:bg-primary selection:text-white">
+        {/* Background Effects */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+             <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-60"></div>
+             <div className="absolute top-[20%] right-[-20%] w-[400px] h-[400px] bg-secondary/20 rounded-full blur-[100px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-60" style={{animationDelay: '2s'}}></div>
+             <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-accent/10 rounded-full blur-[120px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-50" style={{animationDelay: '4s'}}></div>
+        </div>
 
-        <div className="absolute top-4 right-4 z-20">
+        {/* Theme Toggle */}
+        <div className="absolute top-6 right-6 z-20">
             <button 
                 onClick={toggleTheme}
-                className="p-2 rounded-full bg-slate-200/50 dark:bg-dark-surface/50 text-text-secondary dark:text-dark-text-secondary hover:bg-slate-300/80 dark:hover:bg-dark-surface-light/80 transition-colors backdrop-blur-sm"
-                aria-label={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}
-                title={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}
+                className="p-3 rounded-full bg-surface/50 dark:bg-dark-surface/50 text-text-secondary dark:text-dark-text-secondary hover:bg-surface dark:hover:bg-dark-surface transition-all backdrop-blur-sm shadow-sm hover:shadow-md ring-1 ring-black/5 dark:ring-white/10"
+                aria-label="Alternar tema"
             >
                 {theme === 'light' ? (
                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
@@ -46,60 +52,113 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             </button>
         </div>
 
-        <div className="relative z-10 w-full max-w-sm">
-            <div className="w-full p-6 space-y-4 bg-white/60 dark:bg-dark-background/60 backdrop-blur-2xl rounded-3xl shadow-2xl ring-1 ring-black/5">
-                <div className="flex flex-col items-center justify-center text-center">
-                    <div className="p-3 bg-primary/10 rounded-full mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        {/* Login Card */}
+        <div className="relative z-10 w-full max-w-sm p-4 animate-fade-in-up">
+            <div className="bg-white/80 dark:bg-dark-surface/60 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/40 dark:border-white/5 p-8 sm:p-10 relative overflow-hidden">
+                
+                {/* Decorative top sheen */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50"></div>
+
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-primary to-secondary mb-6 shadow-xl shadow-primary/20 transform rotate-[-5deg] hover:rotate-0 transition-transform duration-500 ease-out group cursor-default">
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white transform group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
-                        Controle de Contas
-                    </h1>
-                    <p className="mt-1 text-sm text-text-secondary dark:text-dark-text-secondary">Bem-vindo de volta!</p>
+                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-primary dark:from-white dark:to-primary-light tracking-tight mb-2">Bem-vindo</h1>
+                    <p className="text-text-muted dark:text-dark-text-muted text-sm font-medium">Controle suas contas de forma inteligente</p>
                 </div>
-                <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-                <div className="rounded-lg -space-y-px">
-                     <div>
-                        <input
-                            id="username"
-                            name="username"
-                            type="text"
-                            autoComplete="username"
-                            required
-                            className="appearance-none relative block w-full px-3 py-2.5 border border-slate-300 bg-slate-50/80 text-text-primary placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary focus:z-10 text-sm rounded-t-lg dark:bg-dark-surface/80 dark:border-slate-700 dark:text-dark-text-primary dark:placeholder-slate-400 dark:focus:ring-4 dark:focus:ring-secondary/20 dark:focus:border-secondary transition-all duration-300"
-                            placeholder="Usuário"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                        />
+
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                    <div className="space-y-4">
+                        <div className="relative group">
+                             <input
+                                id="username"
+                                name="username"
+                                type="text"
+                                required
+                                className="peer w-full pl-5 pr-12 py-4 bg-surface-light/50 dark:bg-dark-surface-light/30 border border-border-color dark:border-dark-border-color focus:border-primary dark:focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary placeholder-transparent shadow-sm focus:shadow-md focus:bg-white dark:focus:bg-dark-surface"
+                                placeholder="Usuário"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                            />
+                            <label 
+                                htmlFor="username"
+                                className="absolute left-5 transition-all pointer-events-none 
+                                top-[-10px] text-xs text-primary font-bold bg-white dark:bg-dark-surface px-2 rounded-full
+                                peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-text-muted dark:peer-placeholder-shown:text-dark-text-muted peer-placeholder-shown:bg-transparent peer-placeholder-shown:font-normal peer-placeholder-shown:px-0
+                                peer-focus:top-[-10px] peer-focus:text-xs peer-focus:text-primary peer-focus:font-bold peer-focus:bg-white dark:peer-focus:bg-dark-surface peer-focus:px-2 peer-focus:rounded-full"
+                            >
+                                Usuário
+                            </label>
+                            <div className="absolute right-4 top-4 text-text-muted/30 peer-focus:text-primary/50 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            </div>
+                        </div>
+                        <div className="relative group">
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                className="peer w-full pl-5 pr-12 py-4 bg-surface-light/50 dark:bg-dark-surface-light/30 border border-border-color dark:border-dark-border-color focus:border-primary dark:focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary placeholder-transparent shadow-sm focus:shadow-md focus:bg-white dark:focus:bg-dark-surface"
+                                placeholder="Senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <label 
+                                htmlFor="password"
+                                className="absolute left-5 transition-all pointer-events-none
+                                top-[-10px] text-xs text-primary font-bold bg-white dark:bg-dark-surface px-2 rounded-full
+                                peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-text-muted dark:peer-placeholder-shown:text-dark-text-muted peer-placeholder-shown:bg-transparent peer-placeholder-shown:font-normal peer-placeholder-shown:px-0
+                                peer-focus:top-[-10px] peer-focus:text-xs peer-focus:text-primary peer-focus:font-bold peer-focus:bg-white dark:peer-focus:bg-dark-surface peer-focus:px-2 peer-focus:rounded-full"
+                            >
+                                Senha
+                            </label>
+                             <div className="absolute right-4 top-4 text-text-muted/30 peer-focus:text-primary/50 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                            </div>
+                        </div>
                     </div>
-                     <div>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            className="appearance-none relative block w-full px-3 py-2.5 border border-slate-300 bg-slate-50/80 text-text-primary placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary focus:z-10 text-sm rounded-b-lg dark:bg-dark-surface/80 dark:border-slate-700 dark:text-dark-text-primary dark:placeholder-slate-400 dark:focus:ring-4 dark:focus:ring-secondary/20 dark:focus:border-secondary transition-all duration-300"
-                            placeholder="Senha"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
-                </div>
-                {error && <p className="text-danger text-sm text-center pt-2">{error}</p>}
-                <div>
+
+                    {error && (
+                        <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 flex items-center space-x-3 animate-fade-in">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-danger flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <p className="text-danger text-sm font-medium">{error}</p>
+                        </div>
+                    )}
+
                     <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="group relative w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-50 focus:ring-primary dark:focus:ring-offset-dark-background transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-secondary/30 dark:hover:shadow-secondary/40 focus:shadow-xl focus:shadow-secondary/30 transform hover:scale-[1.02] active:scale-100 disabled:opacity-70 disabled:cursor-not-allowed"
+                        type="submit"
+                        disabled={isLoading}
+                        className="group w-full py-4 px-6 bg-gradient-to-r from-primary to-secondary hover:to-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-primary/40 focus:ring-4 focus:ring-primary/20 transition-all transform hover:-translate-y-1 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center relative overflow-hidden"
                     >
-                    {isLoading ? 'Entrando...' : 'Entrar'}
+                         <span className="relative z-10 flex items-center gap-2">
+                             {isLoading ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Entrando...</span>
+                                </>
+                            ) : (
+                                <>
+                                   <span>Acessar Conta</span>
+                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                    </svg>
+                                </>
+                            )}
+                         </span>
                     </button>
-                </div>
                 </form>
             </div>
+             <p className="text-center text-xs text-text-muted dark:text-dark-text-muted mt-8 opacity-60 font-medium">
+                &copy; {new Date().getFullYear()} Controle de Contas Inteligente
+            </p>
         </div>
     </div>
   );
