@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { type Account, type ChatMessage, type Income, type User } from '../types';
 import { generateResponseStream, ParsedCommand, generateSpeech } from '../services/geminiService';
@@ -25,24 +26,39 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<{ data: string; mimeType: string } | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const initialVoiceStartHandled = useRef(false);
-
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const submitMessage = async (content: string, isVoice: boolean = false) => {
-        if (!content.trim() || isLoading) return;
+        if ((!content.trim() && !selectedImage) || isLoading) return;
 
-        const userMessage: ChatMessage = { role: 'user', content: isVoice ? `🎤: "${content}"` : content };
+        let displayContent = content;
+        if (isVoice) {
+            displayContent = `🎤: "${content}"`;
+        } else if (selectedImage && !content.trim()) {
+            displayContent = "📷 [Imagem enviada]";
+        }
+
+        const userMessage: ChatMessage = { role: 'user', content: displayContent };
         const historyForApi = [...messages];
 
         setMessages(prev => [...prev, userMessage]);
-        if (!isVoice) setInput('');
-        setIsLoading(true);
         
+        // Capture image for this request and clear state immediately
+        const imageToSend = selectedImage;
+        setSelectedImage(null);
+        if (!isVoice) setInput('');
+
+        setIsLoading(true);
         setMessages(prev => [...prev, { role: 'model', content: '' }]);
 
         try {
-            const stream = generateResponseStream(content, historyForApi, accounts, categories, incomes);
+            // Se tiver imagem e nenhum texto, mandamos um texto padrão instruindo a ler a imagem
+            const commandText = content || (imageToSend ? "Analise esta imagem e extraia os dados das contas." : "");
+
+            const stream = generateResponseStream(commandText, historyForApi, accounts, categories, incomes, imageToSend || undefined);
             
             let fullResponse = "";
             let textToSpeak = "";
@@ -155,6 +171,30 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
         }
     };
 
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                // Extract base64 data part (remove "data:image/png;base64,")
+                const base64Data = base64String.split(',')[1];
+                setSelectedImage({
+                    data: base64Data,
+                    mimeType: file.type
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeSelectedImage = () => {
+        setSelectedImage(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     useEffect(() => {
         onListeningChange(isListening);
     }, [isListening, onListeningChange]);
@@ -162,7 +202,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
     useEffect(() => {
         if(isOpen) {
              const userName = currentUser?.name?.split(' ')[0] || 'você';
-             const greeting = `E aí, ${userName}! Beleza? Sou a Ricka, sua nova parceira financeira. 💰✨<br/>Me diga o que você precisa: adicionar uma conta, pagar um boleto, ou só bater um papo sobre como ficar rico. Manda a ver!`;
+             const greeting = `E aí, ${userName}! Beleza? Sou a Ricka, sua nova parceira financeira. 💰✨<br/>Me diga o que você precisa: adicionar uma conta, pagar um boleto, ou só bater um papo. Você também pode me enviar um print da conta!`;
              setMessages([{ role: 'model', content: greeting }]);
              
              generateSpeech(greeting.replace(/<br\/>/g, ' ')).then(audioData => {
@@ -170,6 +210,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
              });
 
              setInput('');
+             setSelectedImage(null);
              initialVoiceStartHandled.current = false; // Reset on open
         } else {
              onListeningChange(false);
@@ -188,7 +229,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isLoading]);
+    }, [messages, isLoading, selectedImage]); // Added selectedImage to scroll when image is added
 
     const handleSend = (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -230,9 +271,36 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                     )}
                     <div ref={messagesEndRef} />
                 </div>
+                
+                {selectedImage && (
+                    <div className="px-4 pb-2">
+                        <div className="relative inline-block">
+                            <img 
+                                src={`data:${selectedImage.mimeType};base64,${selectedImage.data}`} 
+                                alt="Preview" 
+                                className="h-20 rounded-lg border border-primary/50"
+                            />
+                            <button 
+                                onClick={removeSelectedImage}
+                                className="absolute -top-2 -right-2 bg-danger text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="p-4 border-t border-primary/20">
                     <form onSubmit={handleSend} className="flex items-center space-x-2">
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            ref={fileInputRef} 
+                            onChange={handleImageSelect} 
+                            className="hidden" 
+                        />
                          <button
                             type="button"
                             onClick={handleAnalyzeClick}
@@ -244,11 +312,24 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                             </svg>
                         </button>
+                        
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isLoading || isListening}
+                            className="p-2 rounded-full text-white bg-slate-800/50 border border-primary/30 hover:bg-primary/50 disabled:opacity-50 transition-all"
+                            title="Anexar Imagem"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                        </button>
+
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder={isListening ? "Ouvindo..." : "Pergunte ou dê um comando..."}
+                            placeholder={isListening ? "Ouvindo..." : "Escreva ou envie uma imagem..."}
                             disabled={isLoading || isListening}
                             className="flex-1 p-2 rounded-md bg-slate-800/50 text-white border border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         />
@@ -259,10 +340,10 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                                 disabled={isLoading}
                                 className={`p-2 rounded-full transition-all ${isListening ? 'bg-danger/80 text-white animate-pulse-mic' : 'bg-primary text-white'} disabled:opacity-50`}
                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
                            </button>
                         )}
-                        <button type="submit" disabled={isLoading || !input.trim() || isListening} className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 transition-opacity">
+                        <button type="submit" disabled={isLoading || (!input.trim() && !selectedImage) || isListening} className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 transition-opacity">
                             Enviar
                         </button>
                     </form>

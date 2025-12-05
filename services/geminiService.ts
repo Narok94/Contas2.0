@@ -1,4 +1,5 @@
-import { GoogleGenAI, Type, FunctionDeclaration, Content, GenerateContentResponse, Modality } from "@google/genai";
+
+import { GoogleGenAI, Type, FunctionDeclaration, Content, GenerateContentResponse, Modality, Part } from "@google/genai";
 import { Account, ChatMessage, AccountStatus, Income } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -26,6 +27,7 @@ export async function* generateResponseStream(
   accounts: Account[], 
   categories: string[],
   incomes: Income[],
+  image?: { data: string; mimeType: string }
 ): AsyncGenerator<GenerateContentResponse> {
   const addAccountFunctionDeclaration: FunctionDeclaration = {
     name: 'add_account',
@@ -112,6 +114,10 @@ export async function* generateResponseStream(
 - Seu nome é Ricka.
 - Responda sempre em Português do Brasil, usando uma linguagem informal, emojis e um tom bem-humorado.
 - Analise os comandos do usuário para adicionar, pagar ou editar contas e entradas, e chame a função apropriada (add_account, pay_account, edit_account, add_income, edit_income).
+- **IMPORTANTE:** Se o usuário pedir para adicionar, editar ou pagar VÁRIOS itens de uma vez (ex: "Adicione luz 100 e água 50"), você DEVE gerar múltiplas chamadas de função na mesma resposta, uma para cada item identificado. Não processe apenas o primeiro.
+- **ANÁLISE DE IMAGEM:** Se o usuário enviar uma imagem (print, foto de boleto, nota fiscal), extraia TODAS as informações financeiras visíveis (valor, beneficiário/loja, data, etc.).
+    - Se for um boleto ou conta, sugira chamar 'add_account' preenchendo o nome com o beneficiário e a categoria mais adequada.
+    - Se for um comprovante de pagamento, pergunte se deve marcar a conta correspondente como paga.
 - Use o histórico da conversa para entender o contexto. Se o usuário adicionar uma conta e depois disser 'muda o valor pra 50', você sabe qual conta é.
 - Se o usuário estiver só conversando, responda de forma divertida e engajadora. Dê dicas financeiras com uma pitada de humor.
 - Seja direta, mas com personalidade. Evite respostas robóticas.
@@ -121,6 +127,18 @@ export async function* generateResponseStream(
 - Grana entrando (renda): ${incomeList || 'Nenhuma'}
 - Categorias de conta disponíveis: ${categoryList}. Se o usuário falar uma categoria que não existe, joga em 'Outros'.`;
     
+    const currentMessageParts: Part[] = [{ text: command }];
+    
+    // Adiciona a imagem à mensagem se ela existir
+    if (image) {
+        currentMessageParts.unshift({
+            inlineData: {
+                mimeType: image.mimeType,
+                data: image.data
+            }
+        });
+    }
+
     const contents: Content[] = [
       ...history.map(msg => ({
         role: msg.role,
@@ -128,7 +146,7 @@ export async function* generateResponseStream(
       })),
       {
         role: 'user',
-        parts: [{ text: command }],
+        parts: currentMessageParts,
       },
     ];
 
