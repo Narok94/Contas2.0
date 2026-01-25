@@ -15,10 +15,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsubscribe = realtimeService.subscribeToSyncStatus((status) => {
-      setSyncStatus(status);
-    });
-
+    const unsub = realtimeService.subscribeToSyncStatus(setSyncStatus);
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
@@ -26,49 +23,17 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      unsubscribe();
-      document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('mousedown', handleClickOutside);
+        unsub();
     };
   }, []);
 
-  const getSyncIndicator = () => {
-    switch (syncStatus) {
-      case 'synced':
-        return (
-          <div className="flex items-center space-x-1 text-success" title="Sincronizado com a nuvem">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-             </svg>
-             <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-tighter">Nuvem</span>
-          </div>
-        );
-      case 'syncing':
-        return (
-          <div className="flex items-center space-x-1 text-primary animate-pulse" title="Sincronizando...">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-             </svg>
-             <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-tighter">Salvando</span>
-          </div>
-        );
-      case 'error':
-        return (
-          <div className="flex items-center space-x-1 text-danger" title="Erro de sincronização">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-             </svg>
-             <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-tighter">Erro</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center space-x-1 text-text-muted opacity-50" title="Apenas local">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-             </svg>
-             <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-tighter">Local</span>
-          </div>
-        );
+  const getSyncBadge = () => {
+    switch(syncStatus) {
+      case 'synced': return <span className="flex h-2 w-2 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="Sincronizado na Nuvem"></span>;
+      case 'syncing': return <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" title="Salvando na Nuvem..."></span>;
+      case 'error': return <span className="flex items-center gap-1 text-[10px] font-bold text-danger animate-pulse"><span className="h-2 w-2 rounded-full bg-danger"></span> ERRO</span>;
+      default: return <span className="flex h-2 w-2 rounded-full bg-text-muted opacity-50" title="Modo Local"></span>;
     }
   };
 
@@ -76,16 +41,14 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
     <header className="bg-surface/70 dark:bg-dark-surface/70 backdrop-blur-lg shadow-sm sticky top-0 z-30 border-b border-border-color/50 dark:border-dark-border-color/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">Controle de Contas</h1>
-          </div>
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            
-            {/* Sync Indicator */}
-            <div className="mr-2">
-              {getSyncIndicator()}
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent leading-none">Controle de Contas</h1>
+            <div className="flex items-center gap-2 mt-1">
+                 {getSyncBadge()}
+                 <span className="text-[10px] uppercase tracking-tighter text-text-muted dark:text-dark-text-muted font-bold">Cloud Sync</span>
             </div>
-
+          </div>
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}

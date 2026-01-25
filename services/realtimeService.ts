@@ -29,6 +29,7 @@ class RealtimeService {
   constructor() {
     this.db = this.getDefaultDb();
     
+    // Tenta recuperar o usuário logado para carregar o banco correto
     const storedUser = sessionStorage.getItem('app_currentUser');
     if (storedUser) {
         try {
@@ -56,6 +57,7 @@ class RealtimeService {
     this.notifyAll();
   }
 
+  // Define o usuário atual para sincronização
   public setUser(username: string) {
       if (this.currentUserIdentifier !== String(username)) {
           this.currentUserIdentifier = String(username);
@@ -76,8 +78,10 @@ class RealtimeService {
   }
 
   private async loadDb() {
+    // 1. Carrega do local primeiro para ser instantâneo
     this.loadFromLocal();
     
+    // 2. Tenta sincronizar com o servidor se tiver usuário
     if (!this.currentUserIdentifier) {
         this.setSyncStatus('local');
         return;
@@ -89,31 +93,22 @@ class RealtimeService {
       const response = await fetch(`/api/db?identifier=${id}`);
       
       if (response.ok) {
-        const text = await response.text();
-        if (text) {
-          try {
-            const remoteDb = JSON.parse(text);
-            if (remoteDb && remoteDb.users) {
-              this.db = remoteDb;
-              this.saveToLocalOnly();
-              this.setSyncStatus('synced');
-              this.notifyAll();
-            } else {
-              this.setSyncStatus('synced');
-            }
-          } catch (e) {
-            this.setSyncStatus('error');
-          }
+        const remoteDb = await response.json();
+        if (remoteDb && remoteDb.users) {
+          this.db = remoteDb;
+          this.saveToLocalOnly(); // Mantém o cache local atualizado
+          this.setSyncStatus('synced');
+          this.notifyAll();
         } else {
+          // Usuário novo ou sem dados no banco, usa o mock/local
           this.setSyncStatus('synced');
         }
       } else {
-        // Se a API falhar (mesmo com 500), voltamos para modo Local graciosamente
-        console.warn(`Sync: API indisponível (${response.status}). Operando em modo Local.`);
-        this.setSyncStatus('local');
+        this.setSyncStatus('error');
       }
     } catch (error) {
-      this.setSyncStatus('local');
+      console.error('Sincronização falhou:', error);
+      this.setSyncStatus('error');
     }
   }
 
@@ -149,13 +144,16 @@ class RealtimeService {
     } catch (e) {}
   }
 
+  // Função central de salvamento com debounce para o banco remoto
   private async _saveDb() {
-    this.saveToLocalOnly();
+    this.saveToLocalOnly(); // Salva local instantaneamente
     
     if (!this.currentUserIdentifier) return;
 
+    // Cancela sincronização anterior se houver uma nova alteração
     if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
 
+    // Espera 2 segundos de inatividade para enviar para a nuvem
     this.syncTimeout = window.setTimeout(async () => {
         this.setSyncStatus('syncing');
         try {
@@ -169,13 +167,12 @@ class RealtimeService {
           if (response.ok) {
             this.setSyncStatus('synced');
           } else {
-            // Em caso de erro ao salvar, não mostramos erro crítico, apenas local
-            this.setSyncStatus('local');
+            this.setSyncStatus('error');
           }
         } catch (error) {
-          this.setSyncStatus('local');
+          this.setSyncStatus('error');
         }
-    }, 3000);
+    }, 2000);
   }
 
   private simulateApiCall<T>(data: T): Promise<T> {
@@ -209,6 +206,8 @@ class RealtimeService {
     }
   }
 
+  // --- MÉTODOS DE DADOS ATUALIZADOS ---
+  
   getUsers = () => this.simulateApiCall(this.db.users);
   updateUser = async (updatedUser: User) => {
     this.db.users = this.db.users.map(u => (u.id === updatedUser.id ? updatedUser : u));

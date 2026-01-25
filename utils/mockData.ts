@@ -1,4 +1,5 @@
 
+
 import { Role, AccountStatus, type User, type Group, type Account, type Income } from '../types';
 
 const today = new Date();
@@ -31,7 +32,7 @@ export const MOCK_USERS: User[] = [
   { id: 'user-1', name: 'Henrique', username: 'henrique', password: 'admin9860', role: Role.ADMIN, groupIds: ['group-1', 'group-3'] },
   { id: 'user-2', name: 'João Silva', username: 'joao', password: '123', role: Role.USER, groupIds: ['group-1'] },
   { id: 'user-3', name: 'Maria Dev', username: 'maria', password: '123', role: Role.USER, groupIds: ['group-2'] },
-  { id: 'user-4', name: 'Jessica', username: 'jessica', password: '123', role: Role.USER, groupIds: ['group-3'] },
+  { id: 'user-4', name: 'Jessica', username: 'jessica', password: '12345', role: Role.USER, groupIds: ['group-3'] },
   { id: 'user-5', name: 'Admin', username: 'admin', password: 'admin', role: Role.ADMIN, groupIds: ['group-1', 'group-2', 'group-3'] },
 ];
 

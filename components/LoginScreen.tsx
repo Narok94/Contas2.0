@@ -11,37 +11,33 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showHint, setShowHint] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    setShowHint(false);
     
+    // Pequeno delay para melhorar a sensação de feedback tátil da UI
     await new Promise(resolve => setTimeout(resolve, 600));
 
-    // Remove espaços extras do início e fim
-    const cleanUsername = username.trim();
-    const cleanPassword = password.trim();
-
-    const success = await onLogin(cleanUsername, cleanPassword);
+    const success = await onLogin(username, password);
     if (!success) {
       setError('Usuário ou senha incorretos.');
-      setShowHint(true);
       setIsLoading(false);
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-[100dvh] bg-background dark:bg-dark-background relative overflow-hidden transition-colors duration-500 selection:bg-primary selection:text-white">
+        {/* Background Effects */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
              <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-60"></div>
              <div className="absolute top-[20%] right-[-20%] w-[400px] h-[400px] bg-secondary/20 rounded-full blur-[100px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-60" style={{animationDelay: '2s'}}></div>
              <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-accent/10 rounded-full blur-[120px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-50" style={{animationDelay: '4s'}}></div>
         </div>
 
+        {/* Theme Toggle */}
         <div className="absolute top-6 right-6 z-20">
             <button 
                 onClick={toggleTheme}
@@ -56,9 +52,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             </button>
         </div>
 
+        {/* Login Card */}
         <div className="relative z-10 w-full max-w-sm p-4 animate-fade-in-up">
             <div className="bg-white/80 dark:bg-dark-surface/60 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/40 dark:border-white/5 p-8 sm:p-10 relative overflow-hidden">
                 
+                {/* Decorative top sheen */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50"></div>
 
                 <div className="text-center mb-10">
@@ -124,18 +122,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     </div>
 
                     {error && (
-                        <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 flex flex-col space-y-2 animate-fade-in">
-                            <div className="flex items-center space-x-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-danger flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                <p className="text-danger text-sm font-bold">{error}</p>
-                            </div>
-                            {showHint && username.toLowerCase() === 'jessica' && (
-                                <p className="text-xs text-text-muted dark:text-dark-text-muted pl-8 italic">
-                                    Dica: Tente a senha padrão "123"
-                                </p>
-                            )}
+                        <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 flex items-center space-x-3 animate-fade-in">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-danger flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <p className="text-danger text-sm font-medium">{error}</p>
                         </div>
                     )}
 
