@@ -1,7 +1,9 @@
+
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from '../utils/mockData';
 import { User, Group, Account, Income } from '../types';
 
 type CollectionKey = 'users' | 'groups' | 'accounts' | 'categories' | 'incomes';
+export type SyncStatus = 'synced' | 'syncing' | 'error' | 'local';
 
 type Db = {
   users: User[];
@@ -12,29 +14,43 @@ type Db = {
 };
 
 type ListenerCallback<T> = (data: T) => void;
+type SyncStatusCallback = (status: SyncStatus) => void;
 
-const DB_VERSION = '1.1'; // Increment this string to force a cache refresh for all users.
+const DB_VERSION = '1.1';
 const DB_STORAGE_KEY = 'controle_contas_db';
 
 class RealtimeService {
   private db: Db;
   private listeners: { [K in CollectionKey]?: ListenerCallback<Db[K]>[] } = {};
+  private syncListeners: SyncStatusCallback[] = [];
+  private currentSyncStatus: SyncStatus = 'local';
+  private isInitialized: boolean = false;
 
   constructor() {
-    this.loadDb();
+    this.db = {
+      users: [],
+      groups: [],
+      accounts: [],
+      categories: [],
+      incomes: [],
+    };
+    this.init();
     window.addEventListener('storage', this.handleStorageChange);
+  }
+
+  private async init() {
+    await this.loadDb();
+    this.isInitialized = true;
+    this.notifyAll();
   }
 
   private handleStorageChange = (event: StorageEvent) => {
     if (event.key === DB_STORAGE_KEY && event.newValue && event.oldValue !== event.newValue) {
         try {
             const parsedData = JSON.parse(event.newValue);
-            if (parsedData.version && parsedData.db) {
+            if (parsedData.db) {
                 this.db = parsedData.db;
-                // Notify all listeners about the change from another tab
-                (Object.keys(this.listeners) as CollectionKey[]).forEach(collection => {
-                    this.notify(collection);
-                });
+                this.notifyAll();
             }
         } catch (error) {
             console.error("Failed to parse storage update:", error);
@@ -42,21 +58,30 @@ class RealtimeService {
     }
   }
 
-  private loadDb() {
+  private async loadDb() {
+    this.setSyncStatus('syncing');
     try {
-      const storedDataString = localStorage.getItem(DB_STORAGE_KEY);
-      if (storedDataString) {
-        const storedData = JSON.parse(storedDataString);
-        // Check if the stored data has the correct version
-        if (storedData.version === DB_VERSION && storedData.db) {
-          this.db = storedData.db;
-          return; // Data is fresh, no need to re-initialize
+      const response = await fetch('/api/db?identifier=global_state');
+      if (response.ok) {
+        const remoteDb = await response.json();
+        if (remoteDb && remoteDb.users) {
+          this.db = remoteDb;
+          this.saveToLocalOnly();
+          this.setSyncStatus('synced');
+          return;
         }
       }
 
-      // If we reach here, either there's no data, it's malformed, or it's an old version.
-      // Re-initialize with fresh mock data.
-      console.log(`Cache is old or missing. Initializing with fresh data version: ${DB_VERSION}.`);
+      const storedDataString = localStorage.getItem(DB_STORAGE_KEY);
+      if (storedDataString) {
+        const storedData = JSON.parse(storedDataString);
+        if (storedData.version === DB_VERSION && storedData.db) {
+          this.db = storedData.db;
+          this.setSyncStatus('local');
+          return;
+        }
+      }
+
       this.db = {
         users: MOCK_USERS,
         groups: MOCK_GROUPS,
@@ -64,30 +89,51 @@ class RealtimeService {
         categories: ACCOUNT_CATEGORIES,
         incomes: MOCK_INCOMES,
       };
-      this._saveDb();
+      await this._saveDb();
 
     } catch (error) {
-      console.error("Failed to load database from localStorage, initializing with mock data.", error);
-      // Fallback to mock data on parsing error
-      this.db = {
-        users: MOCK_USERS,
-        groups: MOCK_GROUPS,
-        accounts: MOCK_ACCOUNTS,
-        categories: ACCOUNT_CATEGORIES,
-        incomes: MOCK_INCOMES,
-      };
+      console.error("Database initialization error:", error);
+      this.setSyncStatus('error');
     }
   }
 
-  private _saveDb() {
+  private setSyncStatus(status: SyncStatus) {
+    this.currentSyncStatus = status;
+    this.syncListeners.forEach(callback => callback(status));
+  }
+
+  public subscribeToSyncStatus(callback: SyncStatusCallback) {
+    this.syncListeners.push(callback);
+    callback(this.currentSyncStatus);
+    return () => {
+      this.syncListeners = this.syncListeners.filter(cb => cb !== callback);
+    };
+  }
+
+  private saveToLocalOnly() {
     try {
-      const dataToStore = {
-        version: DB_VERSION,
-        db: this.db,
-      };
-      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(dataToStore));
+      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ version: DB_VERSION, db: this.db }));
+    } catch (e) {}
+  }
+
+  private async _saveDb() {
+    this.saveToLocalOnly();
+    this.setSyncStatus('syncing');
+    
+    try {
+      const response = await fetch('/api/db?identifier=global_state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.db)
+      });
+      if (response.ok) {
+        this.setSyncStatus('synced');
+      } else {
+        this.setSyncStatus('error');
+      }
     } catch (error) {
-      console.error("Failed to save database to localStorage.", error);
+      console.error("Failed to sync with cloud database:", error);
+      this.setSyncStatus('error');
     }
   }
 
@@ -99,6 +145,12 @@ class RealtimeService {
     const data = this.db[collection];
     const listeners = this.listeners[collection] as ListenerCallback<Db[K]>[] | undefined;
     (listeners || []).forEach(callback => callback(data));
+  }
+
+  private notifyAll() {
+    (Object.keys(this.db) as CollectionKey[]).forEach(collection => {
+      this.notify(collection);
+    });
   }
 
   subscribe<K extends CollectionKey>(collection: K, callback: ListenerCallback<Db[K]>) {
@@ -116,122 +168,109 @@ class RealtimeService {
     }
   }
 
-  // --- API Methods ---
-  
-  // Users
   getUsers = () => this.simulateApiCall(this.db.users);
   updateUser = async (updatedUser: User) => {
     this.db.users = this.db.users.map(u => (u.id === updatedUser.id ? updatedUser : u));
-    this._saveDb();
+    await this._saveDb();
     this.notify('users');
-    return this.simulateApiCall(updatedUser);
+    return updatedUser;
   };
   addUser = async (newUser: Omit<User, 'id'>): Promise<User> => {
     const userWithId = { ...newUser, id: `user-${Date.now()}` };
     this.db.users.push(userWithId);
-    this._saveDb();
+    await this._saveDb();
     this.notify('users');
-    return this.simulateApiCall(userWithId);
+    return userWithId;
   };
   deleteUser = async (userId: string) => {
     this.db.users = this.db.users.filter(u => u.id !== userId);
-    this._saveDb();
+    await this._saveDb();
     this.notify('users');
-    return this.simulateApiCall({ success: true });
+    return { success: true };
   };
 
-  // Groups
   getGroups = () => this.simulateApiCall(this.db.groups);
   updateGroup = async (updatedGroup: Group) => {
     this.db.groups = this.db.groups.map(g => (g.id === updatedGroup.id ? updatedGroup : g));
-    this._saveDb();
+    await this._saveDb();
     this.notify('groups');
-    return this.simulateApiCall(updatedGroup);
+    return updatedGroup;
   };
   addGroup = async (newGroup: Omit<Group, 'id'>): Promise<Group> => {
     const groupWithId = { ...newGroup, id: `group-${Date.now()}` };
     this.db.groups.push(groupWithId);
-    this._saveDb();
+    await this._saveDb();
     this.notify('groups');
-    return this.simulateApiCall(groupWithId);
+    return groupWithId;
   };
   deleteGroup = async (groupId: string) => {
     this.db.groups = this.db.groups.filter(g => g.id !== groupId);
-    this._saveDb();
+    await this._saveDb();
     this.notify('groups');
-    return this.simulateApiCall({ success: true });
+    return { success: true };
   };
   
-  // Accounts
   getAccounts = () => this.simulateApiCall(this.db.accounts);
   updateAccount = async (updatedAccount: Account) => {
     this.db.accounts = this.db.accounts.map(a => (a.id === updatedAccount.id ? updatedAccount : a));
-    this._saveDb();
+    await this._saveDb();
     this.notify('accounts');
-    return this.simulateApiCall(updatedAccount);
+    return updatedAccount;
   };
   addAccount = async (newAccount: Account) => {
     this.db.accounts.push(newAccount);
-    this._saveDb();
+    await this._saveDb();
     this.notify('accounts');
-    return this.simulateApiCall(newAccount);
+    return newAccount;
   };
   deleteAccount = async (accountId: string) => {
     this.db.accounts = this.db.accounts.filter(a => a.id !== accountId);
-    this._saveDb();
+    await this._saveDb();
     this.notify('accounts');
-    return this.simulateApiCall({ success: true });
+    return { success: true };
   };
   updateMultipleAccounts = async (allAccounts: Account[]) => {
       this.db.accounts = allAccounts;
-      this._saveDb();
+      await this._saveDb();
       this.notify('accounts');
-      return this.simulateApiCall(allAccounts);
+      return allAccounts;
   };
 
-  // Incomes
   getIncomes = () => this.simulateApiCall(this.db.incomes);
   updateIncome = async (updatedIncome: Income) => {
     this.db.incomes = this.db.incomes.map(i => (i.id === updatedIncome.id ? updatedIncome : i));
-    this._saveDb();
+    await this._saveDb();
     this.notify('incomes');
-    return this.simulateApiCall(updatedIncome);
+    return updatedIncome;
   };
   addIncome = async (newIncome: Income) => {
     this.db.incomes.push(newIncome);
-    this._saveDb();
+    await this._saveDb();
     this.notify('incomes');
-    return this.simulateApiCall(newIncome);
+    return newIncome;
   };
   deleteIncome = async (incomeId: string) => {
     this.db.incomes = this.db.incomes.filter(i => i.id !== incomeId);
-    this._saveDb();
+    await this._saveDb();
     this.notify('incomes');
-    return this.simulateApiCall({ success: true });
+    return { success: true };
   };
   
-  // Categories
   getCategories = () => this.simulateApiCall(this.db.categories);
   saveCategories = async (categories: string[]) => {
     this.db.categories = categories;
-    this._saveDb();
+    await this._saveDb();
     this.notify('categories');
-    return this.simulateApiCall(categories);
+    return categories;
   }
   
-  // Data Import/Export
-  exportData = async () => {
-    return this.simulateApiCall(this.db);
-  };
+  exportData = async () => this.db;
 
   importData = async (data: Db) => {
     this.db = data;
-    this._saveDb();
-    // Notify all listeners about the massive change
-    (Object.keys(this.listeners) as CollectionKey[]).forEach(collection => {
-      this.notify(collection);
-    });
-    return this.simulateApiCall({ success: true });
+    await this._saveDb();
+    this.notifyAll();
+    return { success: true };
   };
 }
 

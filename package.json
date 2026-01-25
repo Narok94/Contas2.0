@@ -1,3 +1,4 @@
+
 {
   "name": "controle-de-contas-inteligente",
   "version": "1.0.0",
@@ -8,6 +9,10 @@
   },
   "devDependencies": {
     "typescript": "^5.0.0",
-    "esbuild": "0.23.0"
+    "esbuild": "0.23.0",
+    "@vercel/node": "^3.0.0"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0"
   }
 }

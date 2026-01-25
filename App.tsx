@@ -185,7 +185,6 @@ const App: React.FC = () => {
                 } else if (storedUser.groupIds.length > 1) {
                     setView('groupSelection');
                 } else {
-                    // Invalid state, log out
                     handleLogout();
                 }
             } else {
@@ -215,9 +214,12 @@ const App: React.FC = () => {
       return incomes.filter(inc => inc.groupId === activeGroupId);
   }, [incomes, currentUser, activeGroupId]);
 
-  const handleLogin = async (username: string, password: string): Promise<boolean> => {
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (!user || user.password !== password) {
+  const handleLogin = async (usernameInput: string, passwordInput: string): Promise<boolean> => {
+    const trimmedUsername = usernameInput.trim().toLowerCase();
+    const trimmedPassword = passwordInput.trim();
+
+    const user = users.find(u => u.username.toLowerCase() === trimmedUsername);
+    if (!user || user.password !== trimmedPassword) {
         return false;
     }
     
@@ -225,15 +227,14 @@ const App: React.FC = () => {
     sessionStorage.setItem('app_currentUser', JSON.stringify(user));
 
     if (user.mustChangePassword) {
-        // Will be handled by re-render
+        // Handled by view render
     } else if (user.groupIds.length === 1) {
         handleGroupSelect(user.groupIds[0]);
     } else if (user.groupIds.length > 1) {
         setView('groupSelection');
     } else {
-        // User with no groups, treat as an error for now
         alert("Você não pertence a nenhum grupo.");
-        handleLogout(); // Clear partial login state
+        handleLogout();
         return false;
     }
 
@@ -254,30 +255,22 @@ const App: React.FC = () => {
     setView('login');
   };
 
-  // Account CRUD
+  // ... rest of the file ...
   const handleAddOrUpdateAccount = async (accountData: Omit<Account, 'id' | 'status'> & { id?: string }) => {
     if (accountData.id) {
-        // Update
         const existingAccount = accounts.find(acc => acc.id === accountData.id);
         if (!existingAccount) return;
-        
         const updatedAccountData = { ...existingAccount, ...accountData };
-
-        // FIX: When a recurring account is changed to be non-recurring,
-        // it should become a regular pending bill for the current period,
-        // not disappear because its original state was 'PAID' in the future.
         if (existingAccount.isRecurrent && !updatedAccountData.isRecurrent) {
             updatedAccountData.status = AccountStatus.PENDING;
             updatedAccountData.paymentDate = undefined;
         }
-
         await dataService.updateAccount(updatedAccountData);
     } else {
-        // Add
         if (!currentUser || !activeGroupId) return;
         const newAccountData: Account = {
             ...accountData,
-            groupId: activeGroupId, // Ensure it's added to the active group
+            groupId: activeGroupId,
             id: `acc-${Date.now()}`,
             status: AccountStatus.PENDING,
             ...(accountData.isInstallment && { currentInstallment: 1 }),
@@ -288,7 +281,6 @@ const App: React.FC = () => {
 
   const handleBatchAddAccounts = async (accountsData: any[]) => {
       if (!currentUser || !activeGroupId) return;
-
       const newAccounts: Account[] = accountsData.map((data, index) => ({
           ...data,
           groupId: activeGroupId,
@@ -296,9 +288,6 @@ const App: React.FC = () => {
           status: AccountStatus.PENDING,
           ...(data.isInstallment && { currentInstallment: 1 }),
       }));
-
-      // We can use a loop or add a batch method to dataService if performance is critical.
-      // For now, looping is fine for small batches.
       for (const acc of newAccounts) {
           await dataService.addAccount(acc);
       }
@@ -307,14 +296,12 @@ const App: React.FC = () => {
   const handleToggleAccountStatus = async (accountId: string) => {
       const account = accounts.find(acc => acc.id === accountId);
       if (!account) return;
-      
       const isNowPaid = account.status === AccountStatus.PENDING;
       const updatedAccountData = {
           ...account,
           status: isNowPaid ? AccountStatus.PAID : AccountStatus.PENDING,
           paymentDate: isNowPaid ? new Date().toISOString() : undefined,
       };
-
       await dataService.updateAccount(updatedAccountData);
   };
   
@@ -346,20 +333,17 @@ const App: React.FC = () => {
     return false;
   };
 
-  // Income CRUD
   const handleAddOrUpdateIncome = async (incomeData: Omit<Income, 'id' | 'date'> & { id?: string }) => {
     if (incomeData.id) {
-        // Update
         const existingIncome = incomes.find(inc => inc.id === incomeData.id);
         if (!existingIncome) return;
         const updatedIncomeData = { ...existingIncome, ...incomeData };
         await dataService.updateIncome(updatedIncomeData);
     } else {
-        // Add
         if (!currentUser || !activeGroupId) return;
         const newIncomeData: Income = {
             ...(incomeData as Omit<Income, 'id'|'date'>),
-            groupId: activeGroupId, // Ensure it's added to the active group
+            groupId: activeGroupId,
             id: `inc-${Date.now()}`,
             date: new Date().toISOString(),
         };
@@ -385,14 +369,13 @@ const App: React.FC = () => {
     return false;
   };
 
-  // User CRUD
   const handleAddUser = async (user: Omit<User, 'id'>): Promise<boolean> => {
     if (users.some(u => u.username.toLowerCase() === user.username.toLowerCase())) {
-        alert('Este nome de usuário já está em uso. Por favor, escolha outro.');
+        alert('Este nome de usuário já está em uso.');
         return false;
     }
     if (!user.password || user.password.trim() === '') {
-        alert('A senha é obrigatória para novos usuários.');
+        alert('A senha é obrigatória.');
         return false;
     }
     await dataService.addUser(user);
@@ -403,7 +386,7 @@ const App: React.FC = () => {
     const originalUser = users.find(u => u.id === updatedUser.id);
     if (originalUser && originalUser.username.toLowerCase() !== updatedUser.username.toLowerCase()) {
         if (users.some(u => u.id !== updatedUser.id && u.username.toLowerCase() === updatedUser.username.toLowerCase())) {
-            alert('Este nome de usuário já está em uso. Por favor, escolha outro.');
+            alert('Este nome de usuário já está em uso.');
             return false;
         }
     }
@@ -418,14 +401,11 @@ const App: React.FC = () => {
   const handleChangePassword = async (userId: string, newPassword: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-
     const updatedUserData = { ...user, password: newPassword, mustChangePassword: false };
     const updatedUser = await dataService.updateUser(updatedUserData);
-    
     if (currentUser && currentUser.id === userId) {
       setCurrentUser(updatedUser);
       sessionStorage.setItem('app_currentUser', JSON.stringify(updatedUser));
-      // After password change, we need to decide where to go
       if (updatedUser.groupIds.length === 1) {
           handleGroupSelect(updatedUser.groupIds[0]);
       } else {
@@ -434,7 +414,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Group CRUD
   const handleAddGroup = async (group: Omit<Group, 'id'>) => {
     await dataService.addGroup(group);
   };
@@ -449,7 +428,6 @@ const App: React.FC = () => {
     await dataService.deleteGroup(groupId);
   };
 
-  // Category CRUD
    const handleAddCategory = async (name: string): Promise<boolean> => {
         if (name && !categories.find(c => c.toLowerCase() === name.toLowerCase())) {
             const newCategories = [...categories, name].sort((a, b) => a.localeCompare(b));
@@ -463,7 +441,6 @@ const App: React.FC = () => {
         if (newName && oldName !== newName && !categories.find(c => c.toLowerCase() === newName.toLowerCase())) {
             const newCategories = categories.map(c => (c === oldName ? newName : c)).sort((a, b) => a.localeCompare(b));
             await dataService.saveCategories(newCategories);
-
             const newAccounts = accounts.map(acc => (acc.category === oldName ? { ...acc, category: newName } : acc));
             await dataService.updateMultipleAccounts(newAccounts);
             return true;
@@ -474,11 +451,11 @@ const App: React.FC = () => {
     const handleDeleteCategory = async (name: string): Promise<boolean> => {
         const isCategoryInUse = accounts.some(acc => acc.category === name);
         if (isCategoryInUse) {
-            alert(`A categoria "${name}" está em uso e não pode ser excluída.`);
+            alert(`A categoria "${name}" está em uso.`);
             return false;
         }
         if (categories.length <= 1) {
-            alert("Você deve ter pelo menos uma categoria.");
+            alert("Mínimo de 1 categoria.");
             return false;
         }
         const newCategories = categories.filter(c => c !== name);
@@ -498,33 +475,26 @@ const App: React.FC = () => {
   
    const handleAiCommand = (command: ParsedCommand): string => {
         if (!currentUser || !activeGroupId) {
-            return "Não foi possível processar o comando. Usuário não está em nenhum grupo ativo.";
+            return "Erro: Sessão inválida.";
         }
-       
         switch (command.intent) {
             case 'add_account':
                 handleAddOrUpdateAccount({ ...command.data, groupId: activeGroupId, isRecurrent: false, isInstallment: false });
-                return `Conta "${command.data.name}" adicionada com sucesso!`;
+                return `Conta "${command.data.name}" adicionada!`;
             case 'pay_account':
-                handleToggleAccountStatusByName(command.data.name).then(success => {
-                    // Feedback handled by model response for now
-                });
+                handleToggleAccountStatusByName(command.data.name);
                 return `Conta "${command.data.name}" marcada como paga!`;
             case 'edit_account':
-                handleEditAccountByName(command.data).then(success => {
-                    // Feedback handled by model response for now
-                });
-                return `Conta "${command.data.original_name}" atualizada com sucesso!`;
+                handleEditAccountByName(command.data);
+                return `Conta "${command.data.original_name}" atualizada!`;
             case 'add_income':
                 handleAddOrUpdateIncome({ ...command.data, groupId: activeGroupId, isRecurrent: false });
-                return `Entrada "${command.data.name}" adicionada com sucesso!`;
+                return `Entrada "${command.data.name}" adicionada!`;
             case 'edit_income':
-                handleEditIncomeByName(command.data).then(success => {
-                    // Feedback handled by model response for now
-                });
-                return `Entrada "${command.data.original_name}" atualizada com sucesso!`;
+                handleEditIncomeByName(command.data);
+                return `Entrada "${command.data.original_name}" atualizada!`;
             default:
-                return command.data.text || "Não consegui entender seu comando. Você pode tentar reformular?";
+                return command.data.text || "Comando não compreendido.";
         }
     };
     
@@ -542,137 +512,73 @@ const App: React.FC = () => {
     };
 
     const handleTriggerAiAnalysis = async (): Promise<string> => {
-        if (userAccounts.length === 0) {
-            return "Não há contas para analisar.";
-        }
-
+        if (userAccounts.length === 0) return "Sem dados para análise.";
         try {
             const now = new Date();
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
-
-            const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-            const prevMonth = previousMonthDate.getMonth();
-            const prevYear = previousMonthDate.getFullYear();
-
+            const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
+            const prevMonth = prevMonthDate.getMonth();
+            const prevYear = prevMonthDate.getFullYear();
             const currentMonthAccounts = userAccounts.filter(acc => {
                 if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
                 const paymentDate = new Date(acc.paymentDate);
                 return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
             });
-
-            const previousMonthAccounts = accounts.filter(acc => { // Check all accounts, not just userAccounts for previous month data
-                if (acc.groupId !== activeGroupId) return false;
-                if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
+            const previousMonthAccounts = accounts.filter(acc => {
+                if (acc.groupId !== activeGroupId || acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
                 const paymentDate = new Date(acc.paymentDate);
                 return paymentDate.getMonth() === prevMonth && paymentDate.getFullYear() === prevYear;
             });
-            
-            const insight = await analyzeSpending(currentMonthAccounts, previousMonthAccounts);
-            return insight;
-
+            return await analyzeSpending(currentMonthAccounts, previousMonthAccounts);
         } catch (error) {
-            console.error("Failed to run spending analysis:", error);
-            return "Desculpe, ocorreu um erro ao tentar analisar seus gastos.";
+            return "Erro na análise.";
         }
     };
     
-    // Data Management
     const handleExportData = async () => {
         try {
             const dataToExport = await dataService.exportData();
-            const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-                JSON.stringify(dataToExport, null, 2)
-            )}`;
+            const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(dataToExport, null, 2))}`;
             const link = document.createElement("a");
             link.href = jsonString;
-            const date = new Date().toISOString().slice(0, 10);
-            link.download = `controle_contas_backup_${date}.json`;
+            link.download = `controle_contas_backup_${new Date().toISOString().slice(0, 10)}.json`;
             link.click();
-        } catch (error) {
-            console.error("Failed to export data", error);
-            alert("Ocorreu um erro ao exportar os dados.");
-        }
+        } catch (e) { alert("Erro ao exportar."); }
     };
 
     const handleImportData = (file: File) => {
-        if (!file) return;
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                const text = e.target?.result;
-                if (typeof text !== 'string') throw new Error("Failed to read file");
-                
-                const data = JSON.parse(text);
-                if (data.users && data.groups && data.accounts && data.categories && data.incomes) {
+                const data = JSON.parse(e.target?.result as string);
+                if (data.users && data.groups && data.accounts) {
                     await dataService.importData(data);
-                    alert("Backup restaurado com sucesso! A aplicação será recarregada.");
                     window.location.reload();
-                } else {
-                    alert("Arquivo de backup inválido ou corrompido. Verifique se o arquivo contém 'users', 'groups', 'accounts', 'categories' e 'incomes'.");
-                }
-            } catch (error) {
-                console.error("Failed to import data", error);
-                alert("Ocorreu um erro ao importar o arquivo de backup.");
-            }
+                } else { alert("Arquivo inválido."); }
+            } catch (e) { alert("Erro ao importar."); }
         };
         reader.readAsText(file);
     };
 
     const handleExportToCsv = () => {
-        if (userAccounts.length === 0) {
-            alert("Nenhuma conta para exportar.");
-            return;
-        }
-
-        try {
-            const headers = ["ID", "Nome", "Categoria", "Valor", "Status", "Recorrente", "Parcela Atual", "Total Parcelas", "Data Pagamento"];
-            const rows = userAccounts.map(acc => [
-                `"${acc.id}"`,
-                `"${acc.name.replace(/"/g, '""')}"`,
-                `"${acc.category}"`,
-                acc.value,
-                `"${acc.status}"`,
-                acc.isRecurrent ? "Sim" : "Não",
-                acc.isInstallment ? acc.currentInstallment : "",
-                acc.isInstallment ? acc.totalInstallments : "",
-                `"${acc.paymentDate ? new Date(acc.paymentDate).toLocaleDateString('pt-BR') : ''}"`
-            ].join(','));
-
-            const csvContent = [headers.join(','), ...rows].join('\n');
-            const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
-            
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            const date = new Date().toISOString().slice(0, 10);
-            link.setAttribute("download", `contas_export_${date}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (error) {
-            console.error("Failed to export to CSV", error);
-            alert("Ocorreu um erro ao exportar para CSV.");
-        }
+        if (userAccounts.length === 0) { alert("Sem contas."); return; }
+        const headers = ["Nome", "Categoria", "Valor", "Status", "Recorrente", "Data Pagamento"];
+        const rows = userAccounts.map(acc => [
+            `"${acc.name}"`, `"${acc.category}"`, acc.value, `"${acc.status}"`, acc.isRecurrent ? "Sim" : "Não", `"${acc.paymentDate || ''}"`
+        ].join(','));
+        const blob = new Blob([`\uFEFF${[headers.join(','), ...rows].join('\n')}`], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `contas_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
     };
 
-  if (view === 'login') {
-      return <LoginScreen onLogin={handleLogin} />;
-  }
-
-  if (!currentUser) {
-    // Should be redirected to login, but as a fallback:
-    return <LoginScreen onLogin={handleLogin} />;
-  }
+  if (view === 'login') return <LoginScreen onLogin={handleLogin} />;
+  if (!currentUser) return <LoginScreen onLogin={handleLogin} />;
   
   if (currentUser.mustChangePassword) {
-    return (
-      <ChangePasswordModal 
-        user={currentUser}
-        onSubmit={handleChangePassword}
-        onLogout={handleLogout}
-      />
-    );
+    return <ChangePasswordModal user={currentUser} onSubmit={handleChangePassword} onLogout={handleLogout} />;
   }
 
   if (view === 'groupSelection') {
@@ -680,7 +586,7 @@ const App: React.FC = () => {
   }
 
   const renderContent = () => {
-      if (isLoading || !activeGroupId) { // Also check for activeGroupId
+      if (isLoading || !activeGroupId) {
         return (
              <div className="space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -700,124 +606,30 @@ const App: React.FC = () => {
 
       switch(view) {
         case 'dashboard':
-          return (
-            <Dashboard 
-              accounts={userAccounts} 
-              incomes={userIncomes}
-              onEditAccount={openAccountModal} 
-              onDeleteAccount={handleDeleteAccount} 
-              onToggleStatus={handleToggleAccountStatus}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              onOpenBatchModal={() => setIsBatchModalOpen(true)}
-            />
-          );
+          return <Dashboard accounts={userAccounts} incomes={userIncomes} onEditAccount={openAccountModal} onDeleteAccount={handleDeleteAccount} onToggleStatus={handleToggleAccountStatus} selectedDate={selectedDate} setSelectedDate={setSelectedDate} onOpenBatchModal={() => setIsBatchModalOpen(true)} />;
         case 'admin':
-           return currentUser.role === Role.ADMIN ? (
-            <AdminPanel 
-              users={users} 
-              groups={groups}
-              onAddUser={handleAddUser}
-              onUpdateUser={handleUpdateUser}
-              onDeleteUser={handleDeleteUser}
-              onAddGroup={handleAddGroup}
-              onUpdateGroup={handleUpdateGroup}
-              onDeleteGroup={handleDeleteGroup}
-            />
-          ) : <p>Acesso negado.</p>;
+           return currentUser.role === Role.ADMIN ? <AdminPanel users={users} groups={groups} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} onAddGroup={handleAddGroup} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} /> : <p>Acesso negado.</p>;
         case 'history':
           return <AccountHistory accounts={accounts.filter(acc => acc.groupId === activeGroupId)} />;
         case 'income':
-            return (
-                <IncomeManagement
-                    incomes={userIncomes}
-                    onAddOrUpdate={handleAddOrUpdateIncome}
-                    onDelete={handleDeleteIncome}
-                    activeGroupId={activeGroupId}
-                />
-            );
-        default:
-          return null;
+            return <IncomeManagement incomes={userIncomes} onAddOrUpdate={handleAddOrUpdateIncome} onDelete={handleDeleteIncome} activeGroupId={activeGroupId} />;
+        default: return null;
       }
   }
 
   return (
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-hidden">
-      <Header 
-        currentUser={currentUser} 
-        onSettingsClick={() => setIsSettingsModalOpen(true)}
-        onLogout={handleLogout}
-      />
-      <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-24">
-        {renderContent()}
-      </main>
-      <AccountFormModal
-        isOpen={isAccountModalOpen}
-        onClose={closeAccountModal}
-        onSubmit={handleAddOrUpdateAccount}
-        account={accountToEdit}
-        categories={categories}
-        onManageCategories={() => setIsCategoryModalOpen(true)}
-        activeGroupId={activeGroupId}
-      />
-      <BatchAccountModal
-          isOpen={isBatchModalOpen}
-          onClose={() => setIsBatchModalOpen(false)}
-          onSubmit={handleBatchAddAccounts}
-          categories={categories}
-      />
-      <AddSelectionModal
-          isOpen={isSelectionModalOpen}
-          onClose={() => setIsSelectionModalOpen(false)}
-          onSelectSingle={() => openAccountModal()}
-          onSelectBatch={() => setIsBatchModalOpen(true)}
-      />
-       <ManageCategoriesModal
-          isOpen={isCategoryModalOpen}
-          onClose={() => setIsCategoryModalOpen(false)}
-          categories={categories}
-          onAdd={handleAddCategory}
-          onUpdate={handleUpdateCategory}
-          onDelete={handleDeleteCategory}
-        />
-      <AiChatModal 
-        ref={chatModalRef}
-        isOpen={isChatOpen}
-        onClose={() => {
-            setIsChatOpen(false);
-            setStartVoiceOnChatOpen(false);
-        }}
-        currentUser={currentUser}
-        accounts={userAccounts}
-        incomes={userIncomes}
-        categories={categories}
-        onCommand={handleAiCommand}
-        startWithVoice={startVoiceOnChatOpen}
-        onListeningChange={setIsAiListening}
-        onTriggerAnalysis={handleTriggerAiAnalysis}
-      />
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        onExportData={handleExportData}
-        onImportData={handleImportData}
-        onExportToCsv={handleExportToCsv}
-      />
+      <Header currentUser={currentUser} onSettingsClick={() => setIsSettingsModalOpen(true)} onLogout={handleLogout} />
+      <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-24">{renderContent()}</main>
+      <AccountFormModal isOpen={isAccountModalOpen} onClose={closeAccountModal} onSubmit={handleAddOrUpdateAccount} account={accountToEdit} categories={categories} onManageCategories={() => setIsCategoryModalOpen(true)} activeGroupId={activeGroupId} />
+      <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={handleBatchAddAccounts} categories={categories} />
+      <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => openAccountModal()} onSelectBatch={() => setIsBatchModalOpen(true)} />
+       <ManageCategoriesModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} onAdd={handleAddCategory} onUpdate={handleUpdateCategory} onDelete={handleDeleteCategory} />
+      <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => { setIsChatOpen(false); setStartVoiceOnChatOpen(false); }} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={handleAiCommand} startWithVoice={startVoiceOnChatOpen} onListeningChange={setIsAiListening} onTriggerAnalysis={handleTriggerAiAnalysis} />
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={handleExportData} onImportData={handleImportData} onExportToCsv={handleExportToCsv} />
        <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
-       <FloatingAiButton 
-            onClick={handleAiButtonClick} 
-            onLongPress={handleAiButtonLongPress}
-            constraintsRef={constraintsRef}
-            isListening={isAiListening}
-        />
-       <BottomNavBar
-          activeView={view}
-          onViewChange={setView}
-          onAddClick={() => setIsSelectionModalOpen(true)}
-          isAdmin={currentUser.role === Role.ADMIN}
-       />
+       <FloatingAiButton onClick={handleAiButtonClick} onLongPress={handleAiButtonLongPress} constraintsRef={constraintsRef} isListening={isAiListening} />
+       <BottomNavBar activeView={view} onViewChange={setView} onAddClick={() => setIsSelectionModalOpen(true)} isAdmin={currentUser.role === Role.ADMIN} />
     </div>
   );
 };
