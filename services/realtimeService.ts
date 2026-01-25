@@ -95,19 +95,25 @@ class RealtimeService {
           this.saveToLocalOnly();
           this.setSyncStatus('synced');
           this.notifyAll();
+          console.log('RealtimeService: Cloud DB loaded successfully.');
         } else {
-          // Recebeu ok, mas o banco está vazio ou é nulo. 
-          // Consideramos sincronizado (nuvem ativa mas vazia)
+          // Response OK but empty DB, still considered synced
           this.setSyncStatus('synced');
+          console.log('RealtimeService: Cloud DB is empty, starting clean sync.');
         }
       } else {
-        // Erro de rede ou 503 (não configurado na Vercel)
-        this.setSyncStatus('local');
-        console.warn('RealtimeService: Cloud unavailable, staying in Local mode.');
+        // If it's a 503 it might be a missing env var on Vercel
+        if (response.status === 503) {
+            console.warn('RealtimeService: Cloud database not configured on Vercel.');
+            this.setSyncStatus('local');
+        } else {
+            console.error('RealtimeService: Server returned error', response.status);
+            this.setSyncStatus('error');
+        }
       }
     } catch (error) {
-      this.setSyncStatus('local');
-      console.error('RealtimeService: Sync error:', error);
+      console.error('RealtimeService: Failed to reach API', error);
+      this.setSyncStatus('error');
     }
   }
 
@@ -151,7 +157,7 @@ class RealtimeService {
     if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
 
     this.syncTimeout = window.setTimeout(async () => {
-        // Tentamos salvar mesmo se o status for local, para ver se a nuvem "acordou"
+        // We try to save even if status was 'error' or 'local' initially to see if it recovers
         this.setSyncStatus('syncing');
         try {
           const id = encodeURIComponent(this.currentUserIdentifier!);
@@ -164,10 +170,10 @@ class RealtimeService {
           if (response.ok) {
             this.setSyncStatus('synced');
           } else {
-            this.setSyncStatus('local');
+            this.setSyncStatus('error');
           }
         } catch (error) {
-          this.setSyncStatus('local');
+          this.setSyncStatus('error');
         }
     }, 2000);
   }
