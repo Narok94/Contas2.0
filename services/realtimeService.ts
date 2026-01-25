@@ -97,15 +97,13 @@ class RealtimeService {
           this.notifyAll();
           return;
         }
-        this.setSyncStatus('synced'); // Banco vazio, mas conectado
-      } else if (response.status === 503) {
-        // Banco não configurado na Vercel, fica em modo local silencioso
-        this.setSyncStatus('local');
+        this.setSyncStatus('synced'); 
       } else {
-        this.setSyncStatus('error');
+        // Se der erro de rede ou config, não mostramos ERRO vermelho, ficamos em LOCAL.
+        this.setSyncStatus('local');
       }
     } catch (error) {
-      this.setSyncStatus('error');
+      this.setSyncStatus('local');
     }
   }
 
@@ -144,11 +142,14 @@ class RealtimeService {
   private async _saveDb() {
     this.saveToLocalOnly();
     
-    if (!this.currentUserIdentifier || this.currentSyncStatus === 'local') return;
+    if (!this.currentUserIdentifier) return;
 
     if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
 
     this.syncTimeout = window.setTimeout(async () => {
+        // Só tenta sincronizar se não estiver explicitamente em modo local
+        if (this.currentSyncStatus === 'local' && !navigator.onLine) return;
+
         this.setSyncStatus('syncing');
         try {
           const id = encodeURIComponent(this.currentUserIdentifier!);
@@ -160,15 +161,13 @@ class RealtimeService {
           
           if (response.ok) {
             this.setSyncStatus('synced');
-          } else if (response.status === 503) {
-            this.setSyncStatus('local');
           } else {
-            this.setSyncStatus('error');
+            this.setSyncStatus('local');
           }
         } catch (error) {
-          this.setSyncStatus('error');
+          this.setSyncStatus('local');
         }
-    }, 1500);
+    }, 2000);
   }
 
   private simulateApiCall<T>(data: T): Promise<T> {
