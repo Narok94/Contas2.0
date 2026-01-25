@@ -3,6 +3,15 @@ import { sql } from '@vercel/postgres';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Verifica se a URL do Postgres está configurada
+  if (!process.env.POSTGRES_URL) {
+      console.error('ERRO: POSTGRES_URL não configurado na Vercel.');
+      return res.status(503).json({ 
+          error: 'Banco de dados não configurado', 
+          tip: 'Conecte um projeto Postgres na aba Storage da Vercel.' 
+      });
+  }
+
   try {
     const identifier = req.query.identifier as string;
 
@@ -49,9 +58,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: any) {
     console.error('API Database Error:', error);
     return res.status(500).json({ 
-      error: 'Erro no banco de dados', 
-      message: error.message,
-      env_configured: !!process.env.POSTGRES_URL 
+      error: 'Erro interno no banco de dados', 
+      message: error.message 
     });
   }
 }

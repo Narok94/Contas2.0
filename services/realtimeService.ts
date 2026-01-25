@@ -62,7 +62,7 @@ class RealtimeService {
   private startPolling() {
     if (this.pollingInterval) window.clearInterval(this.pollingInterval);
     this.pollingInterval = window.setInterval(() => {
-        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing') {
+        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing' && this.currentSyncStatus !== 'error') {
             this.loadDb();
         }
     }, 30000);
@@ -115,11 +115,16 @@ class RealtimeService {
         } else {
           this.setSyncStatus('synced');
         }
+      } else if (response.status === 500 || response.status === 404) {
+          // Servidor ou Banco não configurado - Mantém modo local silenciosamente
+          console.warn(`[RealtimeService] Banco de dados indisponível (Status: ${response.status}). Operando em modo local.`);
+          this.setSyncStatus('local');
       } else {
         this.setSyncStatus('error');
       }
     } catch (error) {
-      this.setSyncStatus('error');
+      console.error('[RealtimeService] Falha de rede:', error);
+      this.setSyncStatus('local'); // Falha de rede assume modo local/offline
     }
   }
 
@@ -176,7 +181,8 @@ class RealtimeService {
             this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
           } else {
-            this.setSyncStatus('error');
+            console.error('[RealtimeService] Falha ao salvar no servidor:', response.status);
+            this.setSyncStatus('local');
           }
         } catch (error) {
           this.setSyncStatus('error');
