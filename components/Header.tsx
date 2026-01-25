@@ -12,10 +12,14 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
+  const [lastSync, setLastSync] = useState<Date | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsub = realtimeService.subscribeToSyncStatus(setSyncStatus);
+    const unsub = realtimeService.subscribeToSyncStatus((status, time) => {
+        setSyncStatus(status);
+        setLastSync(time);
+    });
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
@@ -30,10 +34,38 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
 
   const getSyncBadge = () => {
     switch(syncStatus) {
-      case 'synced': return <span className="flex h-2 w-2 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="Sincronizado na Nuvem"></span>;
-      case 'syncing': return <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" title="Salvando na Nuvem..."></span>;
-      case 'error': return <span className="flex items-center gap-1 text-[10px] font-bold text-danger animate-pulse"><span className="h-2 w-2 rounded-full bg-danger"></span> ERRO</span>;
-      default: return <span className="flex h-2 w-2 rounded-full bg-text-muted opacity-50" title="Modo Local"></span>;
+      case 'synced': return (
+          <div className="flex items-center gap-1 group relative">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+            <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
+                Sincronizado: {lastSync ? lastSync.toLocaleTimeString() : 'Agora'}
+            </div>
+          </div>
+      );
+      case 'syncing': return (
+        <div className="flex items-center gap-1 group relative">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]"></span>
+            <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
+                Salvando na nuvem...
+            </div>
+        </div>
+      );
+      case 'error': return (
+        <div className="flex items-center gap-1 group relative">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-danger animate-bounce"></span>
+            <div className="absolute left-0 top-6 hidden group-hover:block bg-danger text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50 font-bold">
+                Falha ao conectar com o banco!
+            </div>
+        </div>
+      );
+      default: return (
+        <div className="flex items-center gap-1 group relative">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-text-muted opacity-40"></span>
+            <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
+                Modo Local (Offline)
+            </div>
+        </div>
+      );
     }
   };
 
@@ -45,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
             <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent leading-none">Controle de Contas</h1>
             <div className="flex items-center gap-2 mt-1">
                  {getSyncBadge()}
-                 <span className="text-[10px] uppercase tracking-tighter text-text-muted dark:text-dark-text-muted font-bold">Cloud Sync</span>
+                 <span className="text-[10px] uppercase tracking-tighter text-text-muted dark:text-dark-text-muted font-bold">Vercel Postgres</span>
             </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">

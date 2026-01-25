@@ -14,7 +14,7 @@ type Db = {
 };
 
 type ListenerCallback<T> = (data: T) => void;
-type SyncStatusCallback = (status: SyncStatus) => void;
+type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
 const DB_STORAGE_KEY = 'controle_contas_db';
 
@@ -24,13 +24,13 @@ class RealtimeService {
   private syncListeners: SyncStatusCallback[] = [];
   private currentSyncStatus: SyncStatus = 'local';
   private currentUserIdentifier: string | null = null;
+  private lastSyncTime: Date | undefined = undefined;
   private syncTimeout: number | null = null;
   private pollingInterval: number | null = null;
 
   constructor() {
     this.db = this.getDefaultDb();
     
-    // Tenta recuperar o usuário logado para carregar o banco correto
     const storedUser = sessionStorage.getItem('app_currentUser');
     if (storedUser) {
         try {
@@ -59,11 +59,8 @@ class RealtimeService {
     this.notifyAll();
   }
 
-  // Inicia verificação periódica (Polling) para sincronizar entre dispositivos
   private startPolling() {
     if (this.pollingInterval) window.clearInterval(this.pollingInterval);
-    
-    // Verifica por novos dados a cada 30 segundos
     this.pollingInterval = window.setInterval(() => {
         if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing') {
             this.loadDb();
@@ -71,13 +68,16 @@ class RealtimeService {
     }, 30000);
   }
 
-  // Define o usuário atual para sincronização
   public setUser(username: string) {
       if (this.currentUserIdentifier !== String(username)) {
           this.currentUserIdentifier = String(username);
+          this.lastSyncTime = undefined;
           this.loadDb();
       }
   }
+
+  public getCurrentUserIdentifier = () => this.currentUserIdentifier;
+  public getLastSyncTime = () => this.lastSyncTime;
 
   private handleStorageChange = (event: StorageEvent) => {
     if (event.key === DB_STORAGE_KEY && event.newValue) {
@@ -106,11 +106,10 @@ class RealtimeService {
       
       if (response.ok) {
         const remoteDb = await response.json();
-        // Só atualiza se recebermos dados válidos e eles forem diferentes do que temos
-        // (Simplicidade: assume que se veio do servidor, é o mais recente)
         if (remoteDb && remoteDb.users) {
           this.db = remoteDb;
           this.saveToLocalOnly();
+          this.lastSyncTime = new Date();
           this.setSyncStatus('synced');
           this.notifyAll();
         } else {
@@ -120,7 +119,6 @@ class RealtimeService {
         this.setSyncStatus('error');
       }
     } catch (error) {
-      console.error('Sincronização falhou:', error);
       this.setSyncStatus('error');
     }
   }
@@ -140,12 +138,12 @@ class RealtimeService {
 
   private setSyncStatus(status: SyncStatus) {
     this.currentSyncStatus = status;
-    this.syncListeners.forEach(callback => callback(status));
+    this.syncListeners.forEach(callback => callback(status, this.lastSyncTime));
   }
 
   public subscribeToSyncStatus(callback: SyncStatusCallback) {
     this.syncListeners.push(callback);
-    callback(this.currentSyncStatus);
+    callback(this.currentSyncStatus, this.lastSyncTime);
     return () => {
       this.syncListeners = this.syncListeners.filter(cb => cb !== callback);
     };
@@ -175,6 +173,7 @@ class RealtimeService {
           });
           
           if (response.ok) {
+            this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
           } else {
             this.setSyncStatus('error');
@@ -216,8 +215,6 @@ class RealtimeService {
     }
   }
 
-  // --- MÉTODOS DE DADOS ATUALIZADOS ---
-  
   getUsers = () => this.simulateApiCall(this.db.users);
   updateUser = async (updatedUser: User) => {
     this.db.users = this.db.users.map(u => (u.id === updatedUser.id ? updatedUser : u));
