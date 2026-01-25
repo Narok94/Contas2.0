@@ -33,7 +33,7 @@ class RealtimeService {
     if (storedUser) {
         try {
             const user = JSON.parse(storedUser);
-            this.currentUserIdentifier = user.username;
+            this.currentUserIdentifier = String(user.username);
         } catch (e) {}
     }
 
@@ -57,8 +57,8 @@ class RealtimeService {
   }
 
   public setUser(username: string) {
-      if (this.currentUserIdentifier !== username) {
-          this.currentUserIdentifier = username;
+      if (this.currentUserIdentifier !== String(username)) {
+          this.currentUserIdentifier = String(username);
           this.loadDb();
       }
   }
@@ -95,24 +95,20 @@ class RealtimeService {
           this.saveToLocalOnly();
           this.setSyncStatus('synced');
           this.notifyAll();
-          console.log('RealtimeService: Cloud DB loaded successfully.');
+          console.log('RealtimeService: Cloud DB loaded.');
         } else {
-          // Response OK but empty DB, still considered synced
           this.setSyncStatus('synced');
-          console.log('RealtimeService: Cloud DB is empty, starting clean sync.');
         }
       } else {
-        // If it's a 503 it might be a missing env var on Vercel
         if (response.status === 503) {
-            console.warn('RealtimeService: Cloud database not configured on Vercel.');
             this.setSyncStatus('local');
         } else {
-            console.error('RealtimeService: Server returned error', response.status);
+            console.error('RealtimeService: API Error status', response.status);
             this.setSyncStatus('error');
         }
       }
     } catch (error) {
-      console.error('RealtimeService: Failed to reach API', error);
+      console.error('RealtimeService: Network error', error);
       this.setSyncStatus('error');
     }
   }
@@ -157,7 +153,6 @@ class RealtimeService {
     if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
 
     this.syncTimeout = window.setTimeout(async () => {
-        // We try to save even if status was 'error' or 'local' initially to see if it recovers
         this.setSyncStatus('syncing');
         try {
           const id = encodeURIComponent(this.currentUserIdentifier!);
@@ -170,9 +165,11 @@ class RealtimeService {
           if (response.ok) {
             this.setSyncStatus('synced');
           } else {
+            console.error('RealtimeService: Save Error', response.status);
             this.setSyncStatus('error');
           }
         } catch (error) {
+          console.error('RealtimeService: Save Network Error', error);
           this.setSyncStatus('error');
         }
     }, 2000);
@@ -245,7 +242,7 @@ class RealtimeService {
     return groupWithId;
   };
   deleteGroup = async (groupId: string) => {
-    this.db.groups = this.db.groups.filter(g => g.id !== groupId);
+    this.db.groups = this.db.groups.filter(u => u.id !== groupId);
     await this._saveDb();
     this.notify('groups');
     return { success: true };
