@@ -178,6 +178,7 @@ const App: React.FC = () => {
                 const storedUser = JSON.parse(storedUserStr);
                 const storedGroupId = sessionStorage.getItem('app_activeGroupId');
                 setCurrentUser(storedUser);
+                realtimeService.setUser(storedUser.username); // Sincroniza o usuário no serviço
 
                 if (storedGroupId) {
                     setActiveGroupId(storedGroupId);
@@ -225,6 +226,7 @@ const App: React.FC = () => {
     
     setCurrentUser(user);
     sessionStorage.setItem('app_currentUser', JSON.stringify(user));
+    realtimeService.setUser(user.username); // Sincroniza o usuário no serviço imediatamente
 
     if (user.mustChangePassword) {
         // Handled by view render
@@ -255,7 +257,6 @@ const App: React.FC = () => {
     setView('login');
   };
 
-  // ... rest of the file ...
   const handleAddOrUpdateAccount = async (accountData: Omit<Account, 'id' | 'status'> & { id?: string }) => {
     if (accountData.id) {
         const existingAccount = accounts.find(acc => acc.id === accountData.id);

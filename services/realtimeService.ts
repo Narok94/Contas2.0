@@ -16,7 +16,6 @@ type Db = {
 type ListenerCallback<T> = (data: T) => void;
 type SyncStatusCallback = (status: SyncStatus) => void;
 
-const DB_VERSION = '1.1';
 const DB_STORAGE_KEY = 'controle_contas_db';
 
 class RealtimeService {
@@ -24,76 +23,102 @@ class RealtimeService {
   private listeners: { [K in CollectionKey]?: ListenerCallback<Db[K]>[] } = {};
   private syncListeners: SyncStatusCallback[] = [];
   private currentSyncStatus: SyncStatus = 'local';
-  private isInitialized: boolean = false;
+  private currentUserIdentifier: string | null = null;
+  private syncTimeout: number | null = null;
 
   constructor() {
-    this.db = {
-      users: [],
-      groups: [],
-      accounts: [],
-      categories: [],
-      incomes: [],
-    };
+    this.db = this.getDefaultDb();
+    
+    const storedUser = sessionStorage.getItem('app_currentUser');
+    if (storedUser) {
+        try {
+            const user = JSON.parse(storedUser);
+            this.currentUserIdentifier = user.username;
+        } catch (e) {}
+    }
+
     this.init();
     window.addEventListener('storage', this.handleStorageChange);
   }
 
+  private getDefaultDb(): Db {
+      return {
+          users: MOCK_USERS,
+          groups: MOCK_GROUPS,
+          accounts: MOCK_ACCOUNTS,
+          categories: ACCOUNT_CATEGORIES,
+          incomes: MOCK_INCOMES,
+      };
+  }
+
   private async init() {
     await this.loadDb();
-    this.isInitialized = true;
     this.notifyAll();
   }
 
+  public setUser(username: string) {
+      if (this.currentUserIdentifier !== username) {
+          this.currentUserIdentifier = username;
+          this.loadDb();
+      }
+  }
+
   private handleStorageChange = (event: StorageEvent) => {
-    if (event.key === DB_STORAGE_KEY && event.newValue && event.oldValue !== event.newValue) {
+    if (event.key === DB_STORAGE_KEY && event.newValue) {
         try {
             const parsedData = JSON.parse(event.newValue);
             if (parsedData.db) {
                 this.db = parsedData.db;
                 this.notifyAll();
             }
-        } catch (error) {
-            console.error("Failed to parse storage update:", error);
-        }
+        } catch (error) {}
     }
   }
 
   private async loadDb() {
+    this.loadFromLocal();
+    
+    if (!this.currentUserIdentifier) {
+        this.setSyncStatus('local');
+        return;
+    }
+
     this.setSyncStatus('syncing');
     try {
-      const response = await fetch('/api/db?identifier=global_state');
+      const id = encodeURIComponent(this.currentUserIdentifier);
+      const response = await fetch(`/api/db?identifier=${id}`);
+      
       if (response.ok) {
         const remoteDb = await response.json();
         if (remoteDb && remoteDb.users) {
           this.db = remoteDb;
           this.saveToLocalOnly();
           this.setSyncStatus('synced');
+          this.notifyAll();
           return;
         }
+        this.setSyncStatus('synced'); // Banco vazio, mas conectado
+      } else if (response.status === 503) {
+        // Banco não configurado na Vercel, fica em modo local silencioso
+        this.setSyncStatus('local');
+      } else {
+        this.setSyncStatus('error');
       }
-
-      const storedDataString = localStorage.getItem(DB_STORAGE_KEY);
-      if (storedDataString) {
-        const storedData = JSON.parse(storedDataString);
-        if (storedData.version === DB_VERSION && storedData.db) {
-          this.db = storedData.db;
-          this.setSyncStatus('local');
-          return;
-        }
-      }
-
-      this.db = {
-        users: MOCK_USERS,
-        groups: MOCK_GROUPS,
-        accounts: MOCK_ACCOUNTS,
-        categories: ACCOUNT_CATEGORIES,
-        incomes: MOCK_INCOMES,
-      };
-      await this._saveDb();
-
     } catch (error) {
-      console.error("Database initialization error:", error);
       this.setSyncStatus('error');
+    }
+  }
+
+  private loadFromLocal() {
+    const storedDataString = localStorage.getItem(DB_STORAGE_KEY);
+    if (storedDataString) {
+      try {
+        const storedData = JSON.parse(storedDataString);
+        if (storedData.db) {
+          this.db = storedData.db;
+          return;
+        }
+      } catch (e) {}
     }
   }
 
@@ -112,33 +137,42 @@ class RealtimeService {
 
   private saveToLocalOnly() {
     try {
-      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ version: DB_VERSION, db: this.db }));
+      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ db: this.db }));
     } catch (e) {}
   }
 
   private async _saveDb() {
     this.saveToLocalOnly();
-    this.setSyncStatus('syncing');
     
-    try {
-      const response = await fetch('/api/db?identifier=global_state', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.db)
-      });
-      if (response.ok) {
-        this.setSyncStatus('synced');
-      } else {
-        this.setSyncStatus('error');
-      }
-    } catch (error) {
-      console.error("Failed to sync with cloud database:", error);
-      this.setSyncStatus('error');
-    }
+    if (!this.currentUserIdentifier || this.currentSyncStatus === 'local') return;
+
+    if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
+
+    this.syncTimeout = window.setTimeout(async () => {
+        this.setSyncStatus('syncing');
+        try {
+          const id = encodeURIComponent(this.currentUserIdentifier!);
+          const response = await fetch(`/api/db?identifier=${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.db)
+          });
+          
+          if (response.ok) {
+            this.setSyncStatus('synced');
+          } else if (response.status === 503) {
+            this.setSyncStatus('local');
+          } else {
+            this.setSyncStatus('error');
+          }
+        } catch (error) {
+          this.setSyncStatus('error');
+        }
+    }, 1500);
   }
 
   private simulateApiCall<T>(data: T): Promise<T> {
-    return new Promise(resolve => setTimeout(() => resolve(data), 50));
+    return new Promise(resolve => setTimeout(() => resolve(data), 5));
   }
 
   private notify<K extends CollectionKey>(collection: K) {
