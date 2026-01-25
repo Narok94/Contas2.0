@@ -89,26 +89,35 @@ class RealtimeService {
       const response = await fetch(`/api/db?identifier=${id}`);
       
       if (response.ok) {
-        const remoteDb = await response.json();
-        if (remoteDb && remoteDb.users) {
-          this.db = remoteDb;
-          this.saveToLocalOnly();
-          this.setSyncStatus('synced');
-          this.notifyAll();
-          console.log('RealtimeService: Cloud DB loaded.');
+        const text = await response.text();
+        if (text) {
+            try {
+                const remoteDb = JSON.parse(text);
+                if (remoteDb && remoteDb.users) {
+                  this.db = remoteDb;
+                  this.saveToLocalOnly();
+                  this.setSyncStatus('synced');
+                  this.notifyAll();
+                  console.log('RealtimeService: Banco na nuvem carregado.');
+                } else {
+                  this.setSyncStatus('synced');
+                }
+            } catch (e) {
+                console.error("RealtimeService: Resposta da API inválida (não JSON)");
+                this.setSyncStatus('error');
+            }
         } else {
-          this.setSyncStatus('synced');
+            this.setSyncStatus('synced');
         }
       } else {
         if (response.status === 503) {
             this.setSyncStatus('local');
         } else {
-            console.error('RealtimeService: API Error status', response.status);
             this.setSyncStatus('error');
         }
       }
     } catch (error) {
-      console.error('RealtimeService: Network error', error);
+      console.error('RealtimeService: Erro de rede', error);
       this.setSyncStatus('error');
     }
   }
@@ -165,11 +174,9 @@ class RealtimeService {
           if (response.ok) {
             this.setSyncStatus('synced');
           } else {
-            console.error('RealtimeService: Save Error', response.status);
             this.setSyncStatus('error');
           }
         } catch (error) {
-          console.error('RealtimeService: Save Network Error', error);
           this.setSyncStatus('error');
         }
     }, 2000);
