@@ -91,33 +91,29 @@ class RealtimeService {
       if (response.ok) {
         const text = await response.text();
         if (text) {
-            try {
-                const remoteDb = JSON.parse(text);
-                if (remoteDb && remoteDb.users) {
-                  this.db = remoteDb;
-                  this.saveToLocalOnly();
-                  this.setSyncStatus('synced');
-                  this.notifyAll();
-                  console.log('RealtimeService: Banco na nuvem carregado.');
-                } else {
-                  this.setSyncStatus('synced');
-                }
-            } catch (e) {
-                console.error("RealtimeService: Resposta da API inválida (não JSON)");
-                this.setSyncStatus('error');
+          try {
+            const remoteDb = JSON.parse(text);
+            if (remoteDb && remoteDb.users) {
+              this.db = remoteDb;
+              this.saveToLocalOnly();
+              this.setSyncStatus('synced');
+              this.notifyAll();
+            } else {
+              this.setSyncStatus('synced');
             }
+          } catch (e) {
+            console.error("Sync: JSON inválido recebido do servidor");
+            this.setSyncStatus('error');
+          }
         } else {
-            this.setSyncStatus('synced');
+          this.setSyncStatus('synced');
         }
       } else {
-        if (response.status === 503) {
-            this.setSyncStatus('local');
-        } else {
-            this.setSyncStatus('error');
-        }
+        console.error(`Sync: API respondeu com erro ${response.status}`);
+        this.setSyncStatus(response.status === 503 ? 'local' : 'error');
       }
     } catch (error) {
-      console.error('RealtimeService: Erro de rede', error);
+      console.error('Sync: Erro de rede na sincronização', error);
       this.setSyncStatus('error');
     }
   }
@@ -174,9 +170,11 @@ class RealtimeService {
           if (response.ok) {
             this.setSyncStatus('synced');
           } else {
+            console.error(`Sync: Erro ao salvar (${response.status})`);
             this.setSyncStatus('error');
           }
         } catch (error) {
+          console.error('Sync: Erro de rede ao salvar', error);
           this.setSyncStatus('error');
         }
     }, 2000);
