@@ -25,6 +25,7 @@ class RealtimeService {
   private currentSyncStatus: SyncStatus = 'local';
   private currentUserIdentifier: string | null = null;
   private syncTimeout: number | null = null;
+  private pollingInterval: number | null = null;
 
   constructor() {
     this.db = this.getDefaultDb();
@@ -54,7 +55,20 @@ class RealtimeService {
 
   private async init() {
     await this.loadDb();
+    this.startPolling();
     this.notifyAll();
+  }
+
+  // Inicia verificação periódica (Polling) para sincronizar entre dispositivos
+  private startPolling() {
+    if (this.pollingInterval) window.clearInterval(this.pollingInterval);
+    
+    // Verifica por novos dados a cada 30 segundos
+    this.pollingInterval = window.setInterval(() => {
+        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing') {
+            this.loadDb();
+        }
+    }, 30000);
   }
 
   // Define o usuário atual para sincronização
@@ -78,10 +92,8 @@ class RealtimeService {
   }
 
   private async loadDb() {
-    // 1. Carrega do local primeiro para ser instantâneo
     this.loadFromLocal();
     
-    // 2. Tenta sincronizar com o servidor se tiver usuário
     if (!this.currentUserIdentifier) {
         this.setSyncStatus('local');
         return;
@@ -94,13 +106,14 @@ class RealtimeService {
       
       if (response.ok) {
         const remoteDb = await response.json();
+        // Só atualiza se recebermos dados válidos e eles forem diferentes do que temos
+        // (Simplicidade: assume que se veio do servidor, é o mais recente)
         if (remoteDb && remoteDb.users) {
           this.db = remoteDb;
-          this.saveToLocalOnly(); // Mantém o cache local atualizado
+          this.saveToLocalOnly();
           this.setSyncStatus('synced');
           this.notifyAll();
         } else {
-          // Usuário novo ou sem dados no banco, usa o mock/local
           this.setSyncStatus('synced');
         }
       } else {
@@ -144,16 +157,13 @@ class RealtimeService {
     } catch (e) {}
   }
 
-  // Função central de salvamento com debounce para o banco remoto
   private async _saveDb() {
-    this.saveToLocalOnly(); // Salva local instantaneamente
+    this.saveToLocalOnly();
     
     if (!this.currentUserIdentifier) return;
 
-    // Cancela sincronização anterior se houver uma nova alteração
     if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
 
-    // Espera 2 segundos de inatividade para enviar para a nuvem
     this.syncTimeout = window.setTimeout(async () => {
         this.setSyncStatus('syncing');
         try {
