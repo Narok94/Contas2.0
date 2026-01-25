@@ -5,7 +5,7 @@
   "description": "Um software de controle de contas moderno e intuitivo.",
   "private": true,
   "scripts": {
-    "build": "mkdir -p public && cp index.html public/index.html && esbuild index.tsx --bundle --format=esm --outfile=public/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --define:process.env.API_KEY='\"'$API_KEY'\"'"
+    "build": "mkdir -p public && cp index.html public/index.html && esbuild index.tsx --bundle --format=esm --outfile=public/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --external:@vercel/postgres --define:process.env.API_KEY='\"'$API_KEY'\"'"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
