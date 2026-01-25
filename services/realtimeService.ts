@@ -95,15 +95,19 @@ class RealtimeService {
           this.saveToLocalOnly();
           this.setSyncStatus('synced');
           this.notifyAll();
-          return;
+        } else {
+          // Recebeu ok, mas o banco está vazio ou é nulo. 
+          // Consideramos sincronizado (nuvem ativa mas vazia)
+          this.setSyncStatus('synced');
         }
-        this.setSyncStatus('synced'); 
       } else {
-        // Se der erro de rede ou config, não mostramos ERRO vermelho, ficamos em LOCAL.
+        // Erro de rede ou 503 (não configurado na Vercel)
         this.setSyncStatus('local');
+        console.warn('RealtimeService: Cloud unavailable, staying in Local mode.');
       }
     } catch (error) {
       this.setSyncStatus('local');
+      console.error('RealtimeService: Sync error:', error);
     }
   }
 
@@ -147,9 +151,7 @@ class RealtimeService {
     if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
 
     this.syncTimeout = window.setTimeout(async () => {
-        // Só tenta sincronizar se não estiver explicitamente em modo local
-        if (this.currentSyncStatus === 'local' && !navigator.onLine) return;
-
+        // Tentamos salvar mesmo se o status for local, para ver se a nuvem "acordou"
         this.setSyncStatus('syncing');
         try {
           const id = encodeURIComponent(this.currentUserIdentifier!);
