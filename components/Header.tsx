@@ -1,7 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { type User } from '../types';
-import realtimeService, { SyncStatus } from '../services/realtimeService';
 
 interface HeaderProps {
   currentUser: User;
@@ -11,15 +10,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
-  const [lastSync, setLastSync] = useState<Date | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsub = realtimeService.subscribeToSyncStatus((status, time) => {
-        setSyncStatus(status);
-        setLastSync(time);
-    });
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
@@ -28,64 +21,8 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
         document.removeEventListener('mousedown', handleClickOutside);
-        unsub();
     };
   }, []);
-
-  const handleRetrySync = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      realtimeService.forceSync();
-  };
-
-  const getSyncBadge = () => {
-    const retryButton = (
-        <button 
-            onClick={handleRetrySync}
-            className="ml-1 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
-            title="Tentar Conectar Novamente"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-        </button>
-    );
-
-    switch(syncStatus) {
-      case 'synced': return (
-          <div className="flex items-center gap-1 group relative">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-            <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
-                Sincronizado: {lastSync ? lastSync.toLocaleTimeString() : 'Agora'}
-            </div>
-            {retryButton}
-          </div>
-      );
-      case 'syncing': return (
-        <div className="flex items-center gap-1 group relative">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]"></span>
-            <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
-                Salvando na nuvem...
-            </div>
-        </div>
-      );
-      case 'error': return (
-        <div className="flex items-center gap-1 group relative">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-danger animate-bounce"></span>
-            <div className="absolute left-0 top-6 hidden group-hover:block bg-danger text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50 font-bold">
-                Falha na Conexão!
-            </div>
-            {retryButton}
-        </div>
-      );
-      default: return (
-        <div className="flex items-center gap-1 group relative">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-text-muted opacity-40"></span>
-            <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
-                Modo Local (Offline)
-            </div>
-            {retryButton}
-        </div>
-      );
-    }
-  };
 
   return (
     <header className="bg-surface/70 dark:bg-dark-surface/70 backdrop-blur-lg shadow-sm sticky top-0 z-30 border-b border-border-color/50 dark:border-dark-border-color/50">
@@ -93,10 +30,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
         <div className="flex items-center justify-between h-16">
           <div className="flex flex-col">
             <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent leading-none">Controle de Contas</h1>
-            <div className="flex items-center gap-2 mt-1">
-                 {getSyncBadge()}
-                 <span className="text-[10px] uppercase tracking-tighter text-text-muted dark:text-dark-text-muted font-bold">Vercel Postgres</span>
-            </div>
+            <p className="text-[10px] uppercase tracking-tighter text-text-muted dark:text-dark-text-muted font-bold mt-1">Armazenamento Local Ativo</p>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="relative" ref={menuRef}>

@@ -1,6 +1,6 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import realtimeService, { SyncStatus } from '../services/realtimeService';
+import React, { useRef } from 'react';
+import realtimeService from '../services/realtimeService';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -14,16 +14,6 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onImportData, onExportToCsv }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [syncInfo, setSyncInfo] = useState<{ status: SyncStatus; lastSync?: Date }>({ status: 'local' });
-
-    useEffect(() => {
-        if (isOpen) {
-            const unsub = realtimeService.subscribeToSyncStatus((status, lastSync) => {
-                setSyncInfo({ status, lastSync });
-            });
-            return unsub;
-        }
-    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -34,55 +24,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            if (window.confirm("Restaurar um backup substituirá todos os dados atuais. Deseja continuar?")) {
+            if (window.confirm("Restaurar um backup substituirá todos os dados atuais localmente. Deseja continuar?")) {
                 onImportData(file);
             }
         }
         if(event.target) event.target.value = '';
     };
 
-    const getStatusText = () => {
-        switch(syncInfo.status) {
-            case 'synced': return 'Conectado e Sincronizado';
-            case 'syncing': return 'Sincronizando...';
-            case 'error': return 'Erro de Conexão';
-            default: return 'Modo Local / Offline';
-        }
-    };
-
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
-            <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-md animate-fade-in-up">
+            <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-md animate-fade-in-up">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary">Configurações</h2>
                     <button onClick={onClose} className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-3xl">&times;</button>
                 </div>
 
                 <div className="space-y-6">
-                     {/* Seção de Status Realtime */}
-                     <div className="p-4 bg-surface-light dark:bg-dark-surface-light rounded-xl border border-border-color dark:border-dark-border-color">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-text-muted mb-3 flex items-center gap-2">
-                             <span className={`h-2 w-2 rounded-full ${syncInfo.status === 'synced' ? 'bg-success' : syncInfo.status === 'syncing' ? 'bg-primary animate-pulse' : 'bg-danger'}`}></span>
-                             Status da Nuvem
-                        </h3>
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-text-secondary">Estado:</span>
-                                <span className="font-bold text-text-primary dark:text-dark-text-primary">{getStatusText()}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-text-secondary">Usuário:</span>
-                                <span className="font-mono text-primary">@{realtimeService.getCurrentUserIdentifier() || 'Nenhum'}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-text-secondary">Último Sync:</span>
-                                <span className="text-text-primary dark:text-dark-text-primary">
-                                    {syncInfo.lastSync ? syncInfo.lastSync.toLocaleTimeString() : 'Nunca'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
                      <div>
                         <h3 className="text-lg font-semibold mb-2 text-text-primary dark:text-dark-text-primary">Aparência</h3>
                         <div className="flex items-center justify-between p-3 bg-surface-light dark:bg-dark-surface-light rounded-lg">
