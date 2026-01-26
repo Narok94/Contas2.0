@@ -41,25 +41,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!identifier) return res.status(400).json({ error: 'Identificador ausente' });
 
   try {
+    // Utiliza a tabela 'controle_contas' conforme solicitado
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS users_data (
+      CREATE TABLE IF NOT EXISTS controle_contas (
         id SERIAL PRIMARY KEY,
-        user_email TEXT NOT NULL UNIQUE,
+        user_identifier TEXT NOT NULL UNIQUE,
         content TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
     if (req.method === 'GET') {
-      const { rows } = await pool.query('SELECT content FROM users_data WHERE user_email = $1', [identifier]);
+      const { rows } = await pool.query('SELECT content FROM controle_contas WHERE user_identifier = $1', [identifier]);
       return res.status(200).json(rows.length > 0 ? JSON.parse(rows[0].content) : null);
     }
 
     if (req.method === 'POST') {
       await pool.query(`
-        INSERT INTO users_data (user_email, content, updated_at)
+        INSERT INTO controle_contas (user_identifier, content, updated_at)
         VALUES ($1, $2, CURRENT_TIMESTAMP)
-        ON CONFLICT (user_email) 
+        ON CONFLICT (user_identifier) 
         DO UPDATE SET content = $2, updated_at = CURRENT_TIMESTAMP;
       `, [identifier, JSON.stringify(req.body)]);
       return res.status(200).json({ success: true });

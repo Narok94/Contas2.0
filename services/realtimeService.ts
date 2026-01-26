@@ -3,6 +3,7 @@ import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOME
 import { User, Group, Account, Income } from '../types';
 
 type CollectionKey = 'users' | 'groups' | 'accounts' | 'categories' | 'incomes';
+export type SyncStatus = 'synced' | 'syncing' | 'error' | 'local';
 
 type Db = {
   users: User[];
@@ -13,13 +14,18 @@ type Db = {
 };
 
 type ListenerCallback<T> = (data: T) => void;
+type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
 const DB_STORAGE_KEY = 'ricka_local_db_v2';
 
 class RealtimeService {
   private db: Db;
   private listeners: { [K in CollectionKey]?: ListenerCallback<Db[K]>[] } = {};
+  private syncListeners: SyncStatusCallback[] = [];
+  private currentSyncStatus: SyncStatus = 'local';
   private currentUserIdentifier: string | null = null;
+  private lastSyncTime: Date | undefined = undefined;
+  private syncDebounceTimer: number | null = null;
 
   constructor() {
     this.db = this.loadInitialDb();
@@ -44,17 +50,21 @@ class RealtimeService {
     };
   }
 
-  private init() {
+  private async init() {
     const userStr = sessionStorage.getItem('app_currentUser');
     if (userStr) {
       const user = JSON.parse(userStr);
       this.currentUserIdentifier = user.username;
+      this.syncWithRemote();
     }
     this.notifyAll();
   }
 
   public setUser(username: string) {
-    this.currentUserIdentifier = username;
+    if (this.currentUserIdentifier !== username) {
+      this.currentUserIdentifier = username;
+      if (username) this.syncWithRemote();
+    }
   }
 
   private handleCrossTabSync = (e: StorageEvent) => {
@@ -66,8 +76,70 @@ class RealtimeService {
     }
   }
 
+  public async syncWithRemote() {
+    if (!this.currentUserIdentifier) return;
+    
+    this.setSyncStatus('syncing');
+    try {
+      const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
+      if (res.ok) {
+        const remoteData = await res.json();
+        if (remoteData && remoteData.users) {
+          this.db = remoteData;
+          this.saveLocal();
+          this.lastSyncTime = new Date();
+          this.setSyncStatus('synced');
+          this.notifyAll();
+        } else {
+          this.setSyncStatus('synced');
+          this.persistRemote();
+        }
+      } else {
+        this.setSyncStatus('error');
+      }
+    } catch (e) {
+      this.setSyncStatus('error');
+    }
+  }
+
+  private setSyncStatus(status: SyncStatus) {
+    this.currentSyncStatus = status;
+    this.syncListeners.forEach(cb => cb(status, this.lastSyncTime));
+  }
+
+  public subscribeToSyncStatus(cb: SyncStatusCallback) {
+    this.syncListeners.push(cb);
+    cb(this.currentSyncStatus, this.lastSyncTime);
+    return () => { this.syncListeners = this.syncListeners.filter(c => c !== cb); };
+  }
+
   private saveLocal() {
     localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ db: this.db, timestamp: Date.now() }));
+  }
+
+  private async persistRemote() {
+    if (!this.currentUserIdentifier) return;
+    
+    if (this.syncDebounceTimer) window.clearTimeout(this.syncDebounceTimer);
+    
+    this.syncDebounceTimer = window.setTimeout(async () => {
+      this.setSyncStatus('syncing');
+      try {
+        const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.db)
+        });
+        if (res.ok) {
+          this.lastSyncTime = new Date();
+          this.setSyncStatus('synced');
+        } else {
+          this.setSyncStatus('error');
+        }
+      } catch (e) {
+        this.setSyncStatus('error');
+      }
+    }, 2000);
   }
 
   private notifyAll() {
@@ -95,12 +167,17 @@ class RealtimeService {
     }
   }
 
+  public forceSync() {
+    this.syncWithRemote();
+  }
+
   public getCurrentUserIdentifier() {
     return this.currentUserIdentifier;
   }
 
   private async write() {
     this.saveLocal();
+    this.persistRemote();
   }
 
   public getAccounts = () => this.db.accounts;

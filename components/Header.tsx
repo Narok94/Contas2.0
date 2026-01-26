@@ -1,6 +1,59 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { type User } from '../types';
+import realtimeService, { type SyncStatus } from '../services/realtimeService';
+
+const SyncStatusIndicator: React.FC = () => {
+    const [status, setStatus] = useState<SyncStatus>('local');
+    
+    useEffect(() => {
+        const unsubscribe = realtimeService.subscribeToSyncStatus((syncStatus) => {
+            setStatus(syncStatus);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const getStatusInfo = () => {
+        switch (status) {
+            case 'syncing':
+                return { text: 'Sincronizando...', color: 'text-primary dark:text-primary-light', icon: <div className="w-2 h-2 bg-primary rounded-full animate-pulse" /> };
+            case 'synced':
+                return { text: 'Vercel Postgres', color: 'text-success', icon: <div className="w-2 h-2 bg-success rounded-full" /> };
+            case 'error':
+                return { text: 'Falha na Conexão', color: 'text-danger', icon: <div className="w-2 h-2 bg-danger rounded-full" /> };
+            case 'local':
+            default:
+                return { text: 'Modo Local (Offline)', color: 'text-text-muted dark:text-dark-text-muted', icon: <div className="w-2 h-2 bg-gray-400 rounded-full" /> };
+        }
+    };
+
+    const { text, color, icon } = getStatusInfo();
+
+    return (
+        <div className="flex items-center space-x-2">
+            <button 
+                onClick={() => realtimeService.forceSync()} 
+                className="p-1.5 bg-surface-light dark:bg-dark-surface-light rounded-full hover:bg-border-color dark:hover:bg-dark-border-color transition-colors"
+                title="Forçar Sincronização"
+            >
+                {status === 'syncing' ? (
+                    <svg className="w-3 h-3 text-primary animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 20h5v-5M20 4h-5v5" />
+                    </svg>
+                )}
+            </button>
+            <div className={`flex items-center space-x-1.5 text-xs font-semibold ${color}`}>
+                {icon}
+                <span className="hidden sm:inline">{text}</span>
+            </div>
+        </div>
+    );
+};
 
 interface HeaderProps {
   currentUser: User;
@@ -30,7 +83,9 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
         <div className="flex items-center justify-between h-16">
           <div className="flex flex-col">
             <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent leading-none">Controle de Contas</h1>
-            <p className="text-[10px] uppercase tracking-tighter text-text-muted dark:text-dark-text-muted font-bold mt-1">Armazenamento Local Ativo</p>
+            <div className="mt-1.5">
+                <SyncStatusIndicator />
+            </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="relative" ref={menuRef}>
