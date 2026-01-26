@@ -55,7 +55,7 @@ class RealtimeService {
     if (userStr) {
       const user = JSON.parse(userStr);
       this.currentUserIdentifier = user.username;
-      this.syncWithRemote();
+      setTimeout(() => this.syncWithRemote(), 1000); // Delay inicial para evitar race conditions
     }
     this.notifyAll();
   }
@@ -63,7 +63,7 @@ class RealtimeService {
   public setUser(username: string) {
     if (this.currentUserIdentifier !== username) {
       this.currentUserIdentifier = username;
-      this.syncWithRemote();
+      if (username) this.syncWithRemote();
     }
   }
 
@@ -76,7 +76,7 @@ class RealtimeService {
     }
   }
 
-  private async syncWithRemote() {
+  public async syncWithRemote() {
     if (!this.currentUserIdentifier) return;
     
     this.setSyncStatus('syncing');
@@ -92,10 +92,11 @@ class RealtimeService {
           this.notifyAll();
         } else {
           this.setSyncStatus('synced');
-          this.persistRemote(); // Envia o estado inicial local se o remoto estiver vazio
+          this.persistRemote();
         }
       } else {
-        this.setSyncStatus('error');
+        // Se a API retornar erro, ficamos em modo local silencioso
+        this.setSyncStatus('local');
       }
     } catch (e) {
       this.setSyncStatus('error');
@@ -134,53 +135,55 @@ class RealtimeService {
           this.lastSyncTime = new Date();
           this.setSyncStatus('synced');
         } else {
-          this.setSyncStatus('error');
+          this.setSyncStatus('local');
         }
       } catch (e) {
         this.setSyncStatus('error');
       }
-    }, 1500); // Debounce de 1.5s para evitar flood
+    }, 2000);
   }
 
   private notifyAll() {
     (Object.keys(this.db) as CollectionKey[]).forEach(k => this.notify(k));
   }
 
+  // Use 'any' type cast to avoid complex generic indexing issues with mapped types
   private notify<K extends CollectionKey>(k: K) {
-    const callbacks = this.listeners[k] as ListenerCallback<Db[K]>[] | undefined;
+    const callbacks = this.listeners[k] as any[] | undefined;
     if (callbacks) callbacks.forEach(cb => cb(this.db[k]));
   }
 
+  // Use 'any' type cast to avoid complex generic indexing issues with mapped types
   public subscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
-    if (!this.listeners[k]) this.listeners[k] = [];
-    (this.listeners[k] as ListenerCallback<Db[K]>[]).push(cb);
+    if (!this.listeners[k]) {
+      (this.listeners as any)[k] = [];
+    }
+    const currentListeners = this.listeners[k] as any[];
+    currentListeners.push(cb);
     cb(this.db[k]);
   }
 
-  // Implementation of unsubscribe
+  // Use 'any' type cast to avoid complex generic indexing issues with mapped types
   public unsubscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
     if (this.listeners[k]) {
-      this.listeners[k] = (this.listeners[k] as ListenerCallback<Db[K]>[]).filter(c => c !== cb);
+      const currentListeners = this.listeners[k] as any[];
+      (this.listeners as any)[k] = currentListeners.filter(c => c !== cb);
     }
   }
 
-  // Implementation of forceSync
   public forceSync() {
     this.syncWithRemote();
   }
 
-  // Implementation of getCurrentUserIdentifier
   public getCurrentUserIdentifier() {
     return this.currentUserIdentifier;
   }
 
-  // Abstração de Escrita
   private async write() {
     this.saveLocal();
     this.persistRemote();
   }
 
-  // API Pública de Dados
   public getAccounts = () => this.db.accounts;
   public updateAccount = async (acc: Account) => {
     this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a);
@@ -197,8 +200,6 @@ class RealtimeService {
     this.notify('accounts');
     this.write();
   }
-
-  // Implementation of updateMultipleAccounts
   public updateMultipleAccounts = async (accs: Account[]) => {
     this.db.accounts = this.db.accounts.map(a => {
         const updated = accs.find(ua => ua.id === a.id);
@@ -209,7 +210,6 @@ class RealtimeService {
   }
 
   public getUsers = () => this.db.users;
-  // Fixed signature to handle Omit<User, 'id'> and return updated User
   public addUser = async (u: Omit<User, 'id'>) => {
     const newUser = { ...u, id: `user-${Date.now()}` } as User;
     this.db.users.push(newUser);
@@ -217,21 +217,18 @@ class RealtimeService {
     this.write();
     return newUser;
   }
-  // Updated to return updated User
   public updateUser = async (u: User) => {
     this.db.users = this.db.users.map(old => old.id === u.id ? u : old);
     this.notify('users');
     this.write();
     return u;
   }
-  // Implementation of deleteUser
   public deleteUser = async (id: string) => {
     this.db.users = this.db.users.filter(u => u.id !== id);
     this.notify('users');
     this.write();
   }
 
-  // Implementation of Group management
   public getGroups = () => this.db.groups;
   public addGroup = async (g: Omit<Group, 'id'>) => {
     const newGroup = { ...g, id: `group-${Date.now()}` } as Group;
@@ -258,7 +255,6 @@ class RealtimeService {
     this.notify('incomes');
     this.write();
   }
-  // Implementation of updateIncome
   public updateIncome = async (inc: Income) => {
     this.db.incomes = this.db.incomes.map(i => i.id === inc.id ? inc : i);
     this.notify('incomes');
@@ -271,7 +267,6 @@ class RealtimeService {
     this.write();
   }
 
-  // Implementation of getCategories
   public getCategories = () => this.db.categories;
   public saveCategories = async (cats: string[]) => {
     this.db.categories = cats;
