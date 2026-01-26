@@ -121,15 +121,16 @@ class RealtimeService {
           this.setSyncStatus('synced');
           this.notifyAll();
         } else {
+          // Usuário novo ou sem dados salvos ainda
           this.setSyncStatus('synced');
         }
       } else {
         const errData = await response.json().catch(() => ({}));
-        console.error(`[RealtimeService] API Error (${response.status}):`, errData);
+        console.error(`[RealtimeService] Erro na API do Banco de Dados (${response.status}):`, errData);
         this.setSyncStatus('error');
       }
     } catch (error) {
-      console.error('[RealtimeService] Connection Error:', error);
+      console.error('[RealtimeService] Falha crítica de rede ao conectar ao banco:', error);
       this.setSyncStatus('error');
     }
   }
@@ -187,11 +188,11 @@ class RealtimeService {
             this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
           } else {
-            console.error('[RealtimeService] Failed to save:', response.status);
+            console.error('[RealtimeService] Erro ao salvar dados na nuvem:', response.status);
             this.setSyncStatus('error');
           }
         } catch (error) {
-          console.error('[RealtimeService] Network error during save:', error);
+          console.error('[RealtimeService] Erro de rede ao tentar salvar:', error);
           this.setSyncStatus('error');
         }
     }, 2000);
