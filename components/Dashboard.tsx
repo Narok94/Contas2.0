@@ -15,6 +15,7 @@ interface DashboardProps {
   setSelectedDate: (date: Date) => void;
   onOpenBatchModal: () => void;
   currentUser: User | null;
+  onOpenMoveModal: () => void;
 }
 
 const SummaryItem: React.FC<{ title: string; value: string; icon: React.ReactNode; valueColor?: string }> = ({ title, value, icon, valueColor = 'text-text-primary dark:text-dark-text-primary' }) => (
@@ -33,7 +34,7 @@ const SummaryItem: React.FC<{ title: string; value: string; icon: React.ReactNod
 );
 
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, onOpenBatchModal, currentUser }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, onOpenBatchModal, currentUser, onOpenMoveModal }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   
@@ -162,7 +163,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                 title="Saldo Atual"
                 value={formatCurrency(stats.balance)}
                 valueColor={stats.balance >= 0 ? 'text-success' : 'text-danger'}
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m12 0V6a2.25 2.25 0 00-2.25-2.25H9.75A2.25 2.25 0 007.5 6v3" /></svg>}
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25-2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m12 0V6a2.25 2.25 0 00-2.25-2.25H9.75A2.25 2.25 0 007.5 6v3" /></svg>}
             />
             <SummaryItem
                 title="Entradas"
@@ -204,6 +205,16 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                 className="p-2 rounded-lg hover:bg-white dark:hover:bg-dark-surface shadow-sm transition-all text-text-secondary disabled:opacity-30 disabled:shadow-none"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+            <div className="h-4 w-px bg-border-color dark:bg-dark-border-color mx-1"></div>
+            <button 
+                onClick={onOpenMoveModal}
+                className="p-2 rounded-lg hover:bg-white dark:hover:bg-dark-surface shadow-sm transition-all text-text-secondary"
+                title="Mover contas entre meses"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
             </button>
           </div>
 

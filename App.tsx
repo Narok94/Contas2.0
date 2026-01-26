@@ -23,6 +23,7 @@ import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
+import MoveAccountsModal from './components/MoveAccountsModal';
 
 interface ManageCategoriesModalProps {
     isOpen: boolean;
@@ -149,6 +150,7 @@ const App: React.FC = () => {
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
   
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -588,6 +590,31 @@ const App: React.FC = () => {
         }
     };
 
+    const handleMoveAccounts = async (accountIds: string[], toMonth: string) => {
+        const [year, month] = toMonth.split('-').map(Number);
+        const targetMonthIndex = month - 1;
+    
+        const accountsToUpdate = accounts
+            .filter(acc => accountIds.includes(acc.id))
+            .map(account => {
+                if (!account.paymentDate) return account;
+    
+                const oldDate = new Date(account.paymentDate);
+                const dayOfMonth = oldDate.getDate();
+    
+                const newDate = new Date(year, targetMonthIndex, dayOfMonth);
+    
+                if (newDate.getMonth() !== targetMonthIndex) {
+                    const lastDayOfTargetMonth = new Date(year, targetMonthIndex + 1, 0);
+                    return { ...account, paymentDate: lastDayOfTargetMonth.toISOString() };
+                } else {
+                    return { ...account, paymentDate: newDate.toISOString() };
+                }
+            });
+    
+        await dataService.updateMultipleAccounts(accountsToUpdate);
+    };
+
   if (view === 'login') return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
   if (view === 'register') return <RegisterScreen onRegister={handleRegister} onNavigateToLogin={() => setView('login')} />;
   
@@ -622,7 +649,7 @@ const App: React.FC = () => {
 
       switch(view) {
         case 'dashboard':
-          return <Dashboard accounts={userAccounts} incomes={userIncomes} onEditAccount={openAccountModal} onDeleteAccount={handleDeleteAccount} onToggleStatus={handleToggleAccountStatus} selectedDate={selectedDate} setSelectedDate={setSelectedDate} onOpenBatchModal={() => setIsBatchModalOpen(true)} currentUser={currentUser} />;
+          return <Dashboard accounts={userAccounts} incomes={userIncomes} onEditAccount={openAccountModal} onDeleteAccount={handleDeleteAccount} onToggleStatus={handleToggleAccountStatus} selectedDate={selectedDate} setSelectedDate={setSelectedDate} onOpenBatchModal={() => setIsBatchModalOpen(true)} currentUser={currentUser} onOpenMoveModal={() => setIsMoveModalOpen(true)} />;
         case 'admin':
            return currentUser.role === Role.ADMIN ? <AdminPanel users={users} groups={groups} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} onAddGroup={handleAddGroup} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} /> : <p>Acesso negado.</p>;
         case 'history':
@@ -641,7 +668,8 @@ const App: React.FC = () => {
       <AccountFormModal isOpen={isAccountModalOpen} onClose={closeAccountModal} onSubmit={handleAddOrUpdateAccount} account={accountToEdit} categories={categories} onManageCategories={() => setIsCategoryModalOpen(true)} activeGroupId={activeGroupId} />
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={handleBatchAddAccounts} categories={categories} />
       <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => openAccountModal()} onSelectBatch={() => setIsBatchModalOpen(true)} />
-       <ManageCategoriesModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} onAdd={handleAddCategory} onUpdate={handleUpdateCategory} onDelete={handleDeleteCategory} />
+      <ManageCategoriesModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} onAdd={handleAddCategory} onUpdate={handleUpdateCategory} onDelete={handleDeleteCategory} />
+      <MoveAccountsModal isOpen={isMoveModalOpen} onClose={() => setIsMoveModalOpen(false)} onSubmit={handleMoveAccounts} allAccounts={userAccounts} currentDashboardMonth={selectedDate.toISOString().slice(0, 7)} />
       <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => { setIsChatOpen(false); setStartVoiceOnChatOpen(false); }} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={handleAiCommand} startWithVoice={startVoiceOnChatOpen} onListeningChange={setIsAiListening} />
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={handleExportData} onImportData={handleImportData} onExportToCsv={handleExportToCsv} />
        <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
