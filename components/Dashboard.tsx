@@ -17,45 +17,20 @@ interface DashboardProps {
   currentUser: User | null;
 }
 
-const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => (
-    <motion.div 
-        className="bg-surface dark:bg-dark-surface p-4 rounded-3xl shadow-lg border border-border-color/50 dark:border-dark-border-color/50 flex flex-col justify-between"
+const SummaryItem: React.FC<{ title: string; value: string; icon: React.ReactNode; valueColor?: string }> = ({ title, value, icon, valueColor = 'text-text-primary dark:text-dark-text-primary' }) => (
+    <motion.div
+        className="bg-surface dark:bg-dark-surface p-4 rounded-xl border border-border-color/50 dark:border-dark-border-color/50"
         variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
     >
-        <div className="flex items-center justify-between text-text-muted dark:text-dark-text-muted">
-            <span className="text-sm font-semibold">{title}</span>
-            <div className={`p-2 rounded-full ${color} bg-opacity-10`}>
-                {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
-            </div>
+        <div className="flex items-center text-sm font-medium text-text-secondary dark:text-dark-text-secondary">
+            {icon}
+            <span className="ml-2">{title}</span>
         </div>
-        <p className="text-2xl lg:text-3xl font-bold text-text-primary dark:text-dark-text-primary mt-2">{value}</p>
+        <p className={`mt-2 text-2xl font-bold truncate ${valueColor}`}>
+            {value}
+        </p>
     </motion.div>
 );
-
-const MonthSummaryCard: React.FC<{ totalIncome: number, paidThisMonth: number, balance: number, formatCurrency: (v: number) => string }> = ({ totalIncome, paidThisMonth, balance, formatCurrency }) => {
-    return (
-        <motion.div 
-            className="bg-gradient-to-br from-primary to-secondary p-4 rounded-3xl shadow-2xl shadow-primary/20 text-white h-full flex flex-col justify-center"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-        >
-            <h3 className="text-base font-bold text-white/90">Resumo do Mês</h3>
-            <div className="mt-3 space-y-1.5">
-                <div className="flex justify-between items-baseline">
-                    <p className="text-sm opacity-80">Entradas</p>
-                    <p className="text-lg font-bold">{formatCurrency(totalIncome)}</p>
-                </div>
-                <div className="flex justify-between items-baseline">
-                    <p className="text-sm opacity-80">Saídas (Pagas)</p>
-                    <p className="text-lg font-bold">{formatCurrency(paidThisMonth)}</p>
-                </div>
-                <div className="flex justify-between items-baseline">
-                    <p className="text-sm opacity-80">Saldo Atual</p>
-                    <p className={`text-lg font-bold ${balance < 0 ? 'text-red-300' : 'text-green-300'}`}>{formatCurrency(balance)}</p>
-                </div>
-            </div>
-        </motion.div>
-    );
-};
 
 
 const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, onOpenBatchModal, currentUser }) => {
@@ -166,7 +141,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.08
       }
     }
   };
@@ -178,14 +153,35 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         </motion.div>
         
         <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
         >
-            <MonthSummaryCard totalIncome={stats.totalIncome} paidThisMonth={stats.paidThisMonth} balance={stats.balance} formatCurrency={formatCurrency} />
-            <StatCard title="Pendente" value={formatCurrency(stats.pending)} icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} color="text-warning" />
-            <StatCard title="Pago" value={formatCurrency(stats.paidThisMonth)} icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} color="text-accent" />
+            <SummaryItem
+                title="Saldo Atual"
+                value={formatCurrency(stats.balance)}
+                valueColor={stats.balance >= 0 ? 'text-success' : 'text-danger'}
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m12 0V6a2.25 2.25 0 00-2.25-2.25H9.75A2.25 2.25 0 007.5 6v3" /></svg>}
+            />
+            <SummaryItem
+                title="Entradas"
+                value={formatCurrency(stats.totalIncome)}
+                valueColor="text-success"
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19.5v-15m0 0l-6.75 6.75M12 4.5l6.75 6.75" /></svg>}
+            />
+            <SummaryItem
+                title="Contas Pagas"
+                value={formatCurrency(stats.paidThisMonth)}
+                valueColor="text-danger"
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" /></svg>}
+            />
+            <SummaryItem
+                title="Pendente"
+                value={formatCurrency(stats.pending)}
+                valueColor="text-amber-500"
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            />
         </motion.div>
 
 
