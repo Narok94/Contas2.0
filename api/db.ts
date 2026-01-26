@@ -1,56 +1,60 @@
-// Fix: Changed require to import for ES module compatibility.
+
 import { createPool } from '@vercel/postgres';
+import type { VercelPool } from '@vercel/postgres';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-let pool: any = null;
+let pool: VercelPool | null = null;
 
-function getDbPool() {
+function getDbPool(): VercelPool {
   if (pool) {
     return pool;
   }
   
-  console.log('[DB POOL] Pool de conexão não encontrado. Tentando criar um novo.');
+  console.log('[DB POOL] Tentando criar um novo pool de conexão.');
   const connectionString = process.env.POSTGRES_URL;
 
   if (!connectionString) {
     console.error('[DB POOL ERROR] A variável de ambiente POSTGRES_URL não foi encontrada.');
-    throw new Error('Configuração do banco de dados incompleta no servidor.');
+    throw new Error('A variável de ambiente POSTGRES_URL não está definida no servidor.');
   }
   
-  const redactedUrl = connectionString.replace(/:([^:]+)@/, ':********@');
-  console.log(`[DB POOL] Usando a connection string: ${redactedUrl}`);
-
   try {
     const newPool = createPool({ connectionString });
     pool = newPool;
     console.log('[DB POOL] Novo pool de conexão criado com sucesso.');
     return pool;
   } catch (e: any) {
-    console.error('[DB POOL ERROR] Falha ao criar o pool de conexão.', e.message);
+    console.error('[DB POOL ERROR] Falha ao criar o pool de conexão:', e.message);
     throw e; 
   }
 }
 
-// Fix: Changed module.exports to export default for ES module compatibility.
-export default async (req: any, res: any) => {
-  let dbPool: any;
+const handler = async (req: VercelRequest, res: VercelResponse) => {
+  console.log(`[DB HANDLER] Função invocada. Método: ${req.method}.`);
+
+  let dbPool: VercelPool;
   try {
     dbPool = getDbPool();
   } catch (error: any) {
+    console.error('[DB HANDLER ERROR] Erro ao obter o pool de conexão:', { message: error.message });
     return res.status(503).json({ 
       error: 'Falha na Inicialização do Banco de Dados', 
       detail: error.message 
     });
   }
 
-  const identifier = req.query.identifier;
+  const identifier = req.query.identifier as string;
   if (!identifier) {
+    console.log('[DB HANDLER WARN] Identificador de usuário ausente na query.');
     return res.status(400).json({ error: 'Identificador de usuário ausente.' });
   }
+  console.log(`[DB HANDLER] Processando para o identificador: ${identifier}`);
 
-  let client: any;
+  let client;
   try {
+    console.log('[DB HANDLER] Tentando conectar ao banco de dados...');
     client = await dbPool.connect();
-    console.log('[DB HANDLER] Conexão com o banco de dados estabelecida com sucesso.');
+    console.log('[DB HANDLER] Conexão com o banco de dados estabelecida.');
     
     await client.query(`
       CREATE TABLE IF NOT EXISTS controle_contas (
@@ -62,25 +66,29 @@ export default async (req: any, res: any) => {
     `);
     
     if (req.method === 'GET') {
+      console.log('[DB HANDLER] Executando GET.');
       const { rows } = await client.query('SELECT content FROM controle_contas WHERE user_identifier = $1', [identifier]);
+      console.log(`[DB HANDLER] GET encontrou ${rows.length} registros.`);
       return res.status(200).json(rows.length > 0 ? JSON.parse(rows[0].content) : null);
     }
 
     if (req.method === 'POST') {
+      console.log('[DB HANDLER] Executando POST.');
       await client.query(`
         INSERT INTO controle_contas (user_identifier, content, updated_at)
         VALUES ($1, $2, CURRENT_TIMESTAMP)
         ON CONFLICT (user_identifier) 
         DO UPDATE SET content = EXCLUDED.content, updated_at = CURRENT_TIMESTAMP;
       `, [identifier, JSON.stringify(req.body)]);
+      console.log('[DB HANDLER] POST executado com sucesso.');
       return res.status(200).json({ success: true });
     }
 
-    return res.status(405).json({ error: 'Método não permitido' });
+    res.setHeader('Allow', ['GET', 'POST']);
+    return res.status(405).json({ error: `Método ${req.method} não permitido.` });
 
   } catch (error: any) {
-    console.error('[API DATABASE ERROR]:', error.message);
-    console.error('[API DATABASE ERROR DETAILS]:', JSON.stringify(error, null, 2));
+    console.error('[API DATABASE ERROR] Erro durante a operação do banco de dados:', { message: error.message, stack: error.stack });
     return res.status(500).json({ 
       error: 'Erro Interno do Servidor ao Acessar o Banco de Dados', 
       message: error.message 
@@ -88,6 +96,10 @@ export default async (req: any, res: any) => {
   } finally {
       if (client) {
         client.release();
+        console.log('[DB HANDLER] Conexão liberada.');
       }
   }
 };
+
+// FIX: Changed 'export =' to 'export default' for ES module compatibility.
+export default handler;
