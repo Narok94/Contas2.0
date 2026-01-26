@@ -184,7 +184,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-hidden">
       <Header currentUser={currentUser} onSettingsClick={() => setIsSettingsModalOpen(true)} onLogout={handleLogout} />
       
-      <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-24">
+      <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-32">
         {view === 'dashboard' && (
             <Dashboard 
                 accounts={userAccounts} 
@@ -201,6 +201,7 @@ const App: React.FC = () => {
                 onOpenBatchModal={() => setIsBatchModalOpen(true)} 
                 currentUser={currentUser} 
                 onOpenMoveModal={() => setIsMoveModalOpen(true)} 
+                categories={categories}
             />
         )}
         {view === 'history' && <AccountHistory accounts={userAccounts} />}

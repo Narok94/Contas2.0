@@ -18,6 +18,7 @@ interface DashboardProps {
   onOpenBatchModal: () => void;
   currentUser: User | null;
   onOpenMoveModal: () => void;
+  categories: string[];
 }
 
 const SummaryItem: React.FC<{ title: string; value: string; icon: React.ReactNode; valueColor?: string; isMain?: boolean }> = ({ title, value, icon, valueColor = 'text-text-primary dark:text-dark-text-primary', isMain = false }) => (
@@ -37,9 +38,12 @@ const SummaryItem: React.FC<{ title: string; value: string; icon: React.ReactNod
 );
 
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal, categories }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterRecurrent, setFilterRecurrent] = useState(false);
+  const [filterInstallment, setFilterInstallment] = useState(false);
   
   const safeDate = useMemo(() => {
     return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date(2026, 0, 1);
@@ -83,15 +87,19 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     return accountsForMonth
       .filter(acc => {
         const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
-        const matchesSearch = searchTerm === '' || acc.name.toLowerCase().includes(searchTerm.toLowerCase()) || acc.category.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesStatus && matchesSearch;
+        const matchesSearch = searchTerm === '' || acc.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = filterCategory === 'ALL' || acc.category === filterCategory;
+        const matchesRecurrent = !filterRecurrent || acc.isRecurrent;
+        const matchesInstallment = !filterInstallment || acc.isInstallment;
+        
+        return matchesStatus && matchesSearch && matchesCategory && matchesRecurrent && matchesInstallment;
       })
       .sort((a, b) => {
         if (a.status === AccountStatus.PENDING && b.status !== AccountStatus.PENDING) return -1;
         if (a.status !== AccountStatus.PENDING && b.status === AccountStatus.PENDING) return 1;
         return a.name.localeCompare(b.name);
     });
-  }, [accountsForMonth, searchTerm, filterStatus]);
+  }, [accountsForMonth, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
   
   const stats = useMemo(() => {
     const selectedMonth = safeDate.getMonth();
@@ -162,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             />
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10">
             {/* Seção de Contas com Seletor de Mês Integrado */}
             <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
@@ -183,24 +191,38 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                     </div>
                 </div>
 
-                <div className="bg-surface/60 dark:bg-dark-surface/60 p-3 rounded-2xl border border-border-color/50 dark:border-dark-border-color/50 backdrop-blur-md">
-                    <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
+                <div className="bg-surface/60 dark:bg-dark-surface/60 p-2 sm:p-3 rounded-2xl border border-border-color/50 dark:border-dark-border-color/50 backdrop-blur-md">
+                    <SearchBar 
+                        searchTerm={searchTerm} 
+                        setSearchTerm={setSearchTerm} 
+                        filterStatus={filterStatus} 
+                        setFilterStatus={setFilterStatus}
+                        filterCategory={filterCategory}
+                        setFilterCategory={setFilterCategory}
+                        filterRecurrent={filterRecurrent}
+                        setFilterRecurrent={setFilterRecurrent}
+                        filterInstallment={filterInstallment}
+                        setFilterInstallment={setFilterInstallment}
+                        categories={categories}
+                    />
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                <AnimatePresence mode="popLayout">
-                    {filteredAccountsForDisplay.map(acc => (
-                    <motion.div
-                        key={acc.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        layout
-                    >
-                        <AccountCard account={acc} onEdit={onEditAccount} onDelete={onDeleteAccount} onToggleStatus={onToggleStatus} />
-                    </motion.div>
-                    ))}
-                </AnimatePresence>
+                {/* Grid otimizado */}
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                    <AnimatePresence mode="popLayout">
+                        {filteredAccountsForDisplay.map(acc => (
+                        <motion.div
+                            key={acc.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            layout
+                            className="h-full"
+                        >
+                            <AccountCard account={acc} onEdit={onEditAccount} onDelete={onDeleteAccount} onToggleStatus={onToggleStatus} />
+                        </motion.div>
+                        ))}
+                    </AnimatePresence>
                 </div>
 
                 {filteredAccountsForDisplay.length === 0 && (
