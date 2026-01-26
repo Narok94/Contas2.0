@@ -51,6 +51,14 @@ export interface Income {
   isRecurrent: boolean;
 }
 
+// Added missing Goal interface to fix Dashboard component import error
+export interface Goal {
+  id: string;
+  name: string;
+  targetValue: number;
+  currentValue: number;
+}
+
 export interface ChatMessage {
     role: 'user' | 'model';
     content: string;
