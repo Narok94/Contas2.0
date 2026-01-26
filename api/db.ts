@@ -1,36 +1,65 @@
 
-import { createPool } from '@vercel/postgres';
+import { createPool, VercelPool } from '@vercel/postgres';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-let pool: any = null;
-try {
-  // O createPool() sem argumentos detecta automaticamente as variáveis de ambiente 
-  // (POSTGRES_URL, DATABASE_URL, etc.) fornecidas pela Vercel.
-  // Esta é a maneira mais robusta e recomendada.
-  if (process.env.POSTGRES_URL || process.env.DATABASE_URL) {
-    pool = createPool();
+// Singleton pool, lazily initialized.
+let pool: VercelPool | null = null;
+
+/**
+ * Gets the singleton connection pool.
+ * Throws an error if the connection string is missing or if pool creation fails.
+ */
+function getDbPool(): VercelPool {
+  if (pool) {
+    return pool;
   }
-} catch (e: any) {
-  console.error('[DB INIT ERROR]: Falha ao criar o pool de conexão.', e.message);
+  
+  console.log('[DB POOL] Pool de conexão não encontrado. Tentando criar um novo.');
+  const connectionString = process.env.POSTGRES_URL;
+
+  if (!connectionString) {
+    console.error('[DB POOL ERROR] A variável de ambiente POSTGRES_URL não foi encontrada.');
+    throw new Error('Configuração do banco de dados incompleta no servidor.');
+  }
+  
+  // Log a redacted version to confirm the value is there without exposing the password
+  const redactedUrl = connectionString.replace(/:([^:]+)@/, ':********@');
+  console.log(`[DB POOL] Usando a connection string: ${redactedUrl}`);
+
+  try {
+    const newPool = createPool({ connectionString });
+    pool = newPool;
+    console.log('[DB POOL] Novo pool de conexão criado com sucesso.');
+    return pool;
+  } catch (e: any) {
+    console.error('[DB POOL ERROR] Falha ao criar o pool de conexão.', e.message);
+    throw e; // Rethrow to be caught by the handler
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Linha de log para depuração
-  console.log(`[API DB HANDLER] Verificando POSTGRES_URL. Definida: ${!!process.env.POSTGRES_URL}`);
-    
-  if (!pool) {
+  let dbPool: VercelPool;
+  try {
+    dbPool = getDbPool();
+  } catch (error: any) {
     return res.status(503).json({ 
-      error: 'Configuração Incompleta do Banco de Dados', 
-      detail: 'A variável de ambiente POSTGRES_URL ou DATABASE_URL não foi encontrada ou é inválida nas configurações do projeto Vercel.' 
+      error: 'Falha na Inicialização do Banco de Dados', 
+      detail: error.message 
     });
   }
 
   const identifier = req.query.identifier as string;
-  if (!identifier) return res.status(400).json({ error: 'Identificador de usuário ausente.' });
+  if (!identifier) {
+    return res.status(400).json({ error: 'Identificador de usuário ausente.' });
+  }
 
+  let client;
   try {
-    // Garante que a tabela 'controle_contas' exista
-    await pool.query(`
+    client = await dbPool.connect();
+    console.log('[DB HANDLER] Conexão com o banco de dados estabelecida com sucesso.');
+    
+    // Ensure the table exists
+    await client.query(`
       CREATE TABLE IF NOT EXISTS controle_contas (
         id SERIAL PRIMARY KEY,
         user_identifier TEXT NOT NULL UNIQUE,
@@ -38,14 +67,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
-
+    
     if (req.method === 'GET') {
-      const { rows } = await pool.query('SELECT content FROM controle_contas WHERE user_identifier = $1', [identifier]);
+      const { rows } = await client.query('SELECT content FROM controle_contas WHERE user_identifier = $1', [identifier]);
       return res.status(200).json(rows.length > 0 ? JSON.parse(rows[0].content) : null);
     }
 
     if (req.method === 'POST') {
-      await pool.query(`
+      await client.query(`
         INSERT INTO controle_contas (user_identifier, content, updated_at)
         VALUES ($1, $2, CURRENT_TIMESTAMP)
         ON CONFLICT (user_identifier) 
@@ -55,8 +84,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(405).json({ error: 'Método não permitido' });
+
   } catch (error: any) {
     console.error('[API DATABASE ERROR]:', error.message);
-    return res.status(500).json({ error: 'Erro Interno do Servidor', message: error.message });
+    // Log the full error object for more details
+    console.error('[API DATABASE ERROR DETAILS]:', JSON.stringify(error, null, 2));
+    return res.status(500).json({ 
+      error: 'Erro Interno do Servidor ao Acessar o Banco de Dados', 
+      message: error.message 
+    });
+  } finally {
+      client?.release();
   }
 }
