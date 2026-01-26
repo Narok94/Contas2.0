@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View, type Goal } from './types';
 import LoginScreen from './components/LoginScreen';
@@ -21,7 +19,6 @@ import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
-import { analyzeSpending } from './services/geminiService';
 import { MOCK_GOALS } from './utils/mockData';
 
 const VARIABLE_UTILITIES = ['Água', 'Luz', 'Internet'];
@@ -204,9 +201,6 @@ const App: React.FC = () => {
       
       if (data.id) {
           if (isVariableUtility) {
-              // Se estamos editando um modelo de utilidade variável (recorrente), 
-              // queremos salvar o valor apenas para este mês.
-              // Verificamos se já existe um snapshot para este mês
               const existingSnapshot = accounts.find(a => 
                 !a.isRecurrent && 
                 a.name === data.name && 
@@ -229,7 +223,6 @@ const App: React.FC = () => {
                   dataService.addAccount(snapshot);
               }
           } else {
-              // Comportamento normal para outras contas ou para instâncias já criadas
               dataService.updateAccount(data);
           }
       } else {
@@ -240,28 +233,6 @@ const App: React.FC = () => {
               value: isVariableUtility ? 0 : data.value
           });
       }
-  };
-
-  const handleGenerateAnalysis = async (): Promise<string> => {
-    const currentMonth = selectedDate.getMonth();
-    const currentYear = selectedDate.getFullYear();
-    const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
-    const prevMonth = prevMonthDate.getMonth();
-    const prevYear = prevMonthDate.getFullYear();
-
-    const currentMonthAccounts = userAccounts.filter(acc => {
-      if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
-      const d = new Date(acc.paymentDate);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const previousMonthAccounts = userAccounts.filter(acc => {
-      if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
-      const d = new Date(acc.paymentDate);
-      return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-    });
-    
-    return analyzeSpending(currentMonthAccounts, previousMonthAccounts);
   };
 
   if (isLoading) {
@@ -302,7 +273,6 @@ const App: React.FC = () => {
                 currentUser={currentUser} 
                 onOpenMoveModal={() => setIsMoveModalOpen(true)} 
                 categories={categories}
-                onGenerateAnalysis={handleGenerateAnalysis}
             />
         )}
         {view === 'history' && <AccountHistory accounts={userAccounts} />}

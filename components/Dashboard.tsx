@@ -4,7 +4,6 @@ import { type Account, AccountStatus, type Income, type User, type Goal } from '
 import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
 import MonthPicker from './MonthPicker';
-import AiInsightCard from './AiInsightCard';
 import GoalTracker from './GoalTracker';
 
 interface DashboardProps {
@@ -20,7 +19,6 @@ interface DashboardProps {
   currentUser: User | null;
   onOpenMoveModal: () => void;
   categories: string[];
-  onGenerateAnalysis: () => Promise<string>;
 }
 
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; isMain?: boolean; colorClass?: string }> = ({ title, value, icon, isMain = false, colorClass = "" }) => (
@@ -39,7 +37,7 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
     </motion.div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal, categories, onGenerateAnalysis }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal, categories }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
@@ -144,7 +142,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditA
             </div>
 
             <aside className="xl:col-span-4 space-y-8">
-                <AiInsightCard onGenerate={onGenerateAnalysis} />
                 <GoalTracker goals={goals} />
             </aside>
         </div>
