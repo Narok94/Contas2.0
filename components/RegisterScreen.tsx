@@ -23,113 +23,96 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
     setError('');
 
     if (password !== confirmPassword) {
-        setError('As senhas digitadas não coincidem.');
+        setError('As senhas não coincidem.');
         setIsLoading(false);
         return;
     }
 
-    await new Promise(resolve => setTimeout(resolve, 800));
-
     const success = await onRegister(name, username, password);
     if (!success) {
-      setError('Este identificador já está sendo usado por outra pessoa.');
+      setError('Este usuário já existe.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] bg-[#f8fafc] dark:bg-[#020617] relative overflow-hidden transition-colors duration-500">
-        {/* Decorative Background */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-             <div className="absolute top-[20%] right-[-10%] w-[45rem] h-[45rem] bg-indigo-500/10 dark:bg-indigo-500/5 rounded-full blur-[120px]"></div>
-             <div className="absolute bottom-[20%] left-[-10%] w-[40rem] h-[40rem] bg-violet-500/10 dark:bg-violet-500/5 rounded-full blur-[100px]"></div>
+    <div className="flex items-center justify-center min-h-[100dvh] bg-[#fdfdfd] dark:bg-[#020617] relative overflow-hidden transition-colors duration-500">
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-40 dark:opacity-20">
+            <div className="absolute top-[-10%] right-[-10%] w-[50rem] h-[50rem] bg-violet-200 dark:bg-violet-900 rounded-full blur-[120px] animate-mesh"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[45rem] h-[45rem] bg-sky-100 dark:bg-sky-900 rounded-full blur-[100px] animate-mesh" style={{animationDelay: '-3s'}}></div>
         </div>
 
         <motion.div 
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative z-10 w-full max-w-lg px-6 py-10"
+            className="relative z-10 w-full max-w-[460px] px-6"
         >
-            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white dark:border-slate-800 p-8 sm:p-12">
+            <div className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/50 dark:border-slate-800/50 p-10 sm:p-14">
                 
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Criar Conta<span className="text-indigo-600">.</span></h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Preencha os dados para começar.</p>
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Começar agora<span className="text-indigo-600">.</span></h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 text-sm">Junte-se a Ricka e domine sua grana.</p>
                 </div>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="space-y-4">
-                        <div className="group">
-                             <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Nome Completo</label>
-                             <input
-                                type="text"
+                        <input
+                            type="text"
+                            required
+                            className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
+                            placeholder="Seu nome completo"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            required
+                            className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
+                            placeholder="Nome de usuário (@exemplo)"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                            <input
+                                type="password"
                                 required
-                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 rounded-2xl outline-none transition-all text-sm text-slate-800 dark:text-white"
-                                placeholder="Ex: Maria Oliveira"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
+                                placeholder="Senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
-                        </div>
-
-                        <div className="group">
-                             <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Usuário</label>
-                             <input
-                                type="text"
+                            <input
+                                type="password"
                                 required
-                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 rounded-2xl outline-none transition-all text-sm text-slate-800 dark:text-white"
-                                placeholder="@nomeusuario"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
+                                placeholder="Confirma"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                             />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="group">
-                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Senha</label>
-                                <input
-                                    type="password"
-                                    required
-                                    className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 rounded-2xl outline-none transition-all text-sm text-slate-800 dark:text-white"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                            </div>
-                            <div className="group">
-                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Confirmar</label>
-                                <input
-                                    type="password"
-                                    required
-                                    className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400 rounded-2xl outline-none transition-all text-sm text-slate-800 dark:text-white"
-                                    placeholder="••••••••"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                />
-                            </div>
                         </div>
                     </div>
 
                     {error && (
-                        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20">
-                            <p className="text-rose-600 dark:text-rose-400 text-xs font-semibold text-center">{error}</p>
+                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-center">
+                            {error}
                         </div>
                     )}
 
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-[0.98] disabled:opacity-50"
+                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-[0.98] disabled:opacity-50"
                     >
-                         {isLoading ? "Processando..." : "Criar minha conta Ricka"}
+                         {isLoading ? "Criando conta..." : "Criar minha conta"}
                     </button>
                     
-                    <div className="text-center pt-4">
+                    <div className="text-center pt-2">
                         <button 
                             type="button"
                             onClick={onNavigateToLogin}
                             className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 transition-colors"
                         >
-                            Já tem uma conta? <span className="text-indigo-600 dark:text-indigo-400">Faça login</span>
+                            Já tenho conta, quero entrar
                         </button>
                     </div>
                 </form>
