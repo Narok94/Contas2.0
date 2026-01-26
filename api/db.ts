@@ -2,11 +2,11 @@
 import { createPool } from '@vercel/postgres';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Pega o link da variável de ambiente
-let connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || "";
+// Tenta pegar a URL de qualquer uma das chaves comuns
+let connectionString = (process.env.DATABASE_URL || process.env.POSTGRES_URL || "").trim();
 
-// LIMPEZA ROBUSTA: Usa Regex para encontrar apenas a parte que começa com postgresql:// e termina no final da URL
-// Isso ignora "psql '", aspas, ou textos extras no final como " hudr"
+// Regex para capturar apenas a URL válida do postgres, terminando antes de qualquer espaço ou aspas
+// Isso remove automaticamente o " hudr" ou o "psql '" do início/fim
 const urlMatch = connectionString.match(/postgresql:\/\/[^\s'"]+/);
 
 if (urlMatch) {
@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!pool || !connectionString) {
     return res.status(503).json({ 
       error: 'Configuração ausente', 
-      message: 'DATABASE_URL não configurada ou inválida na Vercel.' 
+      message: 'DATABASE_URL não configurada ou inválida na Vercel. Verifique as variáveis de ambiente.' 
     });
   }
 
@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Método não permitido' });
 
   } catch (error: any) {
-    console.error('Database Error:', error);
+    console.error('Database Connection Error:', error.message);
     return res.status(500).json({ 
       error: 'Erro de Conexão', 
       message: error.message 

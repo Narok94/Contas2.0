@@ -65,7 +65,7 @@ class RealtimeService {
         if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing') {
             this.loadDb();
         }
-    }, 60000); // Polling a cada 60s
+    }, 60000);
   }
 
   public setUser(username: string) {
@@ -121,15 +121,15 @@ class RealtimeService {
           this.setSyncStatus('synced');
           this.notifyAll();
         } else {
-          this.setSyncStatus('synced'); // Resposta vazia é válida
+          this.setSyncStatus('synced');
         }
       } else {
         const errData = await response.json().catch(() => ({}));
-        console.error(`[RealtimeService] Erro na API (${response.status}):`, errData);
+        console.error(`[RealtimeService] API Error (${response.status}):`, errData);
         this.setSyncStatus('error');
       }
     } catch (error) {
-      console.error('[RealtimeService] Erve de conexão com a API:', error);
+      console.error('[RealtimeService] Connection Error:', error);
       this.setSyncStatus('error');
     }
   }
@@ -187,11 +187,11 @@ class RealtimeService {
             this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
           } else {
-            console.error('[RealtimeService] Falha ao salvar no banco:', response.status);
+            console.error('[RealtimeService] Failed to save:', response.status);
             this.setSyncStatus('error');
           }
         } catch (error) {
-          console.error('[RealtimeService] Erro de rede ao salvar:', error);
+          console.error('[RealtimeService] Network error during save:', error);
           this.setSyncStatus('error');
         }
     }, 2000);
