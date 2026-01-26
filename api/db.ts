@@ -63,15 +63,16 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
         id SERIAL PRIMARY KEY,
         user_identifier TEXT,
         content TEXT,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
     // 2. Garante que TODAS as colunas necessárias existam, adicionando-as se ausentes.
-    //    Isso migra schemas mais antigos para o estado atual sem perda de dados.
     await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS user_identifier TEXT;`);
     await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS content TEXT;`);
-    await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;`);
+    // Esta ALTER garante que a coluna exista, não seja nula, e tenha um valor padrão.
+    // Isso corrige tanto 'column does not exist' quanto 'null value violates not-null constraint'.
+    await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP;`);
     
     // 3. Garante que haja um índice único em user_identifier para a cláusula ON CONFLICT funcionar.
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS controle_contas_user_identifier_idx ON controle_contas (user_identifier);`);
@@ -85,9 +86,11 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
 
     if (req.method === 'POST') {
       console.log('[DB HANDLER] Executando POST.');
+      // A query de INSERT agora depende do DEFAULT do banco de dados para a coluna 'updated_at',
+      // tornando-a mais simples e robusta. A cláusula UPDATE continua a atualizar o timestamp.
       await client.query(`
-        INSERT INTO controle_contas (user_identifier, content, updated_at)
-        VALUES ($1, $2, CURRENT_TIMESTAMP)
+        INSERT INTO controle_contas (user_identifier, content)
+        VALUES ($1, $2)
         ON CONFLICT (user_identifier) 
         DO UPDATE SET content = EXCLUDED.content, updated_at = CURRENT_TIMESTAMP;
       `, [identifier, JSON.stringify(req.body)]);
