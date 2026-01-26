@@ -56,6 +56,25 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     client = await dbPool.connect();
     console.log('[DB HANDLER] Conexão com o banco de dados estabelecida.');
     
+    // --- Lógica de Saneamento de Schema ---
+    // Detecta e neutraliza colunas inesperadas que podem ter sido adicionadas
+    // manualmente ou por versões de código anteriores, causando falhas de 'NOT NULL'.
+    try {
+        const { rows: columnCheck } = await client.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='controle_contas' AND column_name='email_usuario' AND is_nullable='NO'
+        `);
+        if (columnCheck.length > 0) {
+            console.warn('[DB HANDLER] Saneamento: Coluna "email_usuario" NOT NULL inesperada encontrada. Alterando para ser anulável.');
+            // A operação mais segura é tornar a coluna anulável para que as inserções não falhem.
+            await client.query(`ALTER TABLE controle_contas ALTER COLUMN email_usuario DROP NOT NULL;`);
+            console.log('[DB HANDLER] Saneamento: Coluna "email_usuario" agora é anulável.');
+        }
+    } catch (e: any) {
+        console.error('[DB HANDLER] Erro não crítico durante o saneamento do schema, mas continuando a execução.', e.message);
+    }
+
     // --- Lógica de Migração de Schema Robusta ---
     // 1. Cria a tabela com o schema ideal, se ela não existir.
     await client.query(`
@@ -76,11 +95,8 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS controle_contas_user_identifier_idx ON controle_contas (user_identifier);`);
     
     // 4. Garante que a coluna 'updated_at' tenha as restrições corretas, atualizando-a de forma segura.
-    //    Primeiro, preenche quaisquer valores nulos existentes para que a restrição NOT NULL não falhe.
     await client.query(`UPDATE controle_contas SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL;`);
-    //    Em seguida, define o valor padrão para novas inserções.
     await client.query(`ALTER TABLE controle_contas ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;`);
-    //    Finalmente, aplica a restrição NOT NULL, o que agora é seguro.
     await client.query(`ALTER TABLE controle_contas ALTER COLUMN updated_at SET NOT NULL;`);
     
     if (req.method === 'GET') {
