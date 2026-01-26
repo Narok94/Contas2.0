@@ -56,20 +56,25 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     client = await dbPool.connect();
     console.log('[DB HANDLER] Conexão com o banco de dados estabelecida.');
     
+    // 1. Garante que a tabela exista
     await client.query(`
       CREATE TABLE IF NOT EXISTS controle_contas (
         id SERIAL PRIMARY KEY,
         user_identifier TEXT NOT NULL UNIQUE,
-        content TEXT,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // 2. Garante que a coluna 'content' exista para compatibilidade
+    await client.query(`
+      ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS content TEXT;
     `);
     
     if (req.method === 'GET') {
       console.log('[DB HANDLER] Executando GET.');
       const { rows } = await client.query('SELECT content FROM controle_contas WHERE user_identifier = $1', [identifier]);
       console.log(`[DB HANDLER] GET encontrou ${rows.length} registros.`);
-      return res.status(200).json(rows.length > 0 ? JSON.parse(rows[0].content) : null);
+      return res.status(200).json(rows.length > 0 && rows[0].content ? JSON.parse(rows[0].content) : null);
     }
 
     if (req.method === 'POST') {
@@ -101,5 +106,4 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
   }
 };
 
-// FIX: Changed 'export =' to 'export default' for ES module compatibility.
 export default handler;
