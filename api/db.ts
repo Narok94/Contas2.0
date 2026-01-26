@@ -1,15 +1,21 @@
 
-import { sql } from '@vercel/postgres';
+import { createPool } from '@vercel/postgres';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
+// Inicializa o pool usando DATABASE_URL ou POSTGRES_URL
+const pool = createPool({
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL
+});
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Verifica se a URL do Postgres está configurada
-  if (!process.env.POSTGRES_URL) {
-      console.error('ERRO: POSTGRES_URL não configurado na Vercel.');
-      return res.status(503).json({ 
-          error: 'Banco de dados não configurado', 
-          tip: 'Conecte um projeto Postgres na aba Storage da Vercel.' 
-      });
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
+  if (!connectionString) {
+    console.error('ERRO: DATABASE_URL ou POSTGRES_URL não configurada.');
+    return res.status(503).json({ 
+      error: 'Banco de dados não configurado', 
+      message: 'Certifique-se de que a variável DATABASE_URL está definida nas variáveis de ambiente da Vercel.' 
+    });
   }
 
   try {
@@ -19,47 +25,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Identificador do usuário é obrigatório' });
     }
 
-    // Cria a tabela se não existir
-    await sql`
-      CREATE TABLE IF NOT EXISTS users_data (
+    // Garante que a tabela 'operacoes' existe. 
+    // Usamos 'user_id' para identificar de quem são os dados.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS operacoes (
         id SERIAL PRIMARY KEY,
-        user_email TEXT NOT NULL UNIQUE,
-        content TEXT,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        user_id TEXT NOT NULL UNIQUE,
+        data_json TEXT NOT NULL,
+        last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
+    `);
 
-    // OPERAÇÃO GET (BUSCA)
+    // OPERAÇÃO GET: Recupera os dados (trades/contas/configurações)
     if (req.method === 'GET') {
-      const { rows } = await sql`
-        SELECT content FROM users_data WHERE user_email = ${identifier}
-      `;
+      const { rows } = await pool.query(
+        'SELECT data_json FROM operacoes WHERE user_id = $1',
+        [identifier]
+      );
       
       if (rows.length === 0) return res.status(200).json(null);
-      return res.status(200).json(JSON.parse(rows[0].content));
+      return res.status(200).json(JSON.parse(rows[0].data_json));
     }
 
-    // OPERAÇÃO POST (SALVAMENTO)
+    // OPERAÇÃO POST: Salva ou Atualiza (INSERT/UPDATE)
     if (req.method === 'POST') {
       const content = JSON.stringify(req.body);
       
-      await sql`
-        INSERT INTO users_data (user_email, content, updated_at)
-        VALUES (${identifier}, ${content}, CURRENT_TIMESTAMP)
-        ON CONFLICT (user_email) 
-        DO UPDATE SET content = ${content}, updated_at = CURRENT_TIMESTAMP;
-      `;
+      // Realiza o "Upsert" na tabela operacoes
+      await pool.query(`
+        INSERT INTO operacoes (user_id, data_json, last_update)
+        VALUES ($1, $2, CURRENT_TIMESTAMP)
+        ON CONFLICT (user_id) 
+        DO UPDATE SET data_json = $2, last_update = CURRENT_TIMESTAMP;
+      `, [identifier, content]);
       
-      return res.status(200).json({ success: true });
+      return res.status(200).json({ success: true, table: 'operacoes' });
     }
 
     return res.status(405).json({ error: 'Método não permitido' });
 
   } catch (error: any) {
-    console.error('API Database Error:', error);
+    console.error('Database Error:', error);
     return res.status(500).json({ 
-      error: 'Erro interno no banco de dados', 
-      message: error.message 
+      error: 'Erro na operação do banco de dados', 
+      details: error.message 
     });
   }
 }

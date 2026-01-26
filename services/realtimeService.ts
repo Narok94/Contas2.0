@@ -62,7 +62,7 @@ class RealtimeService {
   private startPolling() {
     if (this.pollingInterval) window.clearInterval(this.pollingInterval);
     this.pollingInterval = window.setInterval(() => {
-        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing') {
+        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing' && this.currentSyncStatus !== 'error') {
             this.loadDb();
         }
     }, 30000);
@@ -77,7 +77,7 @@ class RealtimeService {
   }
 
   public forceSync = async () => {
-      console.log("[RealtimeService] Forçando sincronização...");
+      console.log("[RealtimeService] Iniciando sincronização forçada com Neon Postgres...");
       await this.loadDb();
       await this._saveDb();
   };
@@ -112,22 +112,22 @@ class RealtimeService {
       
       if (response.ok) {
         const remoteDb = await response.json();
-        if (remoteDb && remoteDb.users) {
+        if (remoteDb && (remoteDb.users || remoteDb.accounts)) {
           this.db = remoteDb;
           this.saveToLocalOnly();
           this.lastSyncTime = new Date();
           this.setSyncStatus('synced');
           this.notifyAll();
+          console.log("[RealtimeService] Dados recuperados da tabela 'operacoes'.");
         } else {
-          // Se o banco está vazio para este user, considera-se "conectado" mas sem dados remotos
           this.setSyncStatus('synced');
         }
       } else {
-        console.error(`[RealtimeService] API respondeu erro: ${response.status}`);
+        console.error(`[RealtimeService] Erro na API: ${response.status}`);
         this.setSyncStatus('error');
       }
     } catch (error) {
-      console.error('[RealtimeService] Erro de rede:', error);
+      console.error('[RealtimeService] Falha de conexão:', error);
       this.setSyncStatus('error');
     }
   }
@@ -184,6 +184,7 @@ class RealtimeService {
           if (response.ok) {
             this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
+            console.log("[RealtimeService] Dados salvos com sucesso na tabela 'operacoes'.");
           } else {
             this.setSyncStatus('error');
           }
