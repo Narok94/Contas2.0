@@ -55,49 +55,48 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     console.log('[DB HANDLER] Tentando conectar ao banco de dados...');
     client = await dbPool.connect();
     console.log('[DB HANDLER] Conexão com o banco de dados estabelecida.');
-    
-    // --- Lógica de Saneamento de Schema ---
-    // Detecta e neutraliza colunas inesperadas que podem ter sido adicionadas
-    // manualmente ou por versões de código anteriores, causando falhas de 'NOT NULL'.
-    try {
-        const { rows: columnCheck } = await client.query(`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='controle_contas' AND column_name='email_usuario' AND is_nullable='NO'
-        `);
-        if (columnCheck.length > 0) {
-            console.warn('[DB HANDLER] Saneamento: Coluna "email_usuario" NOT NULL inesperada encontrada. Alterando para ser anulável.');
-            // A operação mais segura é tornar a coluna anulável para que as inserções não falhem.
-            await client.query(`ALTER TABLE controle_contas ALTER COLUMN email_usuario DROP NOT NULL;`);
-            console.log('[DB HANDLER] Saneamento: Coluna "email_usuario" agora é anulável.');
-        }
-    } catch (e: any) {
-        console.error('[DB HANDLER] Erro não crítico durante o saneamento do schema, mas continuando a execução.', e.message);
-    }
 
-    // --- Lógica de Migração de Schema Robusta ---
-    // 1. Cria a tabela com o schema ideal, se ela não existir.
+    // --- LÓGICA DE MIGRAÇÃO E SANEAMENTO DE SCHEMA DEFINITIVA ---
+    await client.query('BEGIN');
+
+    // 1. Garante que a tabela exista com a estrutura mínima essencial.
     await client.query(`
       CREATE TABLE IF NOT EXISTS controle_contas (
         id SERIAL PRIMARY KEY,
-        user_identifier TEXT UNIQUE,
-        content TEXT,
-        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+        user_identifier TEXT UNIQUE NOT NULL
       );
     `);
 
-    // 2. Para tabelas existentes, garante que todas as colunas necessárias existam.
-    await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS user_identifier TEXT;`);
+    // 2. Obtém todas as colunas existentes na tabela.
+    const { rows: existingColumnsResult } = await client.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'controle_contas';
+    `);
+    const existingColumns = existingColumnsResult.map(c => c.column_name);
+
+    // 3. Define o "schema de ouro" - as únicas colunas que devem existir.
+    const requiredColumns = new Set(['id', 'user_identifier', 'content', 'updated_at']);
+
+    // 4. REMOVE qualquer coluna que não pertença ao schema de ouro.
+    const columnsToDrop = existingColumns.filter(col => !requiredColumns.has(col));
+    for (const col of columnsToDrop) {
+        console.warn(`[DB MIGRATION] Saneamento: Removendo coluna inesperada "${col}".`);
+        await client.query(`ALTER TABLE controle_contas DROP COLUMN "${col}";`);
+    }
+
+    // 5. GARANTE que todas as colunas do schema de ouro existam.
     await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS content TEXT;`);
     await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE;`);
-    
-    // 3. Garante o índice de unicidade, caso a restrição UNIQUE não tenha sido criada com a tabela.
-    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS controle_contas_user_identifier_idx ON controle_contas (user_identifier);`);
-    
-    // 4. Garante que a coluna 'updated_at' tenha as restrições corretas, atualizando-a de forma segura.
+
+    // 6. FORÇA as restrições corretas em todas as colunas necessárias.
+    // Garante que 'updated_at' não tenha nulos antes de aplicar NOT NULL.
     await client.query(`UPDATE controle_contas SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL;`);
+    // Define o valor padrão e a restrição NOT NULL para 'updated_at'.
     await client.query(`ALTER TABLE controle_contas ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;`);
     await client.query(`ALTER TABLE controle_contas ALTER COLUMN updated_at SET NOT NULL;`);
+    
+    await client.query('COMMIT');
+    console.log('[DB MIGRATION] Saneamento e verificação de schema concluídos com sucesso.');
     
     if (req.method === 'GET') {
       console.log('[DB HANDLER] Executando GET.');
@@ -122,6 +121,10 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     return res.status(405).json({ error: `Método ${req.method} não permitido.` });
 
   } catch (error: any) {
+    if (client) {
+      await client.query('ROLLBACK');
+      console.error('[DB HANDLER] Transação revertida devido a erro.');
+    }
     console.error('[API DATABASE ERROR] Erro durante a operação do banco de dados:', { message: error.message, stack: error.stack });
     return res.status(500).json({ 
       error: 'Erro Interno do Servidor ao Acessar o Banco de Dados', 
