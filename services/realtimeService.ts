@@ -168,7 +168,11 @@ class RealtimeService {
 
   private notify<K extends CollectionKey>(k: K) {
     const callbacks = this.listeners[k] as any[] | undefined;
-    if (callbacks) callbacks.forEach(cb => cb(this.db[k]));
+    if (callbacks) {
+        const data = this.db[k];
+        const dataToSend = Array.isArray(data) ? [...data] : data;
+        callbacks.forEach(cb => cb(dataToSend));
+    }
   }
 
   public subscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
@@ -177,7 +181,12 @@ class RealtimeService {
     }
     const currentListeners = this.listeners[k] as any[];
     currentListeners.push(cb);
-    cb(this.db[k]);
+    const data = this.db[k];
+    const dataToSend = Array.isArray(data) ? [...data] : data;
+    // FIX: Cast the argument to Db[K] to resolve a type inference issue where TypeScript
+    // widens the type of the cloned array to a union of all possible element types,
+    // which is not compatible with the specific array type expected by the callback.
+    cb(dataToSend as Db[K]);
   }
 
   public unsubscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
@@ -207,7 +216,7 @@ class RealtimeService {
     this.write();
   }
   public addAccount = async (acc: Account) => {
-    this.db.accounts.push(acc);
+    this.db.accounts = [...this.db.accounts, acc];
     this.notify('accounts');
     this.write();
   }
@@ -228,7 +237,7 @@ class RealtimeService {
   public getUsers = () => this.db.users;
   public addUser = async (u: Omit<User, 'id'>) => {
     const newUser = { ...u, id: `user-${Date.now()}` } as User;
-    this.db.users.push(newUser);
+    this.db.users = [...this.db.users, newUser];
     this.notify('users');
     this.write();
     return newUser;
@@ -248,7 +257,7 @@ class RealtimeService {
   public getGroups = () => this.db.groups;
   public addGroup = async (g: Omit<Group, 'id'>) => {
     const newGroup = { ...g, id: `group-${Date.now()}` } as Group;
-    this.db.groups.push(newGroup);
+    this.db.groups = [...this.db.groups, newGroup];
     this.notify('groups');
     this.write();
     return newGroup;
@@ -267,7 +276,7 @@ class RealtimeService {
   
   public getIncomes = () => this.db.incomes;
   public addIncome = async (i: Income) => {
-    this.db.incomes.push(i);
+    this.db.incomes = [...this.db.incomes, i];
     this.notify('incomes');
     this.write();
   }

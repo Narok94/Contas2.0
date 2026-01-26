@@ -180,7 +180,6 @@ const App: React.FC = () => {
                 const storedGroupId = sessionStorage.getItem('app_activeGroupId');
                 setCurrentUser(storedUser);
                 
-                // Notifica o serviço de tempo real sobre o usuário atual
                 realtimeService.setUser(storedUser.username);
 
                 if (storedGroupId) {
@@ -227,7 +226,6 @@ const App: React.FC = () => {
     setCurrentUser(user);
     sessionStorage.setItem('app_currentUser', JSON.stringify(user));
     
-    // Vincula o serviço ao usuário logado imediatamente
     realtimeService.setUser(user.username);
 
     if (user.mustChangePassword) {
@@ -246,12 +244,10 @@ const App: React.FC = () => {
   };
 
   const handleRegister = async (name: string, username: string, password: string): Promise<boolean> => {
-    // Verifica se já existe o usuário
     if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
         return false;
     }
 
-    // Cria um grupo pessoal padrão para o novo usuário
     const personalGroupId = `group-personal-${Date.now()}`;
     const personalGroup: Group = {
         id: personalGroupId,
@@ -268,11 +264,9 @@ const App: React.FC = () => {
         groupIds: [personalGroupId]
     };
 
-    // Primeiro salvamos o grupo, depois o usuário
     await dataService.addGroup(personalGroup);
     await dataService.addUser(newUser);
 
-    // Agora fazemos o login automático
     return handleLogin(username, password);
   };
   
@@ -287,12 +281,10 @@ const App: React.FC = () => {
     setActiveGroupId(null);
     sessionStorage.removeItem('app_currentUser');
     sessionStorage.removeItem('app_activeGroupId');
-    // Desvincula o usuário no serviço
     realtimeService.setUser("");
     setView('login');
   };
 
-  // Restante das funções CRUD...
   const handleAddOrUpdateAccount = async (accountData: Omit<Account, 'id' | 'status'> & { id?: string }) => {
     if (accountData.id) {
         const existingAccount = accounts.find(acc => acc.id === accountData.id);
@@ -379,7 +371,7 @@ const App: React.FC = () => {
     } else {
         if (!currentUser || !activeGroupId) return;
         const newIncomeData: Income = {
-            ...(incomeData as Omit<Income, 'id'|'date'>),
+            ...incomeData,
             groupId: activeGroupId,
             id: `inc-${Date.now()}`,
             date: new Date().toISOString(),

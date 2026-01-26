@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } f
 import { type Account, type ChatMessage, type Income, type User } from '../types';
 import { generateResponseStream, ParsedCommand, generateSpeech } from '../services/geminiService';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
-import { playAudio } from '../utils/audioUtils';
+import { audioPlayer } from '../utils/audioUtils';
 
 interface AiChatModalProps {
   isOpen: boolean;
@@ -32,6 +32,9 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
 
     const submitMessage = async (content: string, isVoice: boolean = false) => {
         if ((!content.trim() && !selectedImage) || isLoading) return;
+        
+        audioPlayer.stop();
+        audioPlayer.resumeContext();
 
         let displayContent = content;
         if (isVoice) {
@@ -45,7 +48,6 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
 
         setMessages(prev => [...prev, userMessage]);
         
-        // Capture image for this request and clear state immediately
         const imageToSend = selectedImage;
         setSelectedImage(null);
         if (!isVoice) setInput('');
@@ -54,30 +56,51 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
         setMessages(prev => [...prev, { role: 'model', content: '' }]);
 
         try {
-            // Se tiver imagem e nenhum texto, mandamos um texto padrão instruindo a ler a imagem
             const commandText = content || (imageToSend ? "Analise esta imagem e extraia os dados das contas." : "");
-
             const stream = generateResponseStream(commandText, historyForApi, accounts, categories, incomes, imageToSend || undefined);
             
             let fullResponse = "";
-            let textToSpeak = "";
+            let sentenceBuffer = "";
             const allFunctionCalls = [];
+            
+            const processSentence = async (sentence: string) => {
+                if (sentence.trim()) {
+                    const audioData = await generateSpeech(sentence.trim());
+                    if (audioData) {
+                        audioPlayer.queueAudio(audioData);
+                    }
+                }
+            };
 
             for await (const chunk of stream) {
                 if (chunk.text) {
                     fullResponse += chunk.text;
+                    sentenceBuffer += chunk.text;
+
                     setMessages(prev => {
                         const newMessages = [...prev];
                         newMessages[newMessages.length - 1].content = fullResponse;
                         return newMessages;
                     });
+                    
+                    const sentenceEndRegex = /([^.!?]+[.!?])(?=\s|$)/g;
+                    let match;
+                    let lastIndex = 0;
+                    while ((match = sentenceEndRegex.exec(sentenceBuffer)) !== null) {
+                        const sentence = match[0];
+                        processSentence(sentence);
+                        lastIndex = match.index + sentence.length;
+                    }
+                    sentenceBuffer = sentenceBuffer.substring(lastIndex);
                 }
                 if (chunk.functionCalls) {
                     allFunctionCalls.push(...chunk.functionCalls);
                 }
             }
             
-            textToSpeak = fullResponse;
+            if (sentenceBuffer.trim()) {
+                processSentence(sentenceBuffer);
+            }
 
             if (allFunctionCalls.length > 0) {
                 let commandResultText = "";
@@ -102,25 +125,16 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                         newMessages[newMessages.length - 1].content = commandResultText;
                         return newMessages;
                     });
-                    textToSpeak = commandResultText;
+                    audioPlayer.stop();
+                    processSentence(commandResultText);
                 } else if (!fullResponse) {
                      setMessages(prev => {
                         const newMessages = [...prev];
                         newMessages[newMessages.length - 1].content = "Ação concluída.";
                         return newMessages;
                     });
-                    textToSpeak = "Ação concluída.";
-                }
-            }
-
-            if (textToSpeak) {
-                try {
-                    const audioData = await generateSpeech(textToSpeak);
-                    if (audioData) {
-                        await playAudio(audioData);
-                    }
-                } catch (audioError) {
-                    console.error("Could not play AI response audio:", audioError);
+                    audioPlayer.stop();
+                    processSentence("Ação concluída.");
                 }
             }
 
@@ -157,7 +171,6 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64String = reader.result as string;
-                // Extract base64 data part (remove "data:image/png;base64,")
                 const base64Data = base64String.split(',')[1];
                 setSelectedImage({
                     data: base64Data,
@@ -181,18 +194,21 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
 
     useEffect(() => {
         if(isOpen) {
+             audioPlayer.stop();
+             audioPlayer.resumeContext();
              const userName = currentUser?.name?.split(' ')[0] || 'você';
              const greeting = `Opa, ${userName}! Sou o Tatu, e tô aqui pra ajudar a gente a organizar as contas.<br/>Bills, boletos, pix... pode mandar que eu anoto tudo! 📝`;
              setMessages([{ role: 'model', content: greeting }]);
              
              generateSpeech(greeting.replace(/<br\/>/g, ' ')).then(audioData => {
-                 if(audioData) playAudio(audioData);
+                 if(audioData) audioPlayer.queueAudio(audioData);
              });
 
              setInput('');
              setSelectedImage(null);
-             initialVoiceStartHandled.current = false; // Reset on open
+             initialVoiceStartHandled.current = false;
         } else {
+             audioPlayer.stop();
              onListeningChange(false);
         }
     }, [isOpen, currentUser, onListeningChange]);
@@ -209,7 +225,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isLoading, selectedImage]); // Added selectedImage to scroll when image is added
+    }, [messages, isLoading, selectedImage]);
 
     const handleSend = (e?: React.FormEvent) => {
         e?.preventDefault();

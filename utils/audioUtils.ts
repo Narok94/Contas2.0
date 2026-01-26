@@ -1,3 +1,4 @@
+
 // Custom Base64 decoder as required by guidelines
 function decode(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -29,28 +30,65 @@ async function decodeAudioData(
   return buffer;
 }
 
-let audioContext: AudioContext | null = null;
 
-export const playAudio = async (base64Audio: string): Promise<void> => {
-    if (!base64Audio) return;
+class AudioQueuePlayer {
+    private audioContext: AudioContext;
+    private nextStartTime = 0;
+    private activeSources = new Set<AudioBufferSourceNode>();
 
-    try {
-        if (!audioContext || audioContext.state === 'closed') {
-            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-        }
-
-        const audioBytes = decode(base64Audio);
-        const audioBuffer = await decodeAudioData(audioBytes, audioContext, 24000, 1);
-        
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start();
-    } catch (error) {
-        console.error("Failed to play audio:", error);
-        if (audioContext) {
-            audioContext.close();
-            audioContext = null;
+    constructor() {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+        this.resumeContext();
+    }
+    
+    public resumeContext() {
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume().catch(e => console.error("Error resuming AudioContext", e));
         }
     }
-};
+
+    public async queueAudio(base64Audio: string) {
+        if (!base64Audio) return;
+        this.resumeContext();
+
+        try {
+            const audioBytes = decode(base64Audio);
+            const audioBuffer = await decodeAudioData(audioBytes, this.audioContext, 24000, 1);
+            
+            const source = this.audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(this.audioContext.destination);
+
+            source.onended = () => {
+                this.activeSources.delete(source);
+            };
+
+            const currentTime = this.audioContext.currentTime;
+            const startTime = this.nextStartTime > currentTime ? this.nextStartTime : currentTime;
+
+            source.start(startTime);
+            this.nextStartTime = startTime + audioBuffer.duration;
+            this.activeSources.add(source);
+        } catch (error) {
+            console.error("Failed to queue or play audio:", error);
+            if (this.audioContext) {
+                this.audioContext.close();
+            }
+            this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+        }
+    }
+    
+    public stop() {
+        this.activeSources.forEach(source => {
+            try {
+              source.stop();
+            } catch (e) {
+              // Can throw if already stopped, ignore
+            }
+        });
+        this.activeSources.clear();
+        this.nextStartTime = 0;
+    }
+}
+
+export const audioPlayer = new AudioQueuePlayer();
