@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type, FunctionDeclaration, Content, GenerateContentResponse, Modality, Part } from "@google/genai";
 import { Account, ChatMessage, AccountStatus, Income } from '../types';
 
+// Initialize Gemini API with correct client and API Key
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export type ParsedCommand =
@@ -31,9 +32,9 @@ export async function* generateResponseStream(
 ): AsyncGenerator<GenerateContentResponse> {
   const addAccountFunctionDeclaration: FunctionDeclaration = {
     name: 'add_account',
-    description: 'Adiciona uma nova conta ou despesa.',
     parameters: {
       type: Type.OBJECT,
+      description: 'Adiciona uma nova conta ou despesa.',
       properties: {
         name: { type: Type.STRING, description: 'O nome da conta. Ex: "Conta de Luz", "Aluguel"' },
         value: { type: Type.NUMBER, description: 'O valor monetário da conta.' },
@@ -48,9 +49,9 @@ export async function* generateResponseStream(
 
   const payAccountFunctionDeclaration: FunctionDeclaration = {
     name: 'pay_account',
-    description: 'Marca uma conta como paga.',
     parameters: {
       type: Type.OBJECT,
+      description: 'Marca uma conta como paga.',
       properties: {
         name: { type: Type.STRING, description: 'O nome da conta a ser marcada como paga. Ex: "Conta de Luz"' },
       },
@@ -60,9 +61,9 @@ export async function* generateResponseStream(
 
   const editAccountFunctionDeclaration: FunctionDeclaration = {
     name: 'edit_account',
-    description: 'Edita uma conta ou despesa existente. Pelo menos um dos campos "new_name", "new_value" ou "new_category" deve ser fornecido.',
     parameters: {
       type: Type.OBJECT,
+      description: 'Edita uma conta ou despesa existente. Pelo menos um dos campos "new_name", "new_value" ou "new_category" deve ser fornecido.',
       properties: {
         original_name: { type: Type.STRING, description: 'O nome original da conta a ser editada. Ex: "Aluguel"' },
         new_name: { type: Type.STRING, description: 'O novo nome para a conta.' },
@@ -78,9 +79,9 @@ export async function* generateResponseStream(
 
   const addIncomeFunctionDeclaration: FunctionDeclaration = {
     name: 'add_income',
-    description: 'Adiciona uma nova entrada de dinheiro, como um salário ou um bônus.',
     parameters: {
       type: Type.OBJECT,
+      description: 'Adiciona uma nova entrada de dinheiro, como um salário ou um bônus.',
       properties: {
         name: { type: Type.STRING, description: 'O nome da entrada. Ex: "Salário", "Vale Alimentação"' },
         value: { type: Type.NUMBER, description: 'O valor monetário da entrada.' },
@@ -91,9 +92,9 @@ export async function* generateResponseStream(
 
   const editIncomeFunctionDeclaration: FunctionDeclaration = {
     name: 'edit_income',
-    description: 'Edita uma entrada de dinheiro existente. Pelo menos "new_name" ou "new_value" deve ser fornecido.',
     parameters: {
       type: Type.OBJECT,
+      description: 'Edita uma entrada de dinheiro existente. Pelo menos "new_name" ou "new_value" deve ser fornecido.',
       properties: {
         original_name: { type: Type.STRING, description: 'O nome original da entrada a ser editada. Ex: "Salário"' },
         new_name: { type: Type.STRING, description: 'O novo nome para a entrada.' },
@@ -150,8 +151,9 @@ export async function* generateResponseStream(
       },
     ];
 
+    // Use allowed model 'gemini-3-flash-preview' for basic text/chat tasks
     const stream = await ai.models.generateContentStream({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
@@ -164,9 +166,9 @@ export async function* generateResponseStream(
     }
   } catch (error) {
     console.error("Error processing command with Gemini:", error);
+    // Corrected mock GenerateContentResponse structure
     const errorChunk = {
-        text: () => "Desculpe, não consegui processar sua solicitação no momento.",
-        functionCalls: () => undefined,
+        text: "Desculpe, não consegui processar sua solicitação no momento.",
     } as unknown as GenerateContentResponse;
     yield errorChunk;
   }
@@ -207,15 +209,16 @@ export const analyzeSpending = async (
   const prompt = `Aqui estão os resumos de gastos. Mês anterior: ${formattedPreviousSummary}. Mês atual: ${formattedCurrentSummary}. Por favor, forneça sua análise.`;
 
   try {
+    // Use allowed model 'gemini-3-flash-preview' for analysis tasks
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         systemInstruction: systemInstruction,
       },
     });
 
-    return response.text;
+    return response.text || "Desculpe, não consegui analisar seus gastos no momento.";
   } catch (error) {
     console.error("Error analyzing spending with Gemini:", error);
     return "Desculpe, não consegui analisar seus gastos no momento.";
@@ -227,6 +230,7 @@ export const generateSpeech = async (text: string): Promise<string | null> => {
         return null;
     }
     try {
+        // Use allowed model 'gemini-2.5-flash-preview-tts' for text-to-speech tasks
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: text }] }],

@@ -16,7 +16,7 @@ type Db = {
 type ListenerCallback<T> = (data: T) => void;
 type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
-const DB_STORAGE_KEY = 'controle_contas_db';
+const DB_STORAGE_KEY = 'ricka_local_db_v2';
 
 class RealtimeService {
   private db: Db;
@@ -25,315 +25,266 @@ class RealtimeService {
   private currentSyncStatus: SyncStatus = 'local';
   private currentUserIdentifier: string | null = null;
   private lastSyncTime: Date | undefined = undefined;
-  private syncTimeout: number | null = null;
-  private pollingInterval: number | null = null;
+  private syncDebounceTimer: number | null = null;
 
   constructor() {
-    this.db = this.getDefaultDb();
-    
-    const storedUser = sessionStorage.getItem('app_currentUser');
-    if (storedUser) {
-        try {
-            const user = JSON.parse(storedUser);
-            this.currentUserIdentifier = String(user.username);
-        } catch (e) {}
-    }
-
+    this.db = this.loadInitialDb();
     this.init();
-    window.addEventListener('storage', this.handleStorageChange);
+    window.addEventListener('storage', this.handleCrossTabSync);
   }
 
-  private getDefaultDb(): Db {
-      return {
-          users: MOCK_USERS,
-          groups: MOCK_GROUPS,
-          accounts: MOCK_ACCOUNTS,
-          categories: ACCOUNT_CATEGORIES,
-          incomes: MOCK_INCOMES,
-      };
+  private loadInitialDb(): Db {
+    const stored = localStorage.getItem(DB_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.db) return parsed.db;
+      } catch (e) {}
+    }
+    return {
+      users: MOCK_USERS,
+      groups: MOCK_GROUPS,
+      accounts: MOCK_ACCOUNTS,
+      categories: ACCOUNT_CATEGORIES,
+      incomes: MOCK_INCOMES,
+    };
   }
 
   private async init() {
-    await this.loadDb();
-    this.startPolling();
+    const userStr = sessionStorage.getItem('app_currentUser');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      this.currentUserIdentifier = user.username;
+      this.syncWithRemote();
+    }
     this.notifyAll();
   }
 
-  private startPolling() {
-    if (this.pollingInterval) window.clearInterval(this.pollingInterval);
-    this.pollingInterval = window.setInterval(() => {
-        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing') {
-            this.loadDb();
-        }
-    }, 60000);
-  }
-
   public setUser(username: string) {
-      if (this.currentUserIdentifier !== String(username)) {
-          this.currentUserIdentifier = String(username);
-          this.lastSyncTime = undefined;
-          this.loadDb();
-      }
-  }
-
-  public forceSync = async () => {
-      console.log("[RealtimeService] Forçando sincronização...");
-      await this.loadDb();
-      if (this.currentSyncStatus !== 'error') {
-          await this._saveDb();
-      }
-  };
-
-  public getCurrentUserIdentifier = () => this.currentUserIdentifier;
-  public getLastSyncTime = () => this.lastSyncTime;
-
-  private handleStorageChange = (event: StorageEvent) => {
-    if (event.key === DB_STORAGE_KEY && event.newValue) {
-        try {
-            const parsedData = JSON.parse(event.newValue);
-            if (parsedData.db) {
-                this.db = parsedData.db;
-                this.notifyAll();
-            }
-        } catch (error) {}
+    if (this.currentUserIdentifier !== username) {
+      this.currentUserIdentifier = username;
+      this.syncWithRemote();
     }
   }
 
-  private async loadDb() {
-    this.loadFromLocal();
+  private handleCrossTabSync = (e: StorageEvent) => {
+    if (e.key === DB_STORAGE_KEY && e.newValue) {
+      try {
+        this.db = JSON.parse(e.newValue).db;
+        this.notifyAll();
+      } catch (err) {}
+    }
+  }
+
+  private async syncWithRemote() {
+    if (!this.currentUserIdentifier) return;
     
-    if (!this.currentUserIdentifier) {
-        this.setSyncStatus('local');
-        return;
-    }
-
     this.setSyncStatus('syncing');
     try {
-      const id = encodeURIComponent(this.currentUserIdentifier);
-      const response = await fetch(`/api/db?identifier=${id}`);
-      
-      if (response.ok) {
-        const remoteDb = await response.json();
-        if (remoteDb && (remoteDb.users || remoteDb.accounts)) {
-          this.db = remoteDb;
-          this.saveToLocalOnly();
+      const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
+      if (res.ok) {
+        const remoteData = await res.json();
+        if (remoteData && remoteData.users) {
+          this.db = remoteData;
+          this.saveLocal();
           this.lastSyncTime = new Date();
           this.setSyncStatus('synced');
           this.notifyAll();
         } else {
-          // Usuário novo ou sem dados salvos ainda
           this.setSyncStatus('synced');
+          this.persistRemote(); // Envia o estado inicial local se o remoto estiver vazio
         }
       } else {
-        const errData = await response.json().catch(() => ({}));
-        console.error(`[RealtimeService] Erro na API do Banco de Dados (${response.status}):`, errData);
         this.setSyncStatus('error');
       }
-    } catch (error) {
-      console.error('[RealtimeService] Falha crítica de rede ao conectar ao banco:', error);
+    } catch (e) {
       this.setSyncStatus('error');
-    }
-  }
-
-  private loadFromLocal() {
-    const storedDataString = localStorage.getItem(DB_STORAGE_KEY);
-    if (storedDataString) {
-      try {
-        const storedData = JSON.parse(storedDataString);
-        if (storedData.db) {
-          this.db = storedData.db;
-          return;
-        }
-      } catch (e) {}
     }
   }
 
   private setSyncStatus(status: SyncStatus) {
     this.currentSyncStatus = status;
-    this.syncListeners.forEach(callback => callback(status, this.lastSyncTime));
+    this.syncListeners.forEach(cb => cb(status, this.lastSyncTime));
   }
 
-  public subscribeToSyncStatus(callback: SyncStatusCallback) {
-    this.syncListeners.push(callback);
-    callback(this.currentSyncStatus, this.lastSyncTime);
-    return () => {
-      this.syncListeners = this.syncListeners.filter(cb => cb !== callback);
-    };
+  public subscribeToSyncStatus(cb: SyncStatusCallback) {
+    this.syncListeners.push(cb);
+    cb(this.currentSyncStatus, this.lastSyncTime);
+    return () => { this.syncListeners = this.syncListeners.filter(c => c !== cb); };
   }
 
-  private saveToLocalOnly() {
-    try {
-      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ db: this.db }));
-    } catch (e) {}
+  private saveLocal() {
+    localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ db: this.db, timestamp: Date.now() }));
   }
 
-  private async _saveDb() {
-    this.saveToLocalOnly();
-    
+  private async persistRemote() {
     if (!this.currentUserIdentifier) return;
-
-    if (this.syncTimeout) window.clearTimeout(this.syncTimeout);
-
-    this.syncTimeout = window.setTimeout(async () => {
-        this.setSyncStatus('syncing');
-        try {
-          const id = encodeURIComponent(this.currentUserIdentifier!);
-          const response = await fetch(`/api/db?identifier=${id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(this.db)
-          });
-          
-          if (response.ok) {
-            this.lastSyncTime = new Date();
-            this.setSyncStatus('synced');
-          } else {
-            console.error('[RealtimeService] Erro ao salvar dados na nuvem:', response.status);
-            this.setSyncStatus('error');
-          }
-        } catch (error) {
-          console.error('[RealtimeService] Erro de rede ao tentar salvar:', error);
+    
+    if (this.syncDebounceTimer) window.clearTimeout(this.syncDebounceTimer);
+    
+    this.syncDebounceTimer = window.setTimeout(async () => {
+      this.setSyncStatus('syncing');
+      try {
+        const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.db)
+        });
+        if (res.ok) {
+          this.lastSyncTime = new Date();
+          this.setSyncStatus('synced');
+        } else {
           this.setSyncStatus('error');
         }
-    }, 2000);
-  }
-
-  private simulateApiCall<T>(data: T): Promise<T> {
-    return new Promise(resolve => setTimeout(() => resolve(data), 5));
-  }
-
-  private notify<K extends CollectionKey>(collection: K) {
-    const data = this.db[collection];
-    const listeners = this.listeners[collection] as ListenerCallback<Db[K]>[] | undefined;
-    (listeners || []).forEach(callback => callback(data));
+      } catch (e) {
+        this.setSyncStatus('error');
+      }
+    }, 1500); // Debounce de 1.5s para evitar flood
   }
 
   private notifyAll() {
-    (Object.keys(this.db) as CollectionKey[]).forEach(collection => {
-      this.notify(collection);
+    (Object.keys(this.db) as CollectionKey[]).forEach(k => this.notify(k));
+  }
+
+  private notify<K extends CollectionKey>(k: K) {
+    const callbacks = this.listeners[k] as ListenerCallback<Db[K]>[] | undefined;
+    if (callbacks) callbacks.forEach(cb => cb(this.db[k]));
+  }
+
+  public subscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
+    if (!this.listeners[k]) this.listeners[k] = [];
+    (this.listeners[k] as ListenerCallback<Db[K]>[]).push(cb);
+    cb(this.db[k]);
+  }
+
+  // Implementation of unsubscribe
+  public unsubscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
+    if (this.listeners[k]) {
+      this.listeners[k] = (this.listeners[k] as ListenerCallback<Db[K]>[]).filter(c => c !== cb);
+    }
+  }
+
+  // Implementation of forceSync
+  public forceSync() {
+    this.syncWithRemote();
+  }
+
+  // Implementation of getCurrentUserIdentifier
+  public getCurrentUserIdentifier() {
+    return this.currentUserIdentifier;
+  }
+
+  // Abstração de Escrita
+  private async write() {
+    this.saveLocal();
+    this.persistRemote();
+  }
+
+  // API Pública de Dados
+  public getAccounts = () => this.db.accounts;
+  public updateAccount = async (acc: Account) => {
+    this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a);
+    this.notify('accounts');
+    this.write();
+  }
+  public addAccount = async (acc: Account) => {
+    this.db.accounts.push(acc);
+    this.notify('accounts');
+    this.write();
+  }
+  public deleteAccount = async (id: string) => {
+    this.db.accounts = this.db.accounts.filter(a => a.id !== id);
+    this.notify('accounts');
+    this.write();
+  }
+
+  // Implementation of updateMultipleAccounts
+  public updateMultipleAccounts = async (accs: Account[]) => {
+    this.db.accounts = this.db.accounts.map(a => {
+        const updated = accs.find(ua => ua.id === a.id);
+        return updated || a;
     });
+    this.notify('accounts');
+    this.write();
   }
 
-  subscribe<K extends CollectionKey>(collection: K, callback: ListenerCallback<Db[K]>) {
-    if (!this.listeners[collection]) {
-      this.listeners[collection] = [];
-    }
-    (this.listeners[collection] as ListenerCallback<Db[K]>[]).push(callback);
-    callback(this.db[collection]);
+  public getUsers = () => this.db.users;
+  // Fixed signature to handle Omit<User, 'id'> and return updated User
+  public addUser = async (u: Omit<User, 'id'>) => {
+    const newUser = { ...u, id: `user-${Date.now()}` } as User;
+    this.db.users.push(newUser);
+    this.notify('users');
+    this.write();
+    return newUser;
+  }
+  // Updated to return updated User
+  public updateUser = async (u: User) => {
+    this.db.users = this.db.users.map(old => old.id === u.id ? u : old);
+    this.notify('users');
+    this.write();
+    return u;
+  }
+  // Implementation of deleteUser
+  public deleteUser = async (id: string) => {
+    this.db.users = this.db.users.filter(u => u.id !== id);
+    this.notify('users');
+    this.write();
+  }
+
+  // Implementation of Group management
+  public getGroups = () => this.db.groups;
+  public addGroup = async (g: Omit<Group, 'id'>) => {
+    const newGroup = { ...g, id: `group-${Date.now()}` } as Group;
+    this.db.groups.push(newGroup);
+    this.notify('groups');
+    this.write();
+    return newGroup;
+  }
+  public updateGroup = async (g: Group) => {
+    this.db.groups = this.db.groups.map(old => old.id === g.id ? g : old);
+    this.notify('groups');
+    this.write();
+    return g;
+  }
+  public deleteGroup = async (id: string) => {
+    this.db.groups = this.db.groups.filter(g => g.id !== id);
+    this.notify('groups');
+    this.write();
   }
   
-  unsubscribe<K extends CollectionKey>(collection: K, callback: ListenerCallback<Db[K]>) {
-    if (this.listeners[collection]) {
-      const listeners = this.listeners[collection] as ListenerCallback<Db[K]>[];
-      (this.listeners as any)[collection] = listeners.filter(cb => cb !== callback);
-    }
+  public getIncomes = () => this.db.incomes;
+  public addIncome = async (i: Income) => {
+    this.db.incomes.push(i);
+    this.notify('incomes');
+    this.write();
+  }
+  // Implementation of updateIncome
+  public updateIncome = async (inc: Income) => {
+    this.db.incomes = this.db.incomes.map(i => i.id === inc.id ? inc : i);
+    this.notify('incomes');
+    this.write();
+    return inc;
+  }
+  public deleteIncome = async (id: string) => {
+    this.db.incomes = this.db.incomes.filter(i => i.id !== id);
+    this.notify('incomes');
+    this.write();
   }
 
-  getUsers = () => this.simulateApiCall(this.db.users);
-  updateUser = async (updatedUser: User) => {
-    this.db.users = this.db.users.map(u => (u.id === updatedUser.id ? updatedUser : u));
-    await this._saveDb();
-    this.notify('users');
-    return updatedUser;
-  };
-  addUser = async (newUser: Omit<User, 'id'>): Promise<User> => {
-    const userWithId = { ...newUser, id: `user-${Date.now()}` };
-    this.db.users.push(userWithId);
-    await this._saveDb();
-    this.notify('users');
-    return userWithId;
-  };
-  deleteUser = async (userId: string) => {
-    this.db.users = this.db.users.filter(u => u.id !== userId);
-    await this._saveDb();
-    this.notify('users');
-    return { success: true };
-  };
-
-  getGroups = () => this.simulateApiCall(this.db.groups);
-  updateGroup = async (updatedGroup: Group) => {
-    this.db.groups = this.db.groups.map(g => (g.id === updatedGroup.id ? updatedGroup : g));
-    await this._saveDb();
-    this.notify('groups');
-    return updatedGroup;
-  };
-  addGroup = async (newGroup: Omit<Group, 'id'>): Promise<Group> => {
-    const groupWithId = { ...newGroup, id: `group-${Date.now()}` };
-    this.db.groups.push(groupWithId);
-    await this._saveDb();
-    this.notify('groups');
-    return groupWithId;
-  };
-  deleteGroup = async (groupId: string) => {
-    this.db.groups = this.db.groups.filter(u => u.id !== groupId);
-    await this._saveDb();
-    this.notify('groups');
-    return { success: true };
-  };
-  
-  getAccounts = () => this.simulateApiCall(this.db.accounts);
-  updateAccount = async (updatedAccount: Account) => {
-    this.db.accounts = this.db.accounts.map(a => (a.id === updatedAccount.id ? updatedAccount : a));
-    await this._saveDb();
-    this.notify('accounts');
-    return updatedAccount;
-  };
-  addAccount = async (newAccount: Account) => {
-    this.db.accounts.push(newAccount);
-    await this._saveDb();
-    this.notify('accounts');
-    return newAccount;
-  };
-  deleteAccount = async (accountId: string) => {
-    this.db.accounts = this.db.accounts.filter(a => a.id !== accountId);
-    await this._saveDb();
-    this.notify('accounts');
-    return { success: true };
-  };
-  updateMultipleAccounts = async (allAccounts: Account[]) => {
-      this.db.accounts = allAccounts;
-      await this._saveDb();
-      this.notify('accounts');
-      return allAccounts;
-  };
-
-  getIncomes = () => this.simulateApiCall(this.db.incomes);
-  updateIncome = async (updatedIncome: Income) => {
-    this.db.incomes = this.db.incomes.map(i => (i.id === updatedIncome.id ? updatedIncome : i));
-    await this._saveDb();
-    this.notify('incomes');
-    return updatedIncome;
-  };
-  addIncome = async (newIncome: Income) => {
-    this.db.incomes.push(newIncome);
-    await this._saveDb();
-    this.notify('incomes');
-    return newIncome;
-  };
-  deleteIncome = async (incomeId: string) => {
-    this.db.incomes = this.db.incomes.filter(i => i.id !== incomeId);
-    await this._saveDb();
-    this.notify('incomes');
-    return { success: true };
-  };
-  
-  getCategories = () => this.simulateApiCall(this.db.categories);
-  saveCategories = async (categories: string[]) => {
-    this.db.categories = categories;
-    await this._saveDb();
+  // Implementation of getCategories
+  public getCategories = () => this.db.categories;
+  public saveCategories = async (cats: string[]) => {
+    this.db.categories = cats;
     this.notify('categories');
-    return categories;
+    this.write();
   }
-  
-  exportData = async () => this.db;
 
-  importData = async (data: Db) => {
+  public exportData = () => this.db;
+  public importData = (data: Db) => {
     this.db = data;
-    await this._saveDb();
     this.notifyAll();
-    return { success: true };
-  };
+    this.write();
+  }
 }
 
-const realtimeService = new RealtimeService();
-export default realtimeService;
+export default new RealtimeService();

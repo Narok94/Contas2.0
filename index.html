@@ -41,17 +41,13 @@
             },
             animation: {
               'mesh': 'mesh 15s ease infinite',
-              'fade-in-up': 'fade-in-up 0.5s ease-out',
+              'fade-in-up': 'fade-in-up 0.4s ease-out',
+              'orb-glow': 'orb-glow 4s ease-in-out infinite',
             },
             keyframes: {
-              mesh: {
-                '0%, 100%': { backgroundPosition: '0% 50%' },
-                '50%': { backgroundPosition: '100% 50%' },
-              },
-              'fade-in-up': {
-                  '0%': { opacity: '0', transform: 'translateY(10px)' },
-                  '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
+              mesh: { '0%, 100%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' } },
+              'fade-in-up': { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+              'orb-glow': { '0%, 100%': { boxShadow: '0 0 15px 0px rgba(99, 102, 241, 0.4)' }, '50%': { boxShadow: '0 0 25px 8px rgba(139, 92, 246, 0.4)' } },
             }
           },
         },
@@ -72,7 +68,7 @@
 }
 </script>
 </head>
-<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased selection:bg-indigo-100 dark:selection:bg-indigo-900/30">
+<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased selection:bg-indigo-100 dark:selection:bg-indigo-900/30 overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="bundle.js"></script>
 </body>

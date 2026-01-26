@@ -2,44 +2,40 @@
 import { createPool } from '@vercel/postgres';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Função para extrair APENAS a URL válida, eliminando espaços, aspas ou lixo como "psql" ou "hudr"
-const getCleanUrl = () => {
-  const rawUrl = (process.env.DATABASE_URL || process.env.POSTGRES_URL || "").trim();
-  if (!rawUrl) return "";
+const getCleanConnectionString = () => {
+  const raw = (process.env.DATABASE_URL || process.env.POSTGRES_URL || "").trim();
+  if (!raw) return null;
 
-  // Captura o que começa com postgres:// ou postgresql:// até o fim da string válida
-  const match = rawUrl.match(/(postgres(?:ql)?:\/\/[^\s'"]+)/);
-  if (!match) return "";
-  
-  let clean = match[1];
+  // Extrai estritamente o protocolo postgres até o fim da URL válida
+  const match = raw.match(/(postgres(?:ql)?:\/\/[^\s'"]+)/);
+  if (!match) return null;
 
-  // Remove o channel_binding que causa erros em conexões diretas via navegador/serverless
-  clean = clean.replace(/[&?]channel_binding=[^&]+/g, '');
+  let url = match[1];
   
-  // Força o modo SSL (exigido pelo Neon/Vercel Postgres)
-  if (!clean.includes('sslmode=')) {
-    clean += (clean.includes('?') ? '&' : '?') + 'sslmode=require';
+  // Remove parâmetros que costumam quebrar em ambientes serverless da Vercel
+  url = url.replace(/[&?]channel_binding=[^&]+/g, '');
+  
+  // Garante SSL ativo (crítico para Neon/Vercel Postgres)
+  if (!url.includes('sslmode=')) {
+    url += (url.includes('?') ? '&' : '?') + 'sslmode=require';
   }
-
-  return clean;
+  
+  return url;
 };
 
-const connectionString = getCleanUrl();
+const connectionString = getCleanConnectionString();
 const pool = connectionString ? createPool({ connectionString }) : null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!pool) {
-    return res.status(503).json({ 
-      error: 'Configuração Incompleta', 
-      message: 'A URL do banco de dados não foi encontrada ou está mal formatada.' 
-    });
+    return res.status(503).json({ error: 'Configuração Incompleta', detail: 'DATABASE_URL não configurada corretamente.' });
   }
 
-  try {
-    const identifier = req.query.identifier as string;
-    if (!identifier) return res.status(400).json({ error: 'Identificador ausente' });
+  const identifier = req.query.identifier as string;
+  if (!identifier) return res.status(400).json({ error: 'Identificador ausente' });
 
-    // Garante que a tabela exista antes de qualquer operação
+  try {
+    // Migração automática leve
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users_data (
         id SERIAL PRIMARY KEY,
@@ -66,10 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(405).json({ error: 'Método não permitido' });
   } catch (error: any) {
-    console.error('[DB FATAL]:', error.message);
-    return res.status(500).json({ 
-      error: 'Erro de Comunicação com o Banco', 
-      message: error.message 
-    });
+    console.error('[DATABASE ERROR]:', error.message);
+    return res.status(500).json({ error: 'Erro de Banco de Dados', message: error.message });
   }
 }
