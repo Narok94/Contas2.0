@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ricka - Inteligência Financeira</title>
+    <title>Tatu - Finanças a Dois</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -19,9 +19,9 @@
         theme: {
           extend: {
             colors: {
-              primary: { light: '#818cf8', DEFAULT: '#6366f1', dark: '#4f46e5' },
-              secondary: { light: '#a78bfa', DEFAULT: '#8b5cf6', dark: '#7c3aed' },
-              accent: { light: '#5eead4', DEFAULT: '#2dd4bf', dark: '#14b8a6' },
+              primary: { light: '#60a5fa', DEFAULT: '#3b82f6', dark: '#2563eb' }, // Blue
+              secondary: { light: '#3b82f6', DEFAULT: '#2563eb', dark: '#1d4ed8' }, // Darker Blue
+              accent: { light: '#7dd3fc', DEFAULT: '#38bdf8', dark: '#0ea5e9' }, // Sky Blue
               background: '#f8fafc',
               surface: '#ffffff',
               'surface-light': '#f1f5f9',
@@ -43,11 +43,19 @@
               'mesh': 'mesh 15s ease infinite',
               'fade-in-up': 'fade-in-up 0.4s ease-out',
               'orb-glow': 'orb-glow 4s ease-in-out infinite',
+              'float-1': 'float 15s ease-in-out infinite',
+              'float-2': 'float 20s ease-in-out infinite',
+              'float-3': 'float 25s ease-in-out infinite',
             },
             keyframes: {
               mesh: { '0%, 100%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' } },
               'fade-in-up': { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-              'orb-glow': { '0%, 100%': { boxShadow: '0 0 15px 0px rgba(99, 102, 241, 0.4)' }, '50%': { boxShadow: '0 0 25px 8px rgba(139, 92, 246, 0.4)' } },
+              'orb-glow': { '0%, 100%': { boxShadow: '0 0 15px 0px rgba(59, 130, 246, 0.5)' }, '50%': { boxShadow: '0 0 25px 8px rgba(56, 189, 248, 0.5)' } },
+              'float': {
+                '0%': { transform: 'translateY(0px)' },
+                '50%': { transform: 'translateY(-20px)' },
+                '100%': { transform: 'translateY(0px)' },
+              },
             }
           },
         },
@@ -68,7 +76,7 @@
 }
 </script>
 </head>
-<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased selection:bg-indigo-100 dark:selection:bg-indigo-900/30 overflow-x-hidden">
+<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased selection:bg-blue-100 dark:selection:bg-blue-900/30 overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="bundle.js"></script>
 </body>

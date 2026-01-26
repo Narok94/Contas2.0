@@ -81,17 +81,15 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
     <header className="bg-surface/70 dark:bg-dark-surface/70 backdrop-blur-lg shadow-sm sticky top-0 z-30 border-b border-border-color/50 dark:border-dark-border-color/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent leading-none">Controle de Contas</h1>
-            <div className="mt-1.5">
-                <SyncStatusIndicator />
-            </div>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-primary leading-none whitespace-nowrap">Controle de Contas</h1>
+            <SyncStatusIndicator />
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="w-9 h-9 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-bold text-lg transition-transform active:scale-90"
+                className="w-9 h-9 bg-primary rounded-full flex items-center justify-center text-white font-bold text-lg transition-transform active:scale-90"
                 aria-label="Abrir menu do usuário"
               >
                 {currentUser.name.charAt(0).toUpperCase()}

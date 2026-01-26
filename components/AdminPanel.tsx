@@ -84,7 +84,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit
                     </div>
                     <div className="flex justify-end space-x-2 pt-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-opacity">{user ? 'Salvar' : 'Adicionar'}</button>
+                        <button type="submit" className="px-4 py-2 rounded-md bg-primary text-white hover:bg-primary-dark transition-colors">{user ? 'Salvar' : 'Adicionar'}</button>
                     </div>
                 </form>
             </div>
@@ -119,7 +119,7 @@ const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose, onSubm
                     <input type="password" placeholder="Senha do Grupo" value={password} onChange={e => setPassword(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color" />
                     <div className="flex justify-end space-x-2 pt-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-opacity">{group ? 'Salvar' : 'Adicionar'}</button>
+                        <button type="submit" className="px-4 py-2 rounded-md bg-primary text-white hover:bg-primary-dark transition-colors">{group ? 'Salvar' : 'Adicionar'}</button>
                     </div>
                 </form>
             </div>
@@ -185,7 +185,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                 <div className="animate-fade-in">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">Todos os Usuários</h2>
-                        <button onClick={() => openUserModal()} className="px-4 py-2 rounded-md bg-gradient-to-r from-primary to-secondary text-white text-sm hover:opacity-90 transition-opacity">Adicionar Usuário</button>
+                        <button onClick={() => openUserModal()} className="px-4 py-2 rounded-md bg-primary text-white text-sm hover:bg-primary-dark transition-colors">Adicionar Usuário</button>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-border-color dark:divide-dark-border-color">
@@ -220,7 +220,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                  <div className="animate-fade-in">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">Todos os Grupos</h2>
-                         <button onClick={() => openGroupModal()} className="px-4 py-2 rounded-md bg-gradient-to-r from-primary to-secondary text-white text-sm hover:opacity-90 transition-opacity">Adicionar Grupo</button>
+                         <button onClick={() => openGroupModal()} className="px-4 py-2 rounded-md bg-primary text-white text-sm hover:bg-primary-dark transition-colors">Adicionar Grupo</button>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-border-color dark:divide-dark-border-color">

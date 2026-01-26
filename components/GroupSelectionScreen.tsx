@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { type User, type Group } from '../types';
 
@@ -12,10 +13,10 @@ const GroupSelectionScreen: React.FC<GroupSelectionScreenProps> = ({ user, group
     const userGroups = groups.filter(g => user.groupIds.includes(g.id));
 
     return (
-        <div className="flex items-center justify-center min-h-[100dvh] bg-[length:200%_200%] bg-gradient-to-br from-slate-100 via-sky-100 to-slate-200 dark:from-slate-900 dark:via-secondary-dark dark:to-slate-800 animate-gradient-pan relative overflow-hidden p-4">
+        <div className="flex items-center justify-center min-h-[100dvh] bg-[length:200%_200%] bg-gradient-to-br from-slate-100 via-sky-100 to-slate-200 dark:from-slate-900 dark:via-blue-900/50 dark:to-slate-800 animate-gradient-pan relative overflow-hidden p-4">
             {/* Decorative Blobs */}
             <div className="absolute top-10 -left-20 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-float-blob"></div>
-            <div className="absolute bottom-10 -right-20 w-72 h-72 bg-secondary/20 rounded-full filter blur-3xl opacity-50 animate-float-blob" style={{animationDelay: '5s'}}></div>
+            <div className="absolute bottom-10 -right-20 w-72 h-72 bg-accent/20 rounded-full filter blur-3xl opacity-50 animate-float-blob" style={{animationDelay: '5s'}}></div>
 
             <div className="relative z-10 w-full max-w-sm">
                 <div className="w-full p-6 space-y-4 bg-white/60 dark:bg-dark-background/60 backdrop-blur-2xl rounded-3xl shadow-2xl ring-1 ring-black/5">
@@ -25,7 +26,7 @@ const GroupSelectionScreen: React.FC<GroupSelectionScreenProps> = ({ user, group
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-primary">
                             Selecione um Grupo
                         </h1>
                         <p className="mt-1 text-sm text-text-secondary dark:text-dark-text-secondary">

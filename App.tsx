@@ -549,7 +549,7 @@ const App: React.FC = () => {
     };
 
     const handleTriggerAiAnalysis = async (): Promise<string> => {
-        if (userAccounts.length === 0) return "Não há contas.";
+        if (userAccounts.length === 0) return "Não há contas para analisar neste mês.";
         try {
             const now = new Date();
             const currentMonth = now.getMonth();
@@ -570,7 +570,8 @@ const App: React.FC = () => {
             });
             return await analyzeSpending(currentMonthAccounts, previousMonthAccounts);
         } catch (error) {
-            return "Erro na análise.";
+            console.error("Analysis Error:", error);
+            return "Ocorreu um erro ao tentar analisar seus gastos.";
         }
     };
     
@@ -656,7 +657,7 @@ const App: React.FC = () => {
 
       switch(view) {
         case 'dashboard':
-          return <Dashboard accounts={userAccounts} incomes={userIncomes} onEditAccount={openAccountModal} onDeleteAccount={handleDeleteAccount} onToggleStatus={handleToggleAccountStatus} selectedDate={selectedDate} setSelectedDate={setSelectedDate} onOpenBatchModal={() => setIsBatchModalOpen(true)} />;
+          return <Dashboard accounts={userAccounts} incomes={userIncomes} onEditAccount={openAccountModal} onDeleteAccount={handleDeleteAccount} onToggleStatus={handleToggleAccountStatus} selectedDate={selectedDate} setSelectedDate={setSelectedDate} onOpenBatchModal={() => setIsBatchModalOpen(true)} currentUser={currentUser} onTriggerAnalysis={handleTriggerAiAnalysis} />;
         case 'admin':
            return currentUser.role === Role.ADMIN ? <AdminPanel users={users} groups={groups} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} onAddGroup={handleAddGroup} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} /> : <p>Acesso negado.</p>;
         case 'history':

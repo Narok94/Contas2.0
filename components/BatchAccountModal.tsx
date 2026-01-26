@@ -239,7 +239,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                     type="submit" 
                     form="batch-form"
                     disabled={isSubmitting}
-                    className="flex-1 sm:flex-none px-6 py-2 rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-opacity font-bold shadow-md disabled:opacity-70"
+                    className="flex-1 sm:flex-none px-6 py-2 rounded-md bg-primary text-white hover:bg-primary-dark transition-colors font-bold shadow-md disabled:opacity-70"
                 >
                     {isSubmitting ? 'Salvando...' : 'Salvar Todas'}
                 </button>

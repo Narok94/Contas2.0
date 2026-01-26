@@ -42,7 +42,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, o
                 <div className="flex items-center justify-center">
                     <button 
                         onClick={onAddClick}
-                        className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-secondary to-accent text-white flex items-center justify-center shadow-lg hover:shadow-glow-primary transform transition-all hover:scale-105 active:scale-95"
+                        className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg hover:shadow-glow-primary transform transition-all hover:scale-105 active:scale-95"
                         aria-label="Adicionar conta"
                     >
                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

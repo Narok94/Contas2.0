@@ -1,6 +1,6 @@
 {
-  "name": "Controle de Contas Inteligente",
-  "description": "Um software de controle de contas moderno e intuitivo com funcionalidades de IA para gerenciamento de despesas em grupo.",
+  "name": "Tatu - Finanças Pessoais",
+  "description": "Um software de controle de contas pessoal e inteligente, projetado para organizar a vida financeira a dois.",
   "requestFramePermissions": [
     "microphone"
   ]

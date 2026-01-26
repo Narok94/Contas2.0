@@ -91,7 +91,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                     </div>
                     <div className="flex justify-end space-x-2 pt-2">
                         {editingIncome && <button type="button" onClick={resetForm} className="px-4 py-2 text-sm rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color">Cancelar Edição</button>}
-                        <button type="submit" className="px-4 py-2 text-sm rounded-md bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90">{editingIncome ? 'Salvar Alterações' : 'Adicionar'}</button>
+                        <button type="submit" className="px-4 py-2 text-sm rounded-md bg-primary text-white hover:bg-primary-dark transition-colors">{editingIncome ? 'Salvar Alterações' : 'Adicionar'}</button>
                     </div>
                 </form>
             </div>

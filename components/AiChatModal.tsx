@@ -202,7 +202,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
     useEffect(() => {
         if(isOpen) {
              const userName = currentUser?.name?.split(' ')[0] || 'você';
-             const greeting = `E aí, ${userName}! Beleza? Sou a Ricka, sua nova parceira financeira. 💰✨<br/>Me diga o que você precisa: adicionar uma conta, pagar um boleto, ou só bater um papo. Você também pode me enviar um print da conta!`;
+             const greeting = `Opa, ${userName}! Sou o Tatu, e tô aqui pra ajudar a gente a organizar as contas.<br/>Bills, boletos, pix... pode mandar que eu anoto tudo! 📝`;
              setMessages([{ role: 'model', content: greeting }]);
              
              generateSpeech(greeting.replace(/<br\/>/g, ' ')).then(audioData => {
@@ -242,16 +242,16 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex justify-center items-center z-50 p-4 animate-fade-in">
             <div className="bg-gradient-to-b from-slate-900 via-black to-slate-900 border border-primary/30 rounded-2xl shadow-2xl shadow-primary/20 w-full max-w-2xl h-[80vh] flex flex-col animate-fade-in-up">
                 <div className="flex justify-between items-center p-4 border-b border-primary/20">
-                    <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-light via-secondary-light to-accent-light">Ricka ✨</h2>
+                    <h2 className="text-xl font-bold text-primary-light">Tatu 📝</h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl transition-colors">&times;</button>
                 </div>
 
-                <div className="flex-1 p-4 overflow-y-auto space-y-4 [scrollbar-width:thin] [scrollbar-color:#6366f1_#0f172a]">
+                <div className="flex-1 p-4 overflow-y-auto space-y-4 [scrollbar-width:thin] [scrollbar-color:#14b8a6_#0f172a]">
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`w-fit max-w-xl px-4 py-3 ${
                                 msg.role === 'user' 
-                                ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white rounded-2xl rounded-br-lg' 
+                                ? 'bg-primary text-white rounded-2xl rounded-br-lg' 
                                 : 'bg-dark-surface-light text-dark-text-primary rounded-2xl rounded-bl-lg'
                             }`}>
                                 <p className="text-sm" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
