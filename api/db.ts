@@ -15,6 +15,9 @@ try {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Linha de log para depuração
+  console.log(`[API DB HANDLER] Verificando POSTGRES_URL. Definida: ${!!process.env.POSTGRES_URL}`);
+    
   if (!pool) {
     return res.status(503).json({ 
       error: 'Configuração Incompleta do Banco de Dados', 
