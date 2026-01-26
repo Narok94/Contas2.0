@@ -137,6 +137,32 @@ class RealtimeService {
     localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ db: this.db, timestamp: Date.now() }));
   }
 
+  private async persistRemoteNoDebounce() {
+    if (!this.currentUserIdentifier) return;
+
+    if (this.syncDebounceTimer) {
+        window.clearTimeout(this.syncDebounceTimer);
+        this.syncDebounceTimer = null;
+    }
+
+    this.setSyncStatus('syncing');
+    try {
+        const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.db)
+        });
+        if (res.ok) {
+            this.lastSyncTime = new Date();
+            this.setSyncStatus('synced');
+        } else {
+            this.handleSyncError();
+        }
+    } catch (e) {
+        this.handleSyncError();
+    }
+  }
+
   private async persistRemote() {
     if (!this.currentUserIdentifier) return;
     
@@ -183,9 +209,6 @@ class RealtimeService {
     currentListeners.push(cb);
     const data = this.db[k];
     const dataToSend = Array.isArray(data) ? [...data] : data;
-    // FIX: Cast the argument to Db[K] to resolve a type inference issue where TypeScript
-    // widens the type of the cloned array to a union of all possible element types,
-    // which is not compatible with the specific array type expected by the callback.
     cb(dataToSend as Db[K]);
   }
 
@@ -208,6 +231,11 @@ class RealtimeService {
     this.saveLocal();
     this.persistRemote();
   }
+  
+  private async writeImmediately() {
+    this.saveLocal();
+    await this.persistRemoteNoDebounce();
+  }
 
   public getAccounts = () => this.db.accounts;
   public updateAccount = async (acc: Account) => {
@@ -223,7 +251,7 @@ class RealtimeService {
   public deleteAccount = async (id: string) => {
     this.db.accounts = this.db.accounts.filter(a => a.id !== id);
     this.notify('accounts');
-    this.write();
+    await this.writeImmediately();
   }
   public updateMultipleAccounts = async (accs: Account[]) => {
     this.db.accounts = this.db.accounts.map(a => {
@@ -251,7 +279,7 @@ class RealtimeService {
   public deleteUser = async (id: string) => {
     this.db.users = this.db.users.filter(u => u.id !== id);
     this.notify('users');
-    this.write();
+    await this.writeImmediately();
   }
 
   public getGroups = () => this.db.groups;
@@ -271,7 +299,7 @@ class RealtimeService {
   public deleteGroup = async (id: string) => {
     this.db.groups = this.db.groups.filter(g => g.id !== id);
     this.notify('groups');
-    this.write();
+    await this.writeImmediately();
   }
   
   public getIncomes = () => this.db.incomes;
@@ -289,7 +317,7 @@ class RealtimeService {
   public deleteIncome = async (id: string) => {
     this.db.incomes = this.db.incomes.filter(i => i.id !== id);
     this.notify('incomes');
-    this.write();
+    await this.writeImmediately();
   }
 
   public getCategories = () => this.db.categories;

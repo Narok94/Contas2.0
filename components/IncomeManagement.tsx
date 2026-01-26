@@ -72,7 +72,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                                 </div>
                                 <div className="flex items-center space-x-3">
                                     <button onClick={() => handleEditClick(income)} className="text-primary-light hover:text-primary">Editar</button>
-                                    <button onClick={() => onDelete(income.id)} className="text-danger hover:text-pink-700">Excluir</button>
+                                    <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir a entrada "${income.name}"?`)) onDelete(income.id); }} className="text-danger hover:text-pink-700">Excluir</button>
                                 </div>
                             </div>
                         )) : <p className="text-center text-text-muted py-8">Nenhuma entrada cadastrada.</p>}

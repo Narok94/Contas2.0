@@ -206,7 +206,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">{user.groupIds.map(gid => groups.find(g => g.id === gid)?.name).filter(Boolean).join(', ')}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                             <button onClick={() => openUserModal(user)} className="text-primary-light hover:text-primary transition-colors">Editar</button>
-                                            <button onClick={() => onDeleteUser(user.id)} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
+                                            <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir o usuário "${user.name}"?`)) onDeleteUser(user.id) }} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -238,7 +238,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">{users.filter(u => u.groupIds.includes(group.id)).length}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                             <button onClick={() => openGroupModal(group)} className="text-primary-light hover:text-primary transition-colors">Editar</button>
-                                            <button onClick={() => onDeleteGroup(group.id)} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
+                                            <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir o grupo "${group.name}"?`)) onDeleteGroup(group.id) }} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
                                         </td>
                                     </tr>
                                 ))}
