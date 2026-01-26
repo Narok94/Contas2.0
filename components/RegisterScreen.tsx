@@ -36,7 +36,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] bg-[#fdfdfd] dark:bg-[#020617] relative overflow-hidden transition-colors duration-500">
+    <div className="flex items-center justify-center min-h-[100dvh] bg-[#fdfdfd] dark:bg-[#020617] relative overflow-hidden transition-colors duration-500 p-4">
         <div className="absolute inset-0 z-0 pointer-events-none opacity-40 dark:opacity-20">
             <div className="absolute top-[-10%] right-[-10%] w-[50rem] h-[50rem] bg-violet-200 dark:bg-violet-900 rounded-full blur-[120px] animate-mesh"></div>
             <div className="absolute bottom-[-10%] left-[-10%] w-[45rem] h-[45rem] bg-sky-100 dark:bg-sky-900 rounded-full blur-[100px] animate-mesh" style={{animationDelay: '-3s'}}></div>
@@ -45,9 +45,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
         <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative z-10 w-full max-w-[460px] px-6"
+            className="relative z-10 w-full max-w-md"
         >
-            <div className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/50 dark:border-slate-800/50 p-10 sm:p-14">
+            <div className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/50 dark:border-slate-800/50 p-8 sm:p-12">
                 
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Começar agora<span className="text-indigo-600">.</span></h1>
