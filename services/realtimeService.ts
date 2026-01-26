@@ -62,10 +62,10 @@ class RealtimeService {
   private startPolling() {
     if (this.pollingInterval) window.clearInterval(this.pollingInterval);
     this.pollingInterval = window.setInterval(() => {
-        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing' && this.currentSyncStatus !== 'error') {
+        if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing') {
             this.loadDb();
         }
-    }, 45000);
+    }, 60000); // Polling a cada 60s
   }
 
   public setUser(username: string) {
@@ -77,7 +77,7 @@ class RealtimeService {
   }
 
   public forceSync = async () => {
-      console.log("[RealtimeService] Tentando reconexão com Neon Postgres...");
+      console.log("[RealtimeService] Forçando sincronização...");
       await this.loadDb();
       if (this.currentSyncStatus !== 'error') {
           await this._saveDb();
@@ -121,14 +121,15 @@ class RealtimeService {
           this.setSyncStatus('synced');
           this.notifyAll();
         } else {
-          this.setSyncStatus('synced');
+          this.setSyncStatus('synced'); // Resposta vazia é válida
         }
       } else {
-        console.error(`[RealtimeService] Falha na API: ${response.status}`);
+        const errData = await response.json().catch(() => ({}));
+        console.error(`[RealtimeService] Erro na API (${response.status}):`, errData);
         this.setSyncStatus('error');
       }
     } catch (error) {
-      console.error('[RealtimeService] Erro de rede/conexão:', error);
+      console.error('[RealtimeService] Erve de conexão com a API:', error);
       this.setSyncStatus('error');
     }
   }
@@ -186,9 +187,11 @@ class RealtimeService {
             this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
           } else {
+            console.error('[RealtimeService] Falha ao salvar no banco:', response.status);
             this.setSyncStatus('error');
           }
         } catch (error) {
+          console.error('[RealtimeService] Erro de rede ao salvar:', error);
           this.setSyncStatus('error');
         }
     }, 2000);
