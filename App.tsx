@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
+import RegisterScreen from './components/RegisterScreen';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
@@ -242,6 +243,37 @@ const App: React.FC = () => {
     }
 
     return true;
+  };
+
+  const handleRegister = async (name: string, username: string, password: string): Promise<boolean> => {
+    // Verifica se já existe o usuário
+    if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+        return false;
+    }
+
+    // Cria um grupo pessoal padrão para o novo usuário
+    const personalGroupId = `group-personal-${Date.now()}`;
+    const personalGroup: Group = {
+        id: personalGroupId,
+        name: `Grupo de ${name}`,
+        password: '123'
+    };
+
+    const newUser: User = {
+        id: `user-${Date.now()}`,
+        name,
+        username,
+        password,
+        role: Role.USER,
+        groupIds: [personalGroupId]
+    };
+
+    // Primeiro salvamos o grupo, depois o usuário
+    await dataService.addGroup(personalGroup);
+    await dataService.addUser(newUser);
+
+    // Agora fazemos o login automático
+    return handleLogin(username, password);
   };
   
   const handleGroupSelect = (groupId: string) => {
@@ -590,8 +622,10 @@ const App: React.FC = () => {
         }
     };
 
-  if (view === 'login') return <LoginScreen onLogin={handleLogin} />;
-  if (!currentUser) return <LoginScreen onLogin={handleLogin} />;
+  if (view === 'login') return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
+  if (view === 'register') return <RegisterScreen onRegister={handleRegister} onNavigateToLogin={() => setView('login')} />;
+  
+  if (!currentUser) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
   
   if (currentUser.mustChangePassword) {
     return <ChangePasswordModal user={currentUser} onSubmit={handleChangePassword} onLogout={handleLogout} />;

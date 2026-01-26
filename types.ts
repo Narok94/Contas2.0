@@ -1,4 +1,5 @@
-export type View = 'login' | 'dashboard' | 'admin' | 'history' | 'income' | 'groupSelection';
+
+export type View = 'login' | 'register' | 'dashboard' | 'admin' | 'history' | 'income' | 'groupSelection';
 
 export enum Role {
   ADMIN = 'ADMIN',

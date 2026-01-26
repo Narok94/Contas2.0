@@ -1,12 +1,14 @@
 
 import React, { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
+import { motion } from 'framer-motion';
 
 interface LoginScreenProps {
   onLogin: (username: string, password: string) => Promise<boolean>;
+  onNavigateToRegister: () => void;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,148 +20,126 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
     
-    // Pequeno delay para melhorar a sensação de feedback tátil da UI
-    await new Promise(resolve => setTimeout(resolve, 600));
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const success = await onLogin(username, password);
     if (!success) {
-      setError('Usuário ou senha incorretos.');
+      setError('Credenciais inválidas. Tente novamente.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] bg-background dark:bg-dark-background relative overflow-hidden transition-colors duration-500 selection:bg-primary selection:text-white">
-        {/* Background Effects */}
+    <div className="flex items-center justify-center min-h-[100dvh] bg-slate-50 dark:bg-[#0b0f1a] relative overflow-hidden transition-colors duration-700">
+        {/* Camada Tecnológica de Fundo */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-             <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-60"></div>
-             <div className="absolute top-[20%] right-[-20%] w-[400px] h-[400px] bg-secondary/20 rounded-full blur-[100px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-60" style={{animationDelay: '2s'}}></div>
-             <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-accent/10 rounded-full blur-[120px] animate-float-blob mix-blend-multiply dark:mix-blend-screen opacity-50" style={{animationDelay: '4s'}}></div>
+             <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] bg-primary/10 rounded-full blur-[120px] animate-float-blob opacity-60"></div>
+             <div className="absolute bottom-[-10%] right-[-5%] w-[35rem] h-[35rem] bg-accent/10 rounded-full blur-[100px] animate-float-blob opacity-50" style={{animationDelay: '3s'}}></div>
+             <div className="absolute top-[30%] right-[10%] w-[20rem] h-[20rem] bg-secondary/10 rounded-full blur-[80px] animate-float-blob opacity-40" style={{animationDelay: '6s'}}></div>
+             
+             {/* Grid sutil */}
+             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
         </div>
 
-        {/* Theme Toggle */}
-        <div className="absolute top-6 right-6 z-20">
+        {/* Botão de Tema */}
+        <div className="absolute top-8 right-8 z-20">
             <button 
                 onClick={toggleTheme}
-                className="p-3 rounded-full bg-surface/50 dark:bg-dark-surface/50 text-text-secondary dark:text-dark-text-secondary hover:bg-surface dark:hover:bg-dark-surface transition-all backdrop-blur-sm shadow-sm hover:shadow-md ring-1 ring-black/5 dark:ring-white/10"
-                aria-label="Alternar tema"
+                className="p-3 rounded-2xl bg-white/40 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:scale-110 transition-all shadow-xl"
             >
                 {theme === 'light' ? (
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                 )}
             </button>
         </div>
 
-        {/* Login Card */}
-        <div className="relative z-10 w-full max-w-sm p-4 animate-fade-in-up">
-            <div className="bg-white/80 dark:bg-dark-surface/60 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/40 dark:border-white/5 p-8 sm:p-10 relative overflow-hidden">
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative z-10 w-full max-w-[26rem] p-6"
+        >
+            <div className="bg-white/70 dark:bg-[#161b2c]/60 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-white/40 dark:border-white/10 p-10 relative">
                 
-                {/* Decorative top sheen */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50"></div>
-
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-primary to-secondary mb-6 shadow-xl shadow-primary/20 transform rotate-[-5deg] hover:rotate-0 transition-transform duration-500 ease-out group cursor-default">
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white transform group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-accent mb-6 shadow-2xl shadow-primary/30">
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                     </div>
-                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-primary dark:from-white dark:to-primary-light tracking-tight mb-2">Bem-vindo</h1>
-                    <p className="text-text-muted dark:text-dark-text-muted text-sm font-medium">Controle suas contas de forma inteligente</p>
+                    <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Financial Hub</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">Gestão inteligente e segura</p>
                 </div>
 
                 <form className="space-y-6" onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        <div className="relative group">
+                    <div className="space-y-5">
+                        <div className="relative">
                              <input
                                 id="username"
-                                name="username"
                                 type="text"
                                 required
-                                className="peer w-full pl-5 pr-12 py-4 bg-surface-light/50 dark:bg-dark-surface-light/30 border border-border-color dark:border-dark-border-color focus:border-primary dark:focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary placeholder-transparent shadow-sm focus:shadow-md focus:bg-white dark:focus:bg-dark-surface"
+                                className="peer w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/40 border border-transparent focus:border-primary/50 rounded-2xl outline-none transition-all text-slate-800 dark:text-white placeholder-transparent"
                                 placeholder="Usuário"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                             />
                             <label 
                                 htmlFor="username"
-                                className="absolute left-5 transition-all pointer-events-none 
-                                top-[-10px] text-xs text-primary font-bold bg-white dark:bg-dark-surface px-2 rounded-full
-                                peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-text-muted dark:peer-placeholder-shown:text-dark-text-muted peer-placeholder-shown:bg-transparent peer-placeholder-shown:font-normal peer-placeholder-shown:px-0
-                                peer-focus:top-[-10px] peer-focus:text-xs peer-focus:text-primary peer-focus:font-bold peer-focus:bg-white dark:peer-focus:bg-dark-surface peer-focus:px-2 peer-focus:rounded-full"
+                                className="absolute left-5 top-4 text-slate-400 dark:text-slate-500 transition-all pointer-events-none peer-focus:text-xs peer-focus:top-[-10px] peer-focus:text-primary peer-focus:bg-white dark:peer-focus:bg-[#1c2237] peer-focus:px-2 peer-focus:rounded-full peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:bg-white dark:peer-[:not(:placeholder-shown)]:bg-[#1c2237] peer-[:not(:placeholder-shown)]:px-2 peer-[:not(:placeholder-shown)]:rounded-full"
                             >
-                                Usuário
+                                Identificador
                             </label>
-                            <div className="absolute right-4 top-4 text-text-muted/30 peer-focus:text-primary/50 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                            </div>
                         </div>
-                        <div className="relative group">
+                        <div className="relative">
                             <input
                                 id="password"
-                                name="password"
                                 type="password"
                                 required
-                                className="peer w-full pl-5 pr-12 py-4 bg-surface-light/50 dark:bg-dark-surface-light/30 border border-border-color dark:border-dark-border-color focus:border-primary dark:focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary placeholder-transparent shadow-sm focus:shadow-md focus:bg-white dark:focus:bg-dark-surface"
+                                className="peer w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/40 border border-transparent focus:border-primary/50 rounded-2xl outline-none transition-all text-slate-800 dark:text-white placeholder-transparent"
                                 placeholder="Senha"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
                             <label 
                                 htmlFor="password"
-                                className="absolute left-5 transition-all pointer-events-none
-                                top-[-10px] text-xs text-primary font-bold bg-white dark:bg-dark-surface px-2 rounded-full
-                                peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-text-muted dark:peer-placeholder-shown:text-dark-text-muted peer-placeholder-shown:bg-transparent peer-placeholder-shown:font-normal peer-placeholder-shown:px-0
-                                peer-focus:top-[-10px] peer-focus:text-xs peer-focus:text-primary peer-focus:font-bold peer-focus:bg-white dark:peer-focus:bg-dark-surface peer-focus:px-2 peer-focus:rounded-full"
+                                className="absolute left-5 top-4 text-slate-400 dark:text-slate-500 transition-all pointer-events-none peer-focus:text-xs peer-focus:top-[-10px] peer-focus:text-primary peer-focus:bg-white dark:peer-focus:bg-[#1c2237] peer-focus:px-2 peer-focus:rounded-full peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:bg-white dark:peer-[:not(:placeholder-shown)]:bg-[#1c2237] peer-[:not(:placeholder-shown)]:px-2 peer-[:not(:placeholder-shown)]:rounded-full"
                             >
-                                Senha
+                                Senha de Acesso
                             </label>
-                             <div className="absolute right-4 top-4 text-text-muted/30 peer-focus:text-primary/50 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                            </div>
                         </div>
                     </div>
 
                     {error && (
-                        <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 flex items-center space-x-3 animate-fade-in">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-danger flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                            <p className="text-danger text-sm font-medium">{error}</p>
-                        </div>
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-danger text-xs text-center font-medium bg-danger/10 py-2 rounded-lg">{error}</motion.p>
                     )}
 
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="group w-full py-4 px-6 bg-gradient-to-r from-primary to-secondary hover:to-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-primary/40 focus:ring-4 focus:ring-primary/20 transition-all transform hover:-translate-y-1 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center relative overflow-hidden"
+                        className="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center items-center"
                     >
-                         <span className="relative z-10 flex items-center gap-2">
-                             {isLoading ? (
-                                <>
-                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>Entrando...</span>
-                                </>
-                            ) : (
-                                <>
-                                   <span>Acessar Conta</span>
-                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                    </svg>
-                                </>
-                            )}
-                         </span>
+                         {isLoading ? (
+                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        ) : "Entrar no Hub"}
                     </button>
+                    
+                    <div className="text-center">
+                        <button 
+                            type="button"
+                            onClick={onNavigateToRegister}
+                            className="text-xs font-semibold text-primary hover:text-accent transition-colors"
+                        >
+                            Criar nova conta digital →
+                        </button>
+                    </div>
                 </form>
             </div>
-             <p className="text-center text-xs text-text-muted dark:text-dark-text-muted mt-8 opacity-60 font-medium">
-                &copy; {new Date().getFullYear()} Controle de Contas Inteligente
+             <p className="text-center text-[10px] text-slate-400 dark:text-slate-600 mt-10 uppercase tracking-widest font-bold">
+                Criptografia de Ponta a Ponta
             </p>
-        </div>
+        </motion.div>
     </div>
   );
 };
