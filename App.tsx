@@ -17,7 +17,7 @@ import StatCardSkeleton from './components/skeletons/StatCardSkeleton';
 import AccountCardSkeleton from './components/skeletons/AccountCardSkeleton';
 import FloatingAiButton from './components/FloatingAiButton';
 import { useTheme } from './hooks/useTheme';
-import { ParsedCommand, analyzeSpending } from './services/geminiService';
+import { ParsedCommand } from './services/geminiService';
 import * as dataService from './services/dataService';
 import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
@@ -548,33 +548,6 @@ const App: React.FC = () => {
         setIsChatOpen(true);
     };
 
-    const handleTriggerAiAnalysis = async (): Promise<string> => {
-        if (userAccounts.length === 0) return "Não há contas para analisar neste mês.";
-        try {
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-            const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-            const prevMonth = previousMonthDate.getMonth();
-            const prevYear = previousMonthDate.getFullYear();
-            const currentMonthAccounts = userAccounts.filter(acc => {
-                if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
-                const paymentDate = new Date(acc.paymentDate);
-                return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
-            });
-            const previousMonthAccounts = accounts.filter(acc => {
-                if (acc.groupId !== activeGroupId) return false;
-                if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
-                const paymentDate = new Date(acc.paymentDate);
-                return paymentDate.getMonth() === prevMonth && paymentDate.getFullYear() === prevYear;
-            });
-            return await analyzeSpending(currentMonthAccounts, previousMonthAccounts);
-        } catch (error) {
-            console.error("Analysis Error:", error);
-            return "Ocorreu um erro ao tentar analisar seus gastos.";
-        }
-    };
-    
     const handleExportData = async () => {
         try {
             const dataToExport = await dataService.exportData();
@@ -657,7 +630,7 @@ const App: React.FC = () => {
 
       switch(view) {
         case 'dashboard':
-          return <Dashboard accounts={userAccounts} incomes={userIncomes} onEditAccount={openAccountModal} onDeleteAccount={handleDeleteAccount} onToggleStatus={handleToggleAccountStatus} selectedDate={selectedDate} setSelectedDate={setSelectedDate} onOpenBatchModal={() => setIsBatchModalOpen(true)} currentUser={currentUser} onTriggerAnalysis={handleTriggerAiAnalysis} />;
+          return <Dashboard accounts={userAccounts} incomes={userIncomes} onEditAccount={openAccountModal} onDeleteAccount={handleDeleteAccount} onToggleStatus={handleToggleAccountStatus} selectedDate={selectedDate} setSelectedDate={setSelectedDate} onOpenBatchModal={() => setIsBatchModalOpen(true)} currentUser={currentUser} />;
         case 'admin':
            return currentUser.role === Role.ADMIN ? <AdminPanel users={users} groups={groups} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} onAddGroup={handleAddGroup} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} /> : <p>Acesso negado.</p>;
         case 'history':
@@ -677,7 +650,7 @@ const App: React.FC = () => {
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={handleBatchAddAccounts} categories={categories} />
       <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => openAccountModal()} onSelectBatch={() => setIsBatchModalOpen(true)} />
        <ManageCategoriesModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} onAdd={handleAddCategory} onUpdate={handleUpdateCategory} onDelete={handleDeleteCategory} />
-      <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => { setIsChatOpen(false); setStartVoiceOnChatOpen(false); }} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={handleAiCommand} startWithVoice={startVoiceOnChatOpen} onListeningChange={setIsAiListening} onTriggerAnalysis={handleTriggerAiAnalysis} />
+      <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => { setIsChatOpen(false); setStartVoiceOnChatOpen(false); }} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={handleAiCommand} startWithVoice={startVoiceOnChatOpen} onListeningChange={setIsAiListening} />
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={handleExportData} onImportData={handleImportData} onExportToCsv={handleExportToCsv} />
        <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
        <FloatingAiButton onClick={handleAiButtonClick} onLongPress={handleAiButtonLongPress} constraintsRef={constraintsRef} isListening={isAiListening} />

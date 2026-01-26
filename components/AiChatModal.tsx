@@ -15,14 +15,13 @@ interface AiChatModalProps {
   onCommand: (command: ParsedCommand) => string;
   startWithVoice: boolean;
   onListeningChange: (isListening: boolean) => void;
-  onTriggerAnalysis: () => Promise<string>;
 }
 
 export interface AiChatModalRef {
     stopListening: () => void;
 }
 
-const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onClose, currentUser, accounts, incomes, categories, onCommand, startWithVoice, onListeningChange, onTriggerAnalysis }, ref) => {
+const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onClose, currentUser, accounts, incomes, categories, onCommand, startWithVoice, onListeningChange }, ref) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -151,25 +150,6 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
     useImperativeHandle(ref, () => ({
         stopListening,
     }));
-
-    const handleAnalyzeClick = async () => {
-        setIsLoading(true);
-        const analysisResult = await onTriggerAnalysis();
-        const modelMessage: ChatMessage = { role: 'model', content: analysisResult };
-        setMessages(prev => [...prev, modelMessage]);
-        setIsLoading(false);
-        
-        if (analysisResult) {
-            try {
-                const audioData = await generateSpeech(analysisResult);
-                if (audioData) {
-                    await playAudio(audioData);
-                }
-            } catch (audioError) {
-                console.error("Could not play AI analysis audio:", audioError);
-            }
-        }
-    };
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -301,18 +281,6 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                             onChange={handleImageSelect} 
                             className="hidden" 
                         />
-                         <button
-                            type="button"
-                            onClick={handleAnalyzeClick}
-                            disabled={isLoading || isListening}
-                            className="p-2 rounded-full text-white bg-slate-800/50 border border-primary/30 hover:bg-primary/50 disabled:opacity-50 transition-all"
-                            title="Analisar Gastos"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={1.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                            </svg>
-                        </button>
-                        
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}

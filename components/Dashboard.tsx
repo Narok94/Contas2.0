@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { type Account, AccountStatus, type Income, type User } from '../types';
 import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
-import AiInsightCard from './AiInsightCard';
 
 interface DashboardProps {
   accounts: Account[];
@@ -16,7 +15,6 @@ interface DashboardProps {
   setSelectedDate: (date: Date) => void;
   onOpenBatchModal: () => void;
   currentUser: User | null;
-  onTriggerAnalysis: () => Promise<string>;
 }
 
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => (
@@ -35,48 +33,32 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
 );
 
 const MonthSummaryCard: React.FC<{ totalIncome: number, paidThisMonth: number, balance: number, formatCurrency: (v: number) => string }> = ({ totalIncome, paidThisMonth, balance, formatCurrency }) => {
-    const progress = totalIncome > 0 ? (paidThisMonth / totalIncome) * 100 : 0;
-    const progressColor = progress > 85 ? 'bg-danger' : progress > 60 ? 'bg-warning' : 'bg-success';
-
     return (
         <motion.div 
-            className="col-span-2 md:col-span-2 bg-gradient-to-br from-primary to-secondary p-4 rounded-3xl shadow-2xl shadow-primary/20 flex flex-col justify-between text-white"
+            className="bg-gradient-to-br from-primary to-secondary p-4 rounded-3xl shadow-2xl shadow-primary/20 text-white h-full flex flex-col justify-center"
             variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
         >
-            <div>
-                <h3 className="text-lg font-bold mb-2 text-white/90">Resumo do Mês</h3>
-                <div className="flex flex-wrap justify-between items-center gap-x-6 gap-y-2">
-                    <div>
-                        <p className="text-xs opacity-80">Entradas</p>
-                        <p className="text-xl font-bold">{formatCurrency(totalIncome)}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs opacity-80">Saídas (Pagas)</p>
-                        <p className="text-xl font-bold">{formatCurrency(paidThisMonth)}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs opacity-80">Saldo Atual</p>
-                        <p className={`text-xl font-bold ${balance < 0 ? 'text-red-300' : 'text-green-300'}`}>{formatCurrency(balance)}</p>
-                    </div>
+            <h3 className="text-base font-bold text-white/90">Resumo do Mês</h3>
+            <div className="mt-3 space-y-1.5">
+                <div className="flex justify-between items-baseline">
+                    <p className="text-sm opacity-80">Entradas</p>
+                    <p className="text-lg font-bold">{formatCurrency(totalIncome)}</p>
                 </div>
-            </div>
-            <div>
-                <div className="w-full bg-black/20 rounded-full h-2.5 overflow-hidden mt-3">
-                    <motion.div
-                        className={`h-full rounded-full ${progressColor}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                    />
+                <div className="flex justify-between items-baseline">
+                    <p className="text-sm opacity-80">Saídas (Pagas)</p>
+                    <p className="text-lg font-bold">{formatCurrency(paidThisMonth)}</p>
                 </div>
-                <p className="text-right text-xs mt-1 opacity-80">{Math.min(100, Math.round(progress))}% da renda gasta</p>
+                <div className="flex justify-between items-baseline">
+                    <p className="text-sm opacity-80">Saldo Atual</p>
+                    <p className={`text-lg font-bold ${balance < 0 ? 'text-red-300' : 'text-green-300'}`}>{formatCurrency(balance)}</p>
+                </div>
             </div>
         </motion.div>
     );
 };
 
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, onOpenBatchModal, currentUser, onTriggerAnalysis }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, onOpenBatchModal, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   
@@ -193,24 +175,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     <div className="space-y-6 max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-3xl font-bold text-text-primary dark:text-dark-text-primary">Olá, {currentUser?.name?.split(' ')[0]}! 👋</h1>
-            <p className="text-text-secondary dark:text-dark-text-secondary mt-1">Bem-vindo(a) de volta, aqui está o resumo.</p>
         </motion.div>
         
         <motion.div 
-            className="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6"
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
         >
             <MonthSummaryCard totalIncome={stats.totalIncome} paidThisMonth={stats.paidThisMonth} balance={stats.balance} formatCurrency={formatCurrency} />
-            
-            <motion.div 
-                 className="col-span-2 md:col-span-1"
-                 variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-            >
-                <AiInsightCard onGenerate={onTriggerAnalysis} />
-            </motion.div>
-
             <StatCard title="Pendente" value={formatCurrency(stats.pending)} icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} color="text-warning" />
             <StatCard title="Pago" value={formatCurrency(stats.paidThisMonth)} icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} color="text-accent" />
         </motion.div>
