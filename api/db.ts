@@ -57,25 +57,31 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     console.log('[DB HANDLER] Conexão com o banco de dados estabelecida.');
     
     // --- Lógica de Migração de Schema Robusta ---
-    // 1. A instrução CREATE TABLE agora reflete o schema ideal para novas instâncias.
+    // 1. Cria a tabela com o schema ideal, se ela não existir.
     await client.query(`
       CREATE TABLE IF NOT EXISTS controle_contas (
         id SERIAL PRIMARY KEY,
-        user_identifier TEXT,
+        user_identifier TEXT UNIQUE,
         content TEXT,
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // 2. Garante que TODAS as colunas necessárias existam, adicionando-as se ausentes.
+    // 2. Para tabelas existentes, garante que todas as colunas necessárias existam.
     await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS user_identifier TEXT;`);
     await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS content TEXT;`);
-    // Esta ALTER garante que a coluna exista, não seja nula, e tenha um valor padrão.
-    // Isso corrige tanto 'column does not exist' quanto 'null value violates not-null constraint'.
-    await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP;`);
+    await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE;`);
     
-    // 3. Garante que haja um índice único em user_identifier para a cláusula ON CONFLICT funcionar.
+    // 3. Garante o índice de unicidade, caso a restrição UNIQUE não tenha sido criada com a tabela.
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS controle_contas_user_identifier_idx ON controle_contas (user_identifier);`);
+    
+    // 4. Garante que a coluna 'updated_at' tenha as restrições corretas, atualizando-a de forma segura.
+    //    Primeiro, preenche quaisquer valores nulos existentes para que a restrição NOT NULL não falhe.
+    await client.query(`UPDATE controle_contas SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL;`);
+    //    Em seguida, define o valor padrão para novas inserções.
+    await client.query(`ALTER TABLE controle_contas ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;`);
+    //    Finalmente, aplica a restrição NOT NULL, o que agora é seguro.
+    await client.query(`ALTER TABLE controle_contas ALTER COLUMN updated_at SET NOT NULL;`);
     
     if (req.method === 'GET') {
       console.log('[DB HANDLER] Executando GET.');
@@ -86,8 +92,6 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
 
     if (req.method === 'POST') {
       console.log('[DB HANDLER] Executando POST.');
-      // A query de INSERT agora depende do DEFAULT do banco de dados para a coluna 'updated_at',
-      // tornando-a mais simples e robusta. A cláusula UPDATE continua a atualizar o timestamp.
       await client.query(`
         INSERT INTO controle_contas (user_identifier, content)
         VALUES ($1, $2)
