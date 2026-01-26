@@ -32,7 +32,22 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
     };
   }, []);
 
+  const handleRetrySync = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      realtimeService.forceSync();
+  };
+
   const getSyncBadge = () => {
+    const retryButton = (
+        <button 
+            onClick={handleRetrySync}
+            className="ml-1 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
+            title="Tentar Conectar Novamente"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+        </button>
+    );
+
     switch(syncStatus) {
       case 'synced': return (
           <div className="flex items-center gap-1 group relative">
@@ -40,6 +55,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
             <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
                 Sincronizado: {lastSync ? lastSync.toLocaleTimeString() : 'Agora'}
             </div>
+            {retryButton}
           </div>
       );
       case 'syncing': return (
@@ -54,8 +70,9 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
         <div className="flex items-center gap-1 group relative">
             <span className="flex h-2.5 w-2.5 rounded-full bg-danger animate-bounce"></span>
             <div className="absolute left-0 top-6 hidden group-hover:block bg-danger text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50 font-bold">
-                Falha ao conectar com o banco!
+                Falha na Conexão!
             </div>
+            {retryButton}
         </div>
       );
       default: return (
@@ -64,6 +81,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
             <div className="absolute left-0 top-6 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
                 Modo Local (Offline)
             </div>
+            {retryButton}
         </div>
       );
     }
