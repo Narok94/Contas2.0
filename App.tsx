@@ -163,7 +163,6 @@ const App: React.FC = () => {
     setView('dashboard');
   };
 
-  // Lógica inteligente para alternar status de pagamento
   const handleToggleAccountStatus = (accountId: string) => {
     const acc = accounts.find(a => a.id === accountId);
     if (!acc) return;
@@ -172,30 +171,22 @@ const App: React.FC = () => {
     const isPaying = acc.status !== AccountStatus.PAID;
     
     if (isVariableUtility && isPaying) {
-        // Se for uma utilidade variável sendo paga, abrimos o formulário para o usuário definir o valor deste mês
-        // Mas para manter a experiência rápida, o Dashboard já deve tratar isso via snapshots se quisermos automatizar.
-        // Implementação: Se for recorrente variável e o usuário clicar em Pagar, vamos criar um snapshot fixo para este mês.
-        
-        // Se o valor atual for 0, forçamos a edição para não pagar algo sem valor
         if (acc.value === 0) {
             setAccountToEdit(acc);
             setIsAccountModalOpen(true);
             return;
         }
 
-        // Criar um novo registro "snapshot" fixo para este mês
         const snapshot: Account = {
             ...acc,
-            id: `acc-snap-${Date.now()}`,
-            isRecurrent: false, // O snapshot não é recorrente
+            id: `acc-snap-${acc.id}-${selectedDate.toISOString().slice(0, 7)}`,
+            isRecurrent: false,
             status: AccountStatus.PAID,
             paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
         };
         
         dataService.addAccount(snapshot);
-        // O original permanece como template (será exibido como pendente/zerado nos outros meses)
     } else {
-        // Comportamento padrão para outras contas
         dataService.updateAccount({
             ...acc, 
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING, 
@@ -206,29 +197,43 @@ const App: React.FC = () => {
 
   const handleAccountSubmit = (data: any) => {
       const isVariableUtility = VARIABLE_UTILITIES.includes(data.category) && data.isRecurrent;
+      const monthKey = selectedDate.toISOString().slice(0, 7);
       
       if (data.id) {
-          // Editando existente
           if (isVariableUtility) {
-              // Se estiver editando uma utilidade variável recorrente, criamos um snapshot fixo para o mês selecionado
-              // em vez de mudar o modelo global (a menos que o usuário queira mudar o modelo, mas aqui focamos no mês atual)
-              const snapshot: Account = {
-                  ...data,
-                  id: `acc-snap-${Date.now()}`,
-                  isRecurrent: false,
-                  paymentDate: data.paymentDate || new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
-              };
-              dataService.addAccount(snapshot);
+              // Se estamos editando um modelo de utilidade variável (recorrente), 
+              // queremos salvar o valor apenas para este mês.
+              // Verificamos se já existe um snapshot para este mês
+              const existingSnapshot = accounts.find(a => 
+                !a.isRecurrent && 
+                a.name === data.name && 
+                a.category === data.category && 
+                a.paymentDate?.startsWith(monthKey)
+              );
+
+              if (existingSnapshot) {
+                  dataService.updateAccount({
+                      ...existingSnapshot,
+                      value: data.value,
+                  });
+              } else {
+                  const snapshot: Account = {
+                      ...data,
+                      id: `acc-snap-${data.id}-${monthKey}`,
+                      isRecurrent: false,
+                      paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
+                  };
+                  dataService.addAccount(snapshot);
+              }
           } else {
+              // Comportamento normal para outras contas ou para instâncias já criadas
               dataService.updateAccount(data);
           }
       } else {
-          // Nova conta
           dataService.addAccount({
               ...data, 
               id: `acc-${Date.now()}`, 
               status: AccountStatus.PENDING,
-              // Se for utilidade variável, o valor inicial do modelo deve ser 0 para não propagar lixo
               value: isVariableUtility ? 0 : data.value
           });
       }

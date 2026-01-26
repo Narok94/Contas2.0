@@ -55,43 +55,39 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const selectedYear = safeDate.getFullYear();
     const selectedMonth = safeDate.getMonth();
     
-    const monthlyAccountMap = new Map<string, Account>();
+    // 1. Identificar todas as contas que são registros fixos (snapshots) deste mês
+    const instances = accounts.filter(acc => 
+        !acc.isRecurrent && 
+        acc.paymentDate && 
+        new Date(acc.paymentDate).getFullYear() === selectedYear && 
+        new Date(acc.paymentDate).getMonth() === selectedMonth
+    );
 
+    // 2. Mapear as instâncias por nome e categoria para fácil busca
+    const instanceKeys = new Set(instances.map(i => `${i.name}-${i.category}`));
+
+    const finalAccounts: Account[] = [...instances];
+
+    // 3. Processar modelos recorrentes
     for (const account of accounts) {
-      const isVariableUtility = VARIABLE_UTILITIES.includes(account.category) && account.isRecurrent;
-      
-      if (account.isRecurrent || (account.paymentDate && new Date(account.paymentDate).getFullYear() === selectedYear && new Date(account.paymentDate).getMonth() === selectedMonth)) {
-        let status = account.status;
-        let paymentDate = account.paymentDate;
-        let displayValue = account.value;
+        if (!account.isRecurrent) continue;
 
-        const paidInSelectedMonth = account.status === AccountStatus.PAID && paymentDate && new Date(paymentDate).getFullYear() === selectedYear && new Date(paymentDate).getMonth() === selectedMonth;
+        const isVariableUtility = VARIABLE_UTILITIES.includes(account.category);
+        const key = `${account.name}-${account.category}`;
 
-        if (account.isRecurrent && !paidInSelectedMonth) {
-          status = AccountStatus.PENDING;
-          paymentDate = undefined;
-          // Se for uma utilidade variável e não estiver paga neste mês, forçamos o valor para 0 na exibição
-          if (isVariableUtility) {
-            displayValue = 0;
-          }
-        }
-        
-        // Priorizamos o registro pago do mês se houver duplicata por causa da recorrência
-        if (!monthlyAccountMap.has(account.id) || paidInSelectedMonth) {
-           monthlyAccountMap.set(account.id, { ...account, status, paymentDate, value: displayValue });
-        }
-      } else if (account.status === AccountStatus.PENDING) {
-         // Mantém contas pendentes de meses anteriores visíveis
-         monthlyAccountMap.set(account.id, account);
-      }
+        // Se já existe uma instância fixa para este mês (paga ou editada), ignoramos o modelo recorrente
+        if (instanceKeys.has(key)) continue;
+
+        // Caso contrário, adicionamos o modelo como pendente (e zerado se for utilidade variável)
+        finalAccounts.push({
+            ...account,
+            status: AccountStatus.PENDING,
+            paymentDate: undefined,
+            value: isVariableUtility ? 0 : account.value
+        });
     }
-    return Array.from(monthlyAccountMap.values()).filter(acc => {
-       if (acc.status === AccountStatus.PAID && acc.paymentDate) {
-         const d = new Date(acc.paymentDate);
-         return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
-       }
-       return true;
-    });
+
+    return finalAccounts;
   }, [accounts, safeDate]);
   
   const filteredAccountsForDisplay = useMemo(() => {
@@ -153,7 +149,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             </div>
         </motion.div>
         
-        {/* Sumário Financeiro */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <SummaryItem
                 title="Saldo Livre"
@@ -182,7 +177,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         </div>
 
         <div className="space-y-6 pb-10">
-            {/* Seção de Contas com Seletor de Mês Integrado */}
             <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
                     <div className="flex items-center gap-3">
@@ -218,7 +212,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                     />
                 </div>
 
-                {/* Grid otimizado */}
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     <AnimatePresence mode="popLayout">
                         {filteredAccountsForDisplay.map(acc => (
