@@ -1,15 +1,14 @@
+
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { type Account, AccountStatus, type Income, type User, type Goal } from '../types';
+import { type Account, AccountStatus, type Income, type User } from '../types';
 import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
 import MonthPicker from './MonthPicker';
-import GoalTracker from './GoalTracker';
 
 interface DashboardProps {
   accounts: Account[];
   incomes: Income[];
-  goals: Goal[];
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (accountId: string) => void;
   onToggleStatus: (accountId: string) => void;
@@ -37,7 +36,7 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
     </motion.div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal, categories }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal, categories }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
@@ -114,7 +113,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditA
         </section>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 pb-24 px-4">
-            <div className="xl:col-span-8 space-y-8">
+            <div className="xl:col-span-12 space-y-8">
                 <div className="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-border-color dark:border-dark-border-color">
                     <SearchBar 
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
@@ -126,7 +125,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditA
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <AnimatePresence mode="popLayout">
                         {filteredAccounts.map(acc => (
                             <AccountCard key={acc.id} account={acc} onEdit={onEditAccount} onDelete={onDeleteAccount} onToggleStatus={onToggleStatus} />
@@ -140,10 +139,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditA
                     </div>
                 )}
             </div>
-
-            <aside className="xl:col-span-4 space-y-8">
-                <GoalTracker goals={goals} />
-            </aside>
         </div>
     </div>
   );

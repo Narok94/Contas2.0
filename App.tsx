@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { type User, type Group, type Account, Role, AccountStatus, type Income, type View, type Goal } from './types';
+import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import Header from './components/Header';
@@ -19,7 +20,6 @@ import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
-import { MOCK_GOALS } from './utils/mockData';
 
 const VARIABLE_UTILITIES = ['Água', 'Luz', 'Internet'];
 
@@ -32,7 +32,6 @@ const App: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
   const [categories, setCategories] = useState<string[]>([]);
   const [view, setView] = useState<View>('login');
   // Ajustado para começar em Janeiro de 2026
@@ -263,7 +262,6 @@ const App: React.FC = () => {
             <Dashboard 
                 accounts={userAccounts} 
                 incomes={userIncomes} 
-                goals={goals}
                 onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                 onDeleteAccount={(id) => dataService.deleteAccount(id)} 
                 onToggleStatus={handleToggleAccountStatus} 

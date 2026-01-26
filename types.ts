@@ -51,15 +51,15 @@ export interface Income {
   isRecurrent: boolean;
 }
 
-// Added missing Goal interface to fix Dashboard component import error
-export interface Goal {
-  id: string;
-  name: string;
-  targetValue: number;
-  currentValue: number;
-}
-
 export interface ChatMessage {
     role: 'user' | 'model';
     content: string;
+}
+
+// Added Goal interface to fix the import error in GoalTracker.tsx
+export interface Goal {
+  id: string;
+  name: string;
+  currentValue: number;
+  targetValue: number;
 }
