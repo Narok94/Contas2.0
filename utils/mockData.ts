@@ -1,6 +1,6 @@
 
 
-import { Role, AccountStatus, type User, type Group, type Account, type Income } from '../types';
+import { Role, AccountStatus, type User, type Group, type Account, type Income, type Goal } from '../types';
 
 const today = new Date();
 const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 15);
@@ -79,4 +79,9 @@ export const MOCK_INCOMES: Income[] = [
   // --- Group 3: Família Tatu ---
   { id: 'inc-j1', groupId: 'group-3', name: 'Salário Jessica', value: 7500, date: lastMonth.toISOString(), isRecurrent: true },
   { id: 'inc-j2', groupId: 'group-3', name: 'Vale Alimentação', value: 800, date: lastMonth.toISOString(), isRecurrent: true },
+];
+
+export const MOCK_GOALS: Goal[] = [
+    { id: 'goal-1', name: 'Viagem de Férias', targetValue: 5000, currentValue: 1750 },
+    { id: 'goal-2', name: 'Reserva de Emergência', targetValue: 10000, currentValue: 8200 },
 ];

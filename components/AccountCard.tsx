@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { motion, PanInfo } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { type Account, AccountStatus } from '../types';
 
 interface AccountCardProps {
@@ -10,102 +9,100 @@ interface AccountCardProps {
   onToggleStatus: (accountId: string) => void;
 }
 
+const getCategoryStyles = (category: string) => {
+    switch (category) {
+        case 'Moradia': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300';
+        case 'Alimentação': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
+        case 'Transporte': return 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300';
+        case 'Saúde': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+        case 'Luz': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
+        default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+    }
+};
+
 const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, onToggleStatus }) => {
   const isPaid = account.status === AccountStatus.PAID;
-  const cardBorderColor = isPaid ? 'border-success' : 'border-danger';
-  const bgColor = 'bg-surface dark:bg-dark-surface';
-  
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 50;
-    if (info.offset.x > swipeThreshold) {
-      onToggleStatus(account.id);
-    } else if (info.offset.x < -swipeThreshold) {
-      if (window.confirm('Tem certeza que deseja excluir esta conta?')) {
-        onDelete(account.id);
-      }
-    }
-  };
+  const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <div className="relative w-full">
-       {/* Background actions for Swipe */}
-       <div className="absolute inset-0 flex items-center justify-between px-4 bg-gray-100 dark:bg-dark-surface-light rounded-2xl">
-        <div className="flex items-center space-x-2 text-success">
-           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-          <span className="text-xs font-bold uppercase">{isPaid ? 'Estornar' : 'Pagar'}</span>
-        </div>
-        <div className="flex items-center space-x-2 text-danger">
-          <span className="text-xs font-bold uppercase">Apagar</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-        </div>
-      </div>
+    <motion.div
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        whileHover={{ y: -4 }}
+        className={`group relative p-5 rounded-[2rem] border transition-all duration-300 ${
+            isPaid 
+                ? 'bg-white dark:bg-slate-900/40 border-emerald-500/30 shadow-md' 
+                : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm'
+        }`}
+    >
+        {/* Badge de Status Pago (Sutil) */}
+        {isPaid && (
+            <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg z-10">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+        )}
 
-       <motion.div
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          onDragEnd={handleDragEnd}
-          className={`relative rounded-2xl shadow-sm p-3.5 border-l-[6px] ${cardBorderColor} ${bgColor} transition-all active:scale-[0.97] cursor-grab active:cursor-grabbing select-none group h-full flex flex-col justify-between`}
-      >
-        <div>
-          <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className={`text-xs font-black uppercase tracking-tight line-clamp-2 leading-tight ${isPaid ? 'text-text-muted line-through opacity-70' : 'text-text-primary dark:text-dark-text-primary'}`}>
-                {account.name}
-              </h3>
-              {!isPaid && (
-                  <div className="w-2 h-2 rounded-full bg-danger animate-pulse shrink-0 mt-0.5"></div>
-              )}
-          </div>
-          
-          <p className={`text-lg font-black tracking-tighter ${isPaid ? 'text-text-muted opacity-60' : 'text-primary'}`}>
-            {formatCurrency(account.value)}
-          </p>
-
-          <div className="mt-2 flex flex-wrap gap-1">
-            <span className="px-1.5 py-0.5 bg-surface-light dark:bg-dark-surface-light text-[9px] font-bold text-text-muted rounded-md uppercase">
-                {account.category}
-            </span>
-            {account.isRecurrent && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[9px] font-bold rounded-md uppercase">Recorrente</span>
-            )}
-            {account.isInstallment && (
-                <span className="px-1.5 py-0.5 bg-secondary/10 text-secondary text-[9px] font-bold rounded-md uppercase">{account.currentInstallment}/{account.totalInstallments}</span>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border-color/30 dark:border-dark-border-color/30">
-            <button
-                onClick={(e) => { e.stopPropagation(); onToggleStatus(account.id); }}
-                className={`text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-xl transition-all ${
-                    isPaid 
-                        ? 'bg-success/10 text-success hover:bg-success hover:text-white' 
-                        : 'bg-danger text-white hover:bg-danger-dark shadow-sm shadow-danger/20'
-                }`}
-            >
-                {isPaid ? 'Pago ✅' : 'Pagar'}
-            </button>
+        <div className="flex justify-between items-start">
+            <div className="space-y-3 flex-1 pr-4">
+                <span className={`text-[10px] font-black px-3 py-1 rounded-full tracking-wider uppercase inline-block ${getCategoryStyles(account.category)}`}>
+                    {account.category}
+                </span>
+                
+                <div>
+                    <h3 className={`font-black text-xl tracking-tighter leading-none ${isPaid ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900 dark:text-white'}`}>
+                        {account.name}
+                    </h3>
+                    <p className={`text-2xl font-black mt-1 tracking-tighter ${isPaid ? 'text-emerald-600/70' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                        {formatCurrency(account.value)}
+                    </p>
+                </div>
+            </div>
             
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button 
+                onClick={() => onToggleStatus(account.id)}
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                    isPaid 
+                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' 
+                        : 'bg-slate-50 dark:bg-slate-700 text-slate-400 hover:bg-indigo-600 hover:text-white'
+                }`}
+                title={isPaid ? "Marcar como pendente" : "Marcar como pago"}
+            >
+                {isPaid ? (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                ) : (
+                    <div className="w-6 h-6 border-2 border-current rounded-lg opacity-40 group-hover:opacity-100 transition-opacity" />
+                )}
+            </button>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-700/50 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+                {account.isInstallment && (
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        Parc. {account.currentInstallment}/{account.totalInstallments}
+                    </span>
+                )}
+            </div>
+
+            <div className="flex gap-2">
                 <button 
-                    onClick={(e) => { e.stopPropagation(); onEdit(account); }}
-                    className="p-1.5 text-text-muted hover:text-primary transition-colors"
+                    onClick={() => onEdit(account)} 
+                    className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-700/50 rounded-xl"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </button>
                 <button 
-                    onClick={(e) => { e.stopPropagation(); if(window.confirm('Excluir conta?')) onDelete(account.id); }}
-                    className="p-1.5 text-text-muted hover:text-danger transition-colors"
+                    onClick={() => { if(window.confirm('Apagar esta conta?')) onDelete(account.id); }} 
+                    className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-slate-50 dark:bg-slate-700/50 rounded-xl"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </button>
             </div>
         </div>
-      </motion.div>
-    </div>
+    </motion.div>
   );
 };
 

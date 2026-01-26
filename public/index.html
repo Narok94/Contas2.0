@@ -115,18 +115,20 @@
         },
       };
     </script>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
-    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.19"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+        "framer-motion": "https://esm.sh/framer-motion@11.11.17?external=react,react-dom",
+        "recharts": "https://esm.sh/recharts@2.13.3?external=react,react-dom",
+        "@google/genai": "https://esm.sh/@google/genai@1.2.0",
+        "@vercel/postgres": "https://esm.sh/@vercel/postgres@0.10.0",
+        "@vercel/node": "https://esm.sh/@vercel/node@5.5.28"
+      }
+    }
+    </script>
 </head>
 <body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased">
     <div id="root"></div>

@@ -1,12 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tatu - Finanças a Dois</title>
+    <title>Tatu - Gestão Financeira Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      // Aplicação imediata do tema para evitar flash branco
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
       } else {
@@ -19,64 +19,52 @@
         theme: {
           extend: {
             colors: {
-              primary: { light: '#60a5fa', DEFAULT: '#3b82f6', dark: '#2563eb' }, // Blue
-              secondary: { light: '#3b82f6', DEFAULT: '#2563eb', dark: '#1d4ed8' }, // Darker Blue
-              accent: { light: '#7dd3fc', DEFAULT: '#38bdf8', dark: '#0ea5e9' }, // Sky Blue
+              primary: { light: '#818cf8', DEFAULT: '#6366f1', dark: '#4f46e5' },
               background: '#f8fafc',
               surface: '#ffffff',
               'surface-light': '#f1f5f9',
               'border-color': '#e2e8f0',
-              'text-primary': '#0f172a',
-              'text-secondary': '#64748b',
               dark: {
                 background: '#020617',
                 surface: '#0f172a',
                 'surface-light': '#1e293b',
                 'border-color': '#334155',
-                'text-primary': '#f8fafc',
-                'text-secondary': '#94a3b8',
               },
-              danger: '#f43f5e',
               success: '#10b981',
+              danger: '#f43f5e',
             },
+            borderRadius: { '3xl': '1.5rem', '4xl': '2rem' },
             animation: {
-              'mesh': 'mesh 15s ease infinite',
-              'fade-in-up': 'fade-in-up 0.4s ease-out',
-              'orb-glow': 'orb-glow 4s ease-in-out infinite',
-              'float-1': 'float 15s ease-in-out infinite',
-              'float-2': 'float 20s ease-in-out infinite',
-              'float-3': 'float 25s ease-in-out infinite',
+              'fade-in-up': 'fade-in-up 0.5s ease-out',
             },
             keyframes: {
-              mesh: { '0%, 100%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' } },
-              'fade-in-up': { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-              'orb-glow': { '0%, 100%': { boxShadow: '0 0 15px 0px rgba(59, 130, 246, 0.5)' }, '50%': { boxShadow: '0 0 25px 8px rgba(56, 189, 248, 0.5)' } },
-              'float': {
-                '0%': { transform: 'translateY(0px)' },
-                '50%': { transform: 'translateY(-20px)' },
-                '100%': { transform: 'translateY(0px)' },
+              'fade-in-up': {
+                '0%': { opacity: '0', transform: 'translateY(15px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
               },
             }
           },
         },
       };
     </script>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
-    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.19",
-    "@vercel/postgres": "https://esm.sh/@vercel/postgres@^0.10.0",
-    "@vercel/node": "https://esm.sh/@vercel/node@^5.5.27"
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.17?external=react,react-dom",
+    "recharts": "https://esm.sh/recharts@2.13.3?external=react,react-dom",
+    "@google/genai": "https://esm.sh/@google/genai@1.2.0",
+    "@vercel/postgres": "https://esm.sh/@vercel/postgres@0.10.0",
+    "@vercel/node": "https://esm.sh/@vercel/node@5.5.28",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
   }
 }
 </script>
 </head>
-<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased selection:bg-blue-100 dark:selection:bg-blue-900/30 overflow-x-hidden">
+<body class="bg-background text-slate-900 dark:bg-dark-background dark:text-slate-100 antialiased overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="bundle.js"></script>
 </body>

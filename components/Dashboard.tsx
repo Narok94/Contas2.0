@@ -1,15 +1,16 @@
-
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Account, AccountStatus, type Income, type User, type Goal } from '../types';
 import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
 import MonthPicker from './MonthPicker';
+import AiInsightCard from './AiInsightCard';
+import GoalTracker from './GoalTracker';
 
 interface DashboardProps {
   accounts: Account[];
   incomes: Income[];
-  goals?: Goal[];
+  goals: Goal[];
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (accountId: string) => void;
   onToggleStatus: (accountId: string) => void;
@@ -19,28 +20,26 @@ interface DashboardProps {
   currentUser: User | null;
   onOpenMoveModal: () => void;
   categories: string[];
+  onGenerateAnalysis: () => Promise<string>;
 }
 
-const VARIABLE_UTILITIES = ['Água', 'Luz', 'Internet'];
-
-const SummaryItem: React.FC<{ title: string; value: string; icon: React.ReactNode; valueColor?: string; isMain?: boolean }> = ({ title, value, icon, valueColor = 'text-text-primary dark:text-dark-text-primary', isMain = false }) => (
+const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; isMain?: boolean; colorClass?: string }> = ({ title, value, icon, isMain = false, colorClass = "" }) => (
     <motion.div
-        className={`${isMain ? 'bg-gradient-to-br from-primary to-secondary text-white shadow-glow-primary' : 'bg-surface dark:bg-dark-surface'} p-5 rounded-[2rem] border border-border-color/50 dark:border-dark-border-color/50 relative overflow-hidden group`}
-        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`${isMain ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color shadow-sm'} p-6 rounded-[2.5rem] relative overflow-hidden group transition-all hover:translate-y-[-4px] hover:shadow-lg`}
     >
-        {!isMain && <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-primary/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>}
-        <div className={`flex items-center text-xs font-bold uppercase tracking-widest ${isMain ? 'text-white/80' : 'text-text-secondary dark:text-dark-text-secondary'}`}>
-            {icon}
-            <span className="ml-2">{title}</span>
+        <div className={`flex items-center text-[10px] font-black uppercase tracking-widest ${isMain ? 'text-indigo-100' : 'text-slate-400'}`}>
+            <span className={`p-1.5 rounded-xl bg-current/10 mr-2 ${!isMain ? colorClass : ''}`}>{icon}</span>
+            <span>{title}</span>
         </div>
-        <p className={`mt-2 text-2xl font-black truncate ${isMain ? 'text-white' : valueColor}`}>
+        <p className={`mt-3 text-3xl font-black tracking-tighter truncate ${isMain ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
             {value}
         </p>
     </motion.div>
 );
 
-
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal, categories }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, goals, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, currentUser, onOpenMoveModal, categories, onGenerateAnalysis }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
@@ -48,193 +47,106 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
   const [filterInstallment, setFilterInstallment] = useState(false);
   
   const safeDate = useMemo(() => {
-    return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date(2026, 0, 1);
+    return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
   }, [selectedDate]);
 
-  const accountsForMonth = useMemo(() => {
-    const selectedYear = safeDate.getFullYear();
-    const selectedMonth = safeDate.getMonth();
-    
-    // 1. Identificar todas as contas que são registros fixos (snapshots) deste mês
-    const instances = accounts.filter(acc => 
-        !acc.isRecurrent && 
-        acc.paymentDate && 
-        new Date(acc.paymentDate).getFullYear() === selectedYear && 
-        new Date(acc.paymentDate).getMonth() === selectedMonth
-    );
-
-    // 2. Mapear as instâncias por nome e categoria para fácil busca
-    const instanceKeys = new Set(instances.map(i => `${i.name}-${i.category}`));
-
-    const finalAccounts: Account[] = [...instances];
-
-    // 3. Processar modelos recorrentes
-    for (const account of accounts) {
-        if (!account.isRecurrent) continue;
-
-        const isVariableUtility = VARIABLE_UTILITIES.includes(account.category);
-        const key = `${account.name}-${account.category}`;
-
-        // Se já existe uma instância fixa para este mês (paga ou editada), ignoramos o modelo recorrente
-        if (instanceKeys.has(key)) continue;
-
-        // Caso contrário, adicionamos o modelo como pendente (e zerado se for utilidade variável)
-        finalAccounts.push({
-            ...account,
-            status: AccountStatus.PENDING,
-            paymentDate: undefined,
-            value: isVariableUtility ? 0 : account.value
-        });
-    }
-
-    return finalAccounts;
-  }, [accounts, safeDate]);
-  
-  const filteredAccountsForDisplay = useMemo(() => {
-    return accountsForMonth
-      .filter(acc => {
-        const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
-        const matchesSearch = searchTerm === '' || acc.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = filterCategory === 'ALL' || acc.category === filterCategory;
-        const matchesRecurrent = !filterRecurrent || acc.isRecurrent;
-        const matchesInstallment = !filterInstallment || acc.isInstallment;
-        
-        return matchesStatus && matchesSearch && matchesCategory && matchesRecurrent && matchesInstallment;
-      })
-      .sort((a, b) => {
-        if (a.status === AccountStatus.PENDING && b.status !== AccountStatus.PENDING) return -1;
-        if (a.status !== AccountStatus.PENDING && b.status === AccountStatus.PENDING) return 1;
-        return a.name.localeCompare(b.name);
-    });
-  }, [accountsForMonth, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
-  
   const stats = useMemo(() => {
-    const selectedMonth = safeDate.getMonth();
-    const selectedYear = safeDate.getFullYear();
+    const m = safeDate.getMonth();
+    const y = safeDate.getFullYear();
 
-    const monthIncomes = incomes.filter(inc => {
-        const incomeDate = new Date(inc.date);
-        return incomeDate.getMonth() === selectedMonth && incomeDate.getFullYear() === selectedYear;
+    const currentMonthAccounts = accounts.filter(acc => {
+        if (!acc.paymentDate) return acc.isRecurrent; 
+        const d = new Date(acc.paymentDate);
+        return d.getMonth() === m && d.getFullYear() === y;
     });
-    const totalIncome = monthIncomes.reduce((sum, inc) => sum + inc.value, 0);
 
-    const paidInMonthValue = accountsForMonth
+    const totalIncome = incomes
+        .filter(inc => {
+            const d = new Date(inc.date);
+            return d.getMonth() === m && d.getFullYear() === y;
+        })
+        .reduce((sum, inc) => sum + inc.value, 0);
+
+    const paid = currentMonthAccounts
         .filter(acc => acc.status === AccountStatus.PAID)
         .reduce((sum, acc) => sum + acc.value, 0);
 
-    const balance = totalIncome - paidInMonthValue;
-    
-    const pendingInMonth = accountsForMonth
+    const pending = currentMonthAccounts
         .filter(acc => acc.status === AccountStatus.PENDING)
         .reduce((sum, acc) => sum + acc.value, 0);
 
-    return {
-        totalIncome,
-        paidThisMonth: paidInMonthValue,
-        balance,
-        pending: pendingInMonth,
-    };
-  }, [incomes, safeDate, accountsForMonth]);
+    return { totalIncome, paid, pending, balance: totalIncome - paid };
+  }, [accounts, incomes, safeDate]);
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
+  const filteredAccounts = useMemo(() => {
+    return accounts.filter(acc => {
+        const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
+        const matchesCategory = filterCategory === 'ALL' || acc.category === filterCategory;
+        const matchesRecurrent = !filterRecurrent || acc.isRecurrent;
+        const matchesInstallment = !filterInstallment || acc.isInstallment;
+        return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
+    });
+  }, [accounts, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
+
+  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex justify-between items-end px-1 mb-2">
+    <div className="space-y-8 animate-fade-in-up max-w-7xl mx-auto py-4">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-4">
             <div>
-              <p className="text-text-secondary dark:text-dark-text-secondary font-medium text-sm">Bem-vindo de volta,</p>
-              <h1 className="text-3xl font-black text-text-primary dark:text-dark-text-primary leading-tight">{currentUser?.name?.split(' ')[0]}! 👋</h1>
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-1">Finanças de {currentUser?.name}</p>
+              <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
+                Tatu Dashboard<span className="text-indigo-600">.</span>
+              </h1>
             </div>
-        </motion.div>
-        
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <SummaryItem
-                title="Saldo Livre"
-                value={formatCurrency(stats.balance)}
-                isMain={true}
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25-2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m12 0V6a2.25 2.25 0 00-2.25-2.25H9.75A2.25 2.25 0 007.5 6v3" /></svg>}
-            />
-            <SummaryItem
-                title="A Pagar"
-                value={formatCurrency(stats.pending)}
-                valueColor="text-danger"
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-            />
-            <SummaryItem
-                title="Rendas"
-                value={formatCurrency(stats.totalIncome)}
-                valueColor="text-success"
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19.5v-15m0 0l-6.75 6.75M12 4.5l6.75 6.75" /></svg>}
-            />
-            <SummaryItem
-                title="Já Pago"
-                value={formatCurrency(stats.paidThisMonth)}
-                valueColor="text-text-primary"
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" /></svg>}
-            />
-        </div>
+            <div className="flex items-center gap-3">
+                <MonthPicker selectedDate={safeDate} onSelectDate={setSelectedDate} />
+                <button onClick={onOpenMoveModal} className="p-3 rounded-2xl bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color text-slate-400 hover:text-indigo-600 transition-all shadow-sm active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                </button>
+            </div>
+        </header>
 
-        <div className="space-y-6 pb-10">
-            <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
-                    <div className="flex items-center gap-3">
-                         <h2 className="text-xl font-black text-text-primary dark:text-dark-text-primary tracking-tight">Contas do Mês</h2>
-                         <MonthPicker selectedDate={safeDate} onSelectDate={setSelectedDate} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={onOpenMoveModal}
-                            className="p-2 rounded-xl bg-surface-light dark:bg-dark-surface-light hover:bg-white dark:hover:bg-dark-surface shadow-sm transition-all text-text-secondary border border-border-color/30"
-                            title="Mover contas entre meses"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+            <StatCard title="Saldo Livre" value={formatCurrency(stats.balance)} isMain={true} icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <StatCard title="Pendente" value={formatCurrency(stats.pending)} colorClass="text-rose-500" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <StatCard title="Entradas" value={formatCurrency(stats.totalIncome)} colorClass="text-emerald-500" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 11l5-5m0 0l5 5m-5-5v12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <StatCard title="Total Pago" value={formatCurrency(stats.paid)} colorClass="text-slate-400" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+        </section>
 
-                <div className="bg-surface/60 dark:bg-dark-surface/60 p-2 sm:p-3 rounded-2xl border border-border-color/50 dark:border-dark-border-color/50 backdrop-blur-md">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 pb-24 px-4">
+            <div className="xl:col-span-8 space-y-8">
+                <div className="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-border-color dark:border-dark-border-color">
                     <SearchBar 
-                        searchTerm={searchTerm} 
-                        setSearchTerm={setSearchTerm} 
-                        filterStatus={filterStatus} 
-                        setFilterStatus={setFilterStatus}
-                        filterCategory={filterCategory}
-                        setFilterCategory={setFilterCategory}
-                        filterRecurrent={filterRecurrent}
-                        setFilterRecurrent={setFilterRecurrent}
-                        filterInstallment={filterInstallment}
-                        setFilterInstallment={setFilterInstallment}
+                        searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
+                        filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+                        filterCategory={filterCategory} setFilterCategory={setFilterCategory}
+                        filterRecurrent={filterRecurrent} setFilterRecurrent={setFilterRecurrent}
+                        filterInstallment={filterInstallment} setFilterInstallment={setFilterInstallment}
                         categories={categories}
                     />
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <AnimatePresence mode="popLayout">
-                        {filteredAccountsForDisplay.map(acc => (
-                        <motion.div
-                            key={acc.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            layout
-                            className="h-full"
-                        >
-                            <AccountCard account={acc} onEdit={onEditAccount} onDelete={onDeleteAccount} onToggleStatus={onToggleStatus} />
-                        </motion.div>
+                        {filteredAccounts.map(acc => (
+                            <AccountCard key={acc.id} account={acc} onEdit={onEditAccount} onDelete={onDeleteAccount} onToggleStatus={onToggleStatus} />
                         ))}
                     </AnimatePresence>
                 </div>
-
-                {filteredAccountsForDisplay.length === 0 && (
-                    <div className="py-20 text-center bg-surface/30 dark:bg-dark-surface/30 rounded-[2.5rem] border-2 border-dashed border-border-color dark:border-dark-border-color">
-                        <p className="text-text-muted italic">Nenhuma conta encontrada para os filtros aplicados.</p>
+                
+                {filteredAccounts.length === 0 && (
+                    <div className="text-center py-20 bg-slate-50 dark:bg-slate-900/20 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-800">
+                        <p className="text-slate-400 font-bold tracking-tight">Nenhuma conta encontrada para os filtros selecionados.</p>
                     </div>
                 )}
             </div>
+
+            <aside className="xl:col-span-4 space-y-8">
+                <AiInsightCard onGenerate={onGenerateAnalysis} />
+                <GoalTracker goals={goals} />
+            </aside>
         </div>
     </div>
   );

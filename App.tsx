@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View, type Goal } from './types';
 import LoginScreen from './components/LoginScreen';
@@ -20,6 +21,8 @@ import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
+import { analyzeSpending } from './services/geminiService';
+import { MOCK_GOALS } from './utils/mockData';
 
 const VARIABLE_UTILITIES = ['Água', 'Luz', 'Internet'];
 
@@ -32,7 +35,7 @@ const App: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
   const [categories, setCategories] = useState<string[]>([]);
   const [view, setView] = useState<View>('login');
   // Ajustado para começar em Janeiro de 2026
@@ -239,6 +242,28 @@ const App: React.FC = () => {
       }
   };
 
+  const handleGenerateAnalysis = async (): Promise<string> => {
+    const currentMonth = selectedDate.getMonth();
+    const currentYear = selectedDate.getFullYear();
+    const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
+    const prevMonth = prevMonthDate.getMonth();
+    const prevYear = prevMonthDate.getFullYear();
+
+    const currentMonthAccounts = userAccounts.filter(acc => {
+      if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
+      const d = new Date(acc.paymentDate);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const previousMonthAccounts = userAccounts.filter(acc => {
+      if (acc.status !== AccountStatus.PAID || !acc.paymentDate) return false;
+      const d = new Date(acc.paymentDate);
+      return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+    });
+    
+    return analyzeSpending(currentMonthAccounts, previousMonthAccounts);
+  };
+
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background">
@@ -277,6 +302,7 @@ const App: React.FC = () => {
                 currentUser={currentUser} 
                 onOpenMoveModal={() => setIsMoveModalOpen(true)} 
                 categories={categories}
+                onGenerateAnalysis={handleGenerateAnalysis}
             />
         )}
         {view === 'history' && <AccountHistory accounts={userAccounts} />}
