@@ -55,7 +55,7 @@ class RealtimeService {
     if (userStr) {
       const user = JSON.parse(userStr);
       this.currentUserIdentifier = user.username;
-      setTimeout(() => this.syncWithRemote(), 1000); // Delay inicial para evitar race conditions
+      this.syncWithRemote();
     }
     this.notifyAll();
   }
@@ -95,8 +95,8 @@ class RealtimeService {
           this.persistRemote();
         }
       } else {
-        // Se a API retornar erro, ficamos em modo local silencioso
-        this.setSyncStatus('local');
+        // Se a API retornar erro (404, 500, 503), mostramos erro para o usuário saber que a nuvem falhou
+        this.setSyncStatus('error');
       }
     } catch (e) {
       this.setSyncStatus('error');
@@ -135,7 +135,7 @@ class RealtimeService {
           this.lastSyncTime = new Date();
           this.setSyncStatus('synced');
         } else {
-          this.setSyncStatus('local');
+          this.setSyncStatus('error');
         }
       } catch (e) {
         this.setSyncStatus('error');
@@ -147,13 +147,11 @@ class RealtimeService {
     (Object.keys(this.db) as CollectionKey[]).forEach(k => this.notify(k));
   }
 
-  // Use 'any' type cast to avoid complex generic indexing issues with mapped types
   private notify<K extends CollectionKey>(k: K) {
     const callbacks = this.listeners[k] as any[] | undefined;
     if (callbacks) callbacks.forEach(cb => cb(this.db[k]));
   }
 
-  // Use 'any' type cast to avoid complex generic indexing issues with mapped types
   public subscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
     if (!this.listeners[k]) {
       (this.listeners as any)[k] = [];
@@ -163,7 +161,6 @@ class RealtimeService {
     cb(this.db[k]);
   }
 
-  // Use 'any' type cast to avoid complex generic indexing issues with mapped types
   public unsubscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
     if (this.listeners[k]) {
       const currentListeners = this.listeners[k] as any[];
