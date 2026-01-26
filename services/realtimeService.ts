@@ -17,6 +17,7 @@ type ListenerCallback<T> = (data: T) => void;
 type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
 const DB_STORAGE_KEY = 'ricka_local_db_v2';
+const RETRY_DELAY = 15000; // 15 segundos
 
 class RealtimeService {
   private db: Db;
@@ -26,6 +27,7 @@ class RealtimeService {
   private currentUserIdentifier: string | null = null;
   private lastSyncTime: Date | undefined = undefined;
   private syncDebounceTimer: number | null = null;
+  private retryTimer: number | null = null;
 
   constructor() {
     this.db = this.loadInitialDb();
@@ -63,7 +65,14 @@ class RealtimeService {
   public setUser(username: string) {
     if (this.currentUserIdentifier !== username) {
       this.currentUserIdentifier = username;
-      if (username) this.syncWithRemote();
+      if (this.retryTimer) clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+      
+      if (username) {
+        this.syncWithRemote();
+      } else {
+        this.setSyncStatus('local');
+      }
     }
   }
 
@@ -77,8 +86,11 @@ class RealtimeService {
   }
 
   public async syncWithRemote() {
-    if (!this.currentUserIdentifier) return;
+    if (!this.currentUserIdentifier || this.currentSyncStatus === 'syncing') return;
     
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+
     this.setSyncStatus('syncing');
     try {
       const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
@@ -87,19 +99,27 @@ class RealtimeService {
         if (remoteData && remoteData.users) {
           this.db = remoteData;
           this.saveLocal();
-          this.lastSyncTime = new Date();
-          this.setSyncStatus('synced');
           this.notifyAll();
-        } else {
-          this.setSyncStatus('synced');
-          this.persistRemote();
+        }
+        this.lastSyncTime = new Date();
+        this.setSyncStatus('synced');
+        if (!remoteData) {
+          this.persistRemote(); // Primeira sincronização para um novo usuário
         }
       } else {
-        this.setSyncStatus('error');
+        this.handleSyncError();
       }
     } catch (e) {
-      this.setSyncStatus('error');
+      this.handleSyncError();
     }
+  }
+
+  private handleSyncError() {
+      this.setSyncStatus('error');
+      if (this.retryTimer) clearTimeout(this.retryTimer);
+      this.retryTimer = window.setTimeout(() => {
+          this.syncWithRemote();
+      }, RETRY_DELAY);
   }
 
   private setSyncStatus(status: SyncStatus) {
@@ -134,10 +154,10 @@ class RealtimeService {
           this.lastSyncTime = new Date();
           this.setSyncStatus('synced');
         } else {
-          this.setSyncStatus('error');
+          this.handleSyncError();
         }
       } catch (e) {
-        this.setSyncStatus('error');
+        this.handleSyncError();
       }
     }, 2000);
   }
