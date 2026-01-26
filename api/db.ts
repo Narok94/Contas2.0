@@ -1,15 +1,9 @@
+// Fix: Changed require to import for ES module compatibility.
+import { createPool } from '@vercel/postgres';
 
-import { createPool, VercelPool } from '@vercel/postgres';
-import { VercelRequest, VercelResponse } from '@vercel/node';
+let pool: any = null;
 
-// Singleton pool, lazily initialized.
-let pool: VercelPool | null = null;
-
-/**
- * Gets the singleton connection pool.
- * Throws an error if the connection string is missing or if pool creation fails.
- */
-function getDbPool(): VercelPool {
+function getDbPool() {
   if (pool) {
     return pool;
   }
@@ -22,7 +16,6 @@ function getDbPool(): VercelPool {
     throw new Error('Configuração do banco de dados incompleta no servidor.');
   }
   
-  // Log a redacted version to confirm the value is there without exposing the password
   const redactedUrl = connectionString.replace(/:([^:]+)@/, ':********@');
   console.log(`[DB POOL] Usando a connection string: ${redactedUrl}`);
 
@@ -33,12 +26,13 @@ function getDbPool(): VercelPool {
     return pool;
   } catch (e: any) {
     console.error('[DB POOL ERROR] Falha ao criar o pool de conexão.', e.message);
-    throw e; // Rethrow to be caught by the handler
+    throw e; 
   }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  let dbPool: VercelPool;
+// Fix: Changed module.exports to export default for ES module compatibility.
+export default async (req: any, res: any) => {
+  let dbPool: any;
   try {
     dbPool = getDbPool();
   } catch (error: any) {
@@ -48,17 +42,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const identifier = req.query.identifier as string;
+  const identifier = req.query.identifier;
   if (!identifier) {
     return res.status(400).json({ error: 'Identificador de usuário ausente.' });
   }
 
-  let client;
+  let client: any;
   try {
     client = await dbPool.connect();
     console.log('[DB HANDLER] Conexão com o banco de dados estabelecida com sucesso.');
     
-    // Ensure the table exists
     await client.query(`
       CREATE TABLE IF NOT EXISTS controle_contas (
         id SERIAL PRIMARY KEY,
@@ -87,13 +80,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('[API DATABASE ERROR]:', error.message);
-    // Log the full error object for more details
     console.error('[API DATABASE ERROR DETAILS]:', JSON.stringify(error, null, 2));
     return res.status(500).json({ 
       error: 'Erro Interno do Servidor ao Acessar o Banco de Dados', 
       message: error.message 
     });
   } finally {
-      client?.release();
+      if (client) {
+        client.release();
+      }
   }
-}
+};
