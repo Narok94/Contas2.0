@@ -56,19 +56,22 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     client = await dbPool.connect();
     console.log('[DB HANDLER] Conexão com o banco de dados estabelecida.');
     
-    // 1. Garante que a tabela exista
+    // --- Lógica de Migração de Schema ---
+    // 1. Garante que a tabela exista (schema mínimo)
     await client.query(`
       CREATE TABLE IF NOT EXISTS controle_contas (
         id SERIAL PRIMARY KEY,
-        user_identifier TEXT NOT NULL UNIQUE,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // 2. Garante que a coluna 'content' exista para compatibilidade
-    await client.query(`
-      ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS content TEXT;
-    `);
+    // 2. Garante que as colunas necessárias existam, adicionando-as se ausentes.
+    await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS user_identifier TEXT;`);
+    await client.query(`ALTER TABLE controle_contas ADD COLUMN IF NOT EXISTS content TEXT;`);
+    
+    // 3. Garante que haja um índice único em user_identifier para a cláusula ON CONFLICT funcionar.
+    //    Isto é idempotente e não falhará se o índice já existir.
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS controle_contas_user_identifier_idx ON controle_contas (user_identifier);`);
     
     if (req.method === 'GET') {
       console.log('[DB HANDLER] Executando GET.');
