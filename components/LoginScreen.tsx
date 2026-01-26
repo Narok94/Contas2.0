@@ -141,7 +141,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] bg-gradient-to-br from-[#0b1f4c] via-[#1c3d7a] to-[#3b82f6] text-slate-800 relative overflow-hidden">
+    <div className="flex items-center justify-center min-h-[100dvh] bg-gradient-to-br from-[#0b1f4c] via-[#1c3d7a] to-[#3b82f6] text-slate-800 relative overflow-hidden p-4">
       <ParticleNetwork />
 
       <div className="absolute top-4 right-4 text-white/70 text-sm font-medium z-10">
