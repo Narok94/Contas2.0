@@ -65,7 +65,7 @@ class RealtimeService {
         if (this.currentUserIdentifier && this.currentSyncStatus !== 'syncing' && this.currentSyncStatus !== 'error') {
             this.loadDb();
         }
-    }, 30000);
+    }, 45000);
   }
 
   public setUser(username: string) {
@@ -77,9 +77,11 @@ class RealtimeService {
   }
 
   public forceSync = async () => {
-      console.log("[RealtimeService] Iniciando sincronização forçada com Neon Postgres...");
+      console.log("[RealtimeService] Tentando reconexão com Neon Postgres...");
       await this.loadDb();
-      await this._saveDb();
+      if (this.currentSyncStatus !== 'error') {
+          await this._saveDb();
+      }
   };
 
   public getCurrentUserIdentifier = () => this.currentUserIdentifier;
@@ -118,16 +120,15 @@ class RealtimeService {
           this.lastSyncTime = new Date();
           this.setSyncStatus('synced');
           this.notifyAll();
-          console.log("[RealtimeService] Dados recuperados da tabela 'operacoes'.");
         } else {
           this.setSyncStatus('synced');
         }
       } else {
-        console.error(`[RealtimeService] Erro na API: ${response.status}`);
+        console.error(`[RealtimeService] Falha na API: ${response.status}`);
         this.setSyncStatus('error');
       }
     } catch (error) {
-      console.error('[RealtimeService] Falha de conexão:', error);
+      console.error('[RealtimeService] Erro de rede/conexão:', error);
       this.setSyncStatus('error');
     }
   }
@@ -184,7 +185,6 @@ class RealtimeService {
           if (response.ok) {
             this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
-            console.log("[RealtimeService] Dados salvos com sucesso na tabela 'operacoes'.");
           } else {
             this.setSyncStatus('error');
           }

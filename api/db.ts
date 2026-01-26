@@ -2,7 +2,7 @@
 import { createPool } from '@vercel/postgres';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Inicializa o pool usando DATABASE_URL ou POSTGRES_URL
+// Inicializa o pool usando a variável DATABASE_URL fornecida pelo Neon
 const pool = createPool({
   connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL
 });
@@ -11,10 +11,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
   if (!connectionString) {
-    console.error('ERRO: DATABASE_URL ou POSTGRES_URL não configurada.');
+    console.error('ERRO: DATABASE_URL não encontrada nas variáveis de ambiente.');
     return res.status(503).json({ 
-      error: 'Banco de dados não configurado', 
-      message: 'Certifique-se de que a variável DATABASE_URL está definida nas variáveis de ambiente da Vercel.' 
+      error: 'Variáveis de ambiente ausentes', 
+      message: 'Configure DATABASE_URL nas configurações da Vercel.' 
     });
   }
 
@@ -25,49 +25,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Identificador do usuário é obrigatório' });
     }
 
-    // Garante que a tabela 'operacoes' existe. 
-    // Usamos 'user_id' para identificar de quem são os dados.
+    // Garante que a tabela 'users_data' existe com índice único para o Upsert funcionar
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS operacoes (
+      CREATE TABLE IF NOT EXISTS users_data (
         id SERIAL PRIMARY KEY,
-        user_id TEXT NOT NULL UNIQUE,
-        data_json TEXT NOT NULL,
-        last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        user_email TEXT NOT NULL,
+        content TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    
+    // Adiciona restrição de unicidade se não houver (para evitar erros no ON CONFLICT)
+    try {
+        await pool.query('ALTER TABLE users_data ADD CONSTRAINT unique_user_email UNIQUE (user_email)');
+    } catch (e) {
+        // Ignora se o constraint já existe
+    }
 
-    // OPERAÇÃO GET: Recupera os dados (trades/contas/configurações)
+    // OPERAÇÃO GET (Busca dados salvos)
     if (req.method === 'GET') {
       const { rows } = await pool.query(
-        'SELECT data_json FROM operacoes WHERE user_id = $1',
+        'SELECT content FROM users_data WHERE user_email = $1',
         [identifier]
       );
       
       if (rows.length === 0) return res.status(200).json(null);
-      return res.status(200).json(JSON.parse(rows[0].data_json));
+      return res.status(200).json(JSON.parse(rows[0].content));
     }
 
-    // OPERAÇÃO POST: Salva ou Atualiza (INSERT/UPDATE)
+    // OPERAÇÃO POST (Salva trades/contas)
     if (req.method === 'POST') {
-      const content = JSON.stringify(req.body);
+      const contentStr = JSON.stringify(req.body);
       
-      // Realiza o "Upsert" na tabela operacoes
+      // Upsert: Se o usuário já existe, atualiza. Se não, insere.
       await pool.query(`
-        INSERT INTO operacoes (user_id, data_json, last_update)
+        INSERT INTO users_data (user_email, content, updated_at)
         VALUES ($1, $2, CURRENT_TIMESTAMP)
-        ON CONFLICT (user_id) 
-        DO UPDATE SET data_json = $2, last_update = CURRENT_TIMESTAMP;
-      `, [identifier, content]);
+        ON CONFLICT (user_email) 
+        DO UPDATE SET content = $2, updated_at = CURRENT_TIMESTAMP;
+      `, [identifier, contentStr]);
       
-      return res.status(200).json({ success: true, table: 'operacoes' });
+      return res.status(200).json({ success: true });
     }
 
     return res.status(405).json({ error: 'Método não permitido' });
 
   } catch (error: any) {
-    console.error('Database Error:', error);
+    console.error('Erro no Banco de Dados:', error);
     return res.status(500).json({ 
-      error: 'Erro na operação do banco de dados', 
+      error: 'Falha na operação de banco', 
       details: error.message 
     });
   }
