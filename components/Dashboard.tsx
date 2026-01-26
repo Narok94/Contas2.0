@@ -21,6 +21,8 @@ interface DashboardProps {
   categories: string[];
 }
 
+const VARIABLE_UTILITIES = ['Água', 'Luz', 'Internet'];
+
 const SummaryItem: React.FC<{ title: string; value: string; icon: React.ReactNode; valueColor?: string; isMain?: boolean }> = ({ title, value, icon, valueColor = 'text-text-primary dark:text-dark-text-primary', isMain = false }) => (
     <motion.div
         className={`${isMain ? 'bg-gradient-to-br from-primary to-secondary text-white shadow-glow-primary' : 'bg-surface dark:bg-dark-surface'} p-5 rounded-[2rem] border border-border-color/50 dark:border-dark-border-color/50 relative overflow-hidden group`}
@@ -56,21 +58,30 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const monthlyAccountMap = new Map<string, Account>();
 
     for (const account of accounts) {
+      const isVariableUtility = VARIABLE_UTILITIES.includes(account.category) && account.isRecurrent;
+      
       if (account.isRecurrent || (account.paymentDate && new Date(account.paymentDate).getFullYear() === selectedYear && new Date(account.paymentDate).getMonth() === selectedMonth)) {
         let status = account.status;
         let paymentDate = account.paymentDate;
+        let displayValue = account.value;
 
         const paidInSelectedMonth = account.status === AccountStatus.PAID && paymentDate && new Date(paymentDate).getFullYear() === selectedYear && new Date(paymentDate).getMonth() === selectedMonth;
 
         if (account.isRecurrent && !paidInSelectedMonth) {
           status = AccountStatus.PENDING;
           paymentDate = undefined;
+          // Se for uma utilidade variável e não estiver paga neste mês, forçamos o valor para 0 na exibição
+          if (isVariableUtility) {
+            displayValue = 0;
+          }
         }
         
+        // Priorizamos o registro pago do mês se houver duplicata por causa da recorrência
         if (!monthlyAccountMap.has(account.id) || paidInSelectedMonth) {
-           monthlyAccountMap.set(account.id, { ...account, status, paymentDate });
+           monthlyAccountMap.set(account.id, { ...account, status, paymentDate, value: displayValue });
         }
       } else if (account.status === AccountStatus.PENDING) {
+         // Mantém contas pendentes de meses anteriores visíveis
          monthlyAccountMap.set(account.id, account);
       }
     }

@@ -21,6 +21,8 @@ import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 
+const VARIABLE_UTILITIES = ['Água', 'Luz', 'Internet'];
+
 const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -161,6 +163,77 @@ const App: React.FC = () => {
     setView('dashboard');
   };
 
+  // Lógica inteligente para alternar status de pagamento
+  const handleToggleAccountStatus = (accountId: string) => {
+    const acc = accounts.find(a => a.id === accountId);
+    if (!acc) return;
+
+    const isVariableUtility = VARIABLE_UTILITIES.includes(acc.category) && acc.isRecurrent;
+    const isPaying = acc.status !== AccountStatus.PAID;
+    
+    if (isVariableUtility && isPaying) {
+        // Se for uma utilidade variável sendo paga, abrimos o formulário para o usuário definir o valor deste mês
+        // Mas para manter a experiência rápida, o Dashboard já deve tratar isso via snapshots se quisermos automatizar.
+        // Implementação: Se for recorrente variável e o usuário clicar em Pagar, vamos criar um snapshot fixo para este mês.
+        
+        // Se o valor atual for 0, forçamos a edição para não pagar algo sem valor
+        if (acc.value === 0) {
+            setAccountToEdit(acc);
+            setIsAccountModalOpen(true);
+            return;
+        }
+
+        // Criar um novo registro "snapshot" fixo para este mês
+        const snapshot: Account = {
+            ...acc,
+            id: `acc-snap-${Date.now()}`,
+            isRecurrent: false, // O snapshot não é recorrente
+            status: AccountStatus.PAID,
+            paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
+        };
+        
+        dataService.addAccount(snapshot);
+        // O original permanece como template (será exibido como pendente/zerado nos outros meses)
+    } else {
+        // Comportamento padrão para outras contas
+        dataService.updateAccount({
+            ...acc, 
+            status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING, 
+            paymentDate: isPaying ? new Date().toISOString() : undefined 
+        });
+    }
+  };
+
+  const handleAccountSubmit = (data: any) => {
+      const isVariableUtility = VARIABLE_UTILITIES.includes(data.category) && data.isRecurrent;
+      
+      if (data.id) {
+          // Editando existente
+          if (isVariableUtility) {
+              // Se estiver editando uma utilidade variável recorrente, criamos um snapshot fixo para o mês selecionado
+              // em vez de mudar o modelo global (a menos que o usuário queira mudar o modelo, mas aqui focamos no mês atual)
+              const snapshot: Account = {
+                  ...data,
+                  id: `acc-snap-${Date.now()}`,
+                  isRecurrent: false,
+                  paymentDate: data.paymentDate || new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
+              };
+              dataService.addAccount(snapshot);
+          } else {
+              dataService.updateAccount(data);
+          }
+      } else {
+          // Nova conta
+          dataService.addAccount({
+              ...data, 
+              id: `acc-${Date.now()}`, 
+              status: AccountStatus.PENDING,
+              // Se for utilidade variável, o valor inicial do modelo deve ser 0 para não propagar lixo
+              value: isVariableUtility ? 0 : data.value
+          });
+      }
+  };
+
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background">
@@ -192,10 +265,7 @@ const App: React.FC = () => {
                 goals={goals}
                 onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                 onDeleteAccount={(id) => dataService.deleteAccount(id)} 
-                onToggleStatus={(id) => {
-                    const acc = accounts.find(a => a.id === id);
-                    if (acc) dataService.updateAccount({...acc, status: acc.status === AccountStatus.PAID ? AccountStatus.PENDING : AccountStatus.PAID, paymentDate: acc.status === AccountStatus.PAID ? undefined : new Date().toISOString() });
-                }} 
+                onToggleStatus={handleToggleAccountStatus} 
                 selectedDate={selectedDate} 
                 setSelectedDate={setSelectedDate} 
                 onOpenBatchModal={() => setIsBatchModalOpen(true)} 
@@ -218,10 +288,7 @@ const App: React.FC = () => {
       
       <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={() => {}} onImportData={() => {}} onExportToCsv={() => {}} />
-      <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={(data) => {
-          if (data.id) dataService.updateAccount(data);
-          else dataService.addAccount({...data, id: `acc-${Date.now()}`, status: AccountStatus.PENDING});
-      }} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
+      <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
           batch.forEach(acc => dataService.addAccount({...acc, id: `acc-batch-${Date.now()}-${Math.random()}`, groupId: activeGroupId}));
       }} categories={categories} />
