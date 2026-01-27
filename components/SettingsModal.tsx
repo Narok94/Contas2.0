@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import realtimeService, { SyncStatus } from '../services/realtimeService';
-import { User, Role } from '../types';
+import { User, Role, AppSettings } from '../types';
 
 const CloudStatusCard: React.FC = () => {
     const [status, setStatus] = useState<SyncStatus>('local');
@@ -51,7 +51,6 @@ const CloudStatusCard: React.FC = () => {
     )
 }
 
-
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -71,30 +70,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
 
     useEffect(() => {
         if (!isOpen) return;
-        const settings = realtimeService.getSettings();
-        setLogoUrl(settings.logoUrl);
+        const currentSettings = realtimeService.getSettings();
+        setLogoUrl(currentSettings?.logoUrl);
 
         const unsub = realtimeService.subscribe('settings', (newSettings) => {
-            setLogoUrl(newSettings.logoUrl);
+            if (newSettings) setLogoUrl(newSettings.logoUrl);
         });
         return () => unsub();
     }, [isOpen]);
 
     if (!isOpen) return null;
-
-    const handleImportClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            if (window.confirm("Restaurar um backup substituirá todos os dados atuais. Deseja continuar?")) {
-                onImportData(file);
-            }
-        }
-        if(event.target) event.target.value = '';
-    };
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -105,7 +90,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_SIZE = 128; // Mantemos o logo pequeno para performance
+                const MAX_SIZE = 128;
                 let width = img.width;
                 let height = img.height;
 
@@ -126,7 +111,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     ctx.drawImage(img, 0, 0, width, height);
-                    const compressedLogo = canvas.toDataURL('image/jpeg', 0.8);
+                    const compressedLogo = canvas.toDataURL('image/jpeg', 0.7);
                     realtimeService.updateSettings({
                         ...realtimeService.getSettings(),
                         logoUrl: compressedLogo
@@ -138,13 +123,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
         reader.readAsDataURL(file);
     };
 
-    const removeLogo = () => {
-        if (window.confirm("Deseja remover o logo personalizado e usar o padrão?")) {
-            realtimeService.updateSettings({
-                ...realtimeService.getSettings(),
-                logoUrl: undefined
-            });
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (window.confirm("Restaurar um backup substituirá todos os dados atuais. Deseja continuar?")) {
+                onImportData(file);
+            }
         }
+        if(event.target) event.target.value = '';
     };
 
     return (
@@ -156,43 +146,37 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                 </div>
 
                 <div className="space-y-6">
-                     {isAdmin && (
+                    {isAdmin && (
                         <div className="border-b border-border-color dark:border-dark-border-color pb-6">
-                            <h3 className="text-lg font-semibold mb-3 text-text-primary dark:text-dark-text-primary">Logo do Sistema (Admin)</h3>
-                            <div className="flex items-center gap-4 bg-surface-light dark:bg-dark-surface-light p-4 rounded-xl">
-                                <div className="w-16 h-16 bg-white rounded-lg border border-border-color flex items-center justify-center overflow-hidden shadow-inner">
+                            <h3 className="text-lg font-semibold mb-3 text-text-primary dark:text-dark-text-primary">Logo da Empresa</h3>
+                            <div className="flex items-center gap-4 p-4 bg-surface-light dark:bg-dark-surface-light rounded-xl border border-dashed border-border-color">
+                                <div className="w-16 h-16 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-inner border border-border-color">
                                     {logoUrl ? (
-                                        <img src={logoUrl} alt="Preview" className="w-full h-full object-contain" />
+                                        <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                                     ) : (
                                         <span className="text-2xl">🐢</span>
                                     )}
                                 </div>
-                                <div className="flex flex-col gap-2 flex-1">
+                                <div className="flex-1 space-y-2">
                                     <button 
                                         onClick={() => logoInputRef.current?.click()}
-                                        className="text-xs font-bold py-2 px-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all"
+                                        className="text-xs font-bold py-2 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all w-full"
                                     >
-                                        Mudar Logo
+                                        Subir Logo
                                     </button>
                                     {logoUrl && (
                                         <button 
-                                            onClick={removeLogo}
-                                            className="text-[10px] font-bold py-1 px-3 text-danger hover:bg-danger/10 rounded-lg transition-all"
+                                            onClick={() => realtimeService.updateSettings({...realtimeService.getSettings(), logoUrl: undefined})}
+                                            className="text-[10px] text-danger font-bold uppercase w-full"
                                         >
-                                            Remover
+                                            Remover Personalização
                                         </button>
                                     )}
-                                    <input 
-                                        type="file" 
-                                        ref={logoInputRef} 
-                                        onChange={handleLogoUpload} 
-                                        accept="image/*" 
-                                        className="hidden" 
-                                    />
+                                    <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
                                 </div>
                             </div>
                         </div>
-                     )}
+                    )}
 
                      <CloudStatusCard />
                      <div>

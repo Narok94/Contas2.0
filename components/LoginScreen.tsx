@@ -118,10 +118,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    const unsubSettings = realtimeService.subscribe('settings', (settings) => {
-        setLogoUrl(settings.logoUrl);
+    // Sincroniza o logo antes do login caso já tenha sido carregado
+    const settings = realtimeService.getSettings();
+    if (settings) setLogoUrl(settings.logoUrl);
+
+    const unsub = realtimeService.subscribe('settings', (newSettings) => {
+        if (newSettings) setLogoUrl(newSettings.logoUrl);
     });
-    return () => unsubSettings();
+    return () => unsub();
   }, []);
 
   useEffect(() => {
@@ -131,7 +135,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
               weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
               hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'shortOffset'
           };
-          setCurrentDateTime(now.toLocaleString('pt-BR', options).replace(' at', ' at').replace(',', ','));
+          setCurrentDateTime(now.toLocaleString('pt-BR', options));
       }, 1000);
       return () => clearInterval(timer);
   }, []);
@@ -164,12 +168,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
       >
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-10">
               <div className="text-center mb-8">
-                  <div className="inline-block p-1 bg-white rounded-full mb-4 shadow-md overflow-hidden w-20 h-20 flex items-center justify-center">
+                  <div className="inline-block p-1 bg-white rounded-full mb-4 shadow-sm w-20 h-20 overflow-hidden flex items-center justify-center">
                       {logoUrl ? (
                           <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                       ) : (
                         <div className="bg-blue-100 w-full h-full flex items-center justify-center">
-                          <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                         </div>
                       )}
                   </div>

@@ -17,12 +17,12 @@ type Db = {
 type ListenerCallback<T> = (data: T) => void;
 type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
-const DB_STORAGE_KEY = 'ricka_local_db_v2';
-const RETRY_DELAY = 15000; // 15 segundos
+const DB_STORAGE_KEY = 'ricka_local_db_v3'; // Versão incrementada para migração
+const RETRY_DELAY = 15000;
 
 class RealtimeService {
   private db: Db;
-  private listeners: { [K in CollectionKey]?: ListenerCallback<Db[K]>[] } = {};
+  private listeners: { [K in CollectionKey]?: ListenerCallback<any>[] } = {};
   private syncListeners: SyncStatusCallback[] = [];
   private currentSyncStatus: SyncStatus = 'local';
   private currentUserIdentifier: string | null = null;
@@ -37,12 +37,25 @@ class RealtimeService {
   }
 
   private loadInitialDb(): Db {
+    const defaultSettings: AppSettings = { appName: 'TATU.' };
     const stored = localStorage.getItem(DB_STORAGE_KEY);
+    
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.db && parsed.db.settings) return parsed.db;
-      } catch (e) {}
+        if (parsed.db) {
+            return {
+                users: parsed.db.users || MOCK_USERS,
+                groups: parsed.db.groups || MOCK_GROUPS,
+                accounts: parsed.db.accounts || MOCK_ACCOUNTS,
+                categories: parsed.db.categories || ACCOUNT_CATEGORIES,
+                incomes: parsed.db.incomes || MOCK_INCOMES,
+                settings: parsed.db.settings || defaultSettings,
+            };
+        }
+      } catch (e) {
+          console.error("Erro ao carregar DB local", e);
+      }
     }
     return {
       users: MOCK_USERS,
@@ -50,7 +63,7 @@ class RealtimeService {
       accounts: MOCK_ACCOUNTS,
       categories: ACCOUNT_CATEGORIES,
       incomes: MOCK_INCOMES,
-      settings: { appName: 'TATU.' }
+      settings: defaultSettings,
     };
   }
 
@@ -69,12 +82,8 @@ class RealtimeService {
       this.currentUserIdentifier = username;
       if (this.retryTimer) clearTimeout(this.retryTimer);
       this.retryTimer = null;
-      
-      if (username) {
-        this.syncWithRemote();
-      } else {
-        this.setSyncStatus('local');
-      }
+      if (username) this.syncWithRemote();
+      else this.setSyncStatus('local');
     }
   }
 
@@ -89,10 +98,8 @@ class RealtimeService {
 
   public async syncWithRemote() {
     if (!this.currentUserIdentifier || this.currentSyncStatus === 'syncing') return;
-    
     if (this.retryTimer) clearTimeout(this.retryTimer);
     this.retryTimer = null;
-
     this.setSyncStatus('syncing');
     try {
       const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
@@ -100,28 +107,21 @@ class RealtimeService {
         const remoteData = await res.json();
         if (remoteData && remoteData.users) {
           this.db = remoteData;
+          if (!this.db.settings) this.db.settings = { appName: 'TATU.' };
           this.saveLocal();
           this.notifyAll();
         }
         this.lastSyncTime = new Date();
         this.setSyncStatus('synced');
-        if (!remoteData) {
-          this.persistRemote(); // Primeira sincronização para um novo usuário
-        }
-      } else {
-        this.handleSyncError();
-      }
-    } catch (e) {
-      this.handleSyncError();
-    }
+        if (!remoteData) this.persistRemote();
+      } else { this.handleSyncError(); }
+    } catch (e) { this.handleSyncError(); }
   }
 
   private handleSyncError() {
-      this.setSyncStatus('error');
-      if (this.retryTimer) clearTimeout(this.retryTimer);
-      this.retryTimer = window.setTimeout(() => {
-          this.syncWithRemote();
-      }, RETRY_DELAY);
+    this.setSyncStatus('error');
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = window.setTimeout(() => this.syncWithRemote(), RETRY_DELAY);
   }
 
   private setSyncStatus(status: SyncStatus) {
@@ -139,210 +139,92 @@ class RealtimeService {
     localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ db: this.db, timestamp: Date.now() }));
   }
 
-  private async persistRemoteNoDebounce() {
-    if (!this.currentUserIdentifier) return;
-
-    if (this.syncDebounceTimer) {
-        window.clearTimeout(this.syncDebounceTimer);
-        this.syncDebounceTimer = null;
-    }
-
-    this.setSyncStatus('syncing');
-    try {
-        const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(this.db)
-        });
-        if (res.ok) {
-            this.lastSyncTime = new Date();
-            this.setSyncStatus('synced');
-        } else {
-            this.handleSyncError();
-        }
-    } catch (e) {
-        this.handleSyncError();
-    }
-  }
-
   private async persistRemote() {
     if (!this.currentUserIdentifier) return;
-    
     if (this.syncDebounceTimer) window.clearTimeout(this.syncDebounceTimer);
-    
     this.syncDebounceTimer = window.setTimeout(async () => {
       this.setSyncStatus('syncing');
       try {
-        const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
+        await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.db)
         });
-        if (res.ok) {
-          this.lastSyncTime = new Date();
-          this.setSyncStatus('synced');
-        } else {
-          this.handleSyncError();
-        }
-      } catch (e) {
-        this.handleSyncError();
-      }
+        this.lastSyncTime = new Date();
+        this.setSyncStatus('synced');
+      } catch (e) { this.handleSyncError(); }
     }, 2000);
   }
 
   private notifyAll() {
-    (Object.keys(this.db) as CollectionKey[]).forEach(k => this.notify(k));
+    (['users', 'groups', 'accounts', 'categories', 'incomes', 'settings'] as CollectionKey[]).forEach(k => this.notify(k));
   }
 
   private notify<K extends CollectionKey>(k: K) {
-    const callbacks = this.listeners[k] as any[] | undefined;
+    const callbacks = this.listeners[k];
     if (callbacks) {
-        const data = this.db[k];
-        const dataToSend = Array.isArray(data) ? [...data] : (typeof data === 'object' ? { ...data } : data);
-        callbacks.forEach(cb => cb(dataToSend));
+      const data = this.db[k];
+      const copy = Array.isArray(data) ? [...data] : { ...data };
+      callbacks.forEach(cb => cb(copy));
     }
   }
 
   public subscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
-    if (!this.listeners[k]) {
-      (this.listeners as any)[k] = [];
-    }
-    const currentListeners = this.listeners[k] as any[];
-    currentListeners.push(cb);
+    if (!this.listeners[k]) this.listeners[k] = [];
+    this.listeners[k]!.push(cb);
     const data = this.db[k];
-    const dataToSend = Array.isArray(data) ? [...data] : (typeof data === 'object' ? { ...data } : data);
-    cb(dataToSend as Db[K]);
-    return () => this.unsubscribe(k, cb);
+    const copy = Array.isArray(data) ? [...data] : { ...data };
+    cb(copy as Db[K]);
+    return () => {
+      this.listeners[k] = this.listeners[k]!.filter(c => c !== cb);
+    };
   }
 
-  public unsubscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
-    if (this.listeners[k]) {
-      const currentListeners = this.listeners[k] as any[];
-      (this.listeners as any)[k] = currentListeners.filter(c => c !== cb);
-    }
-  }
+  public forceSync() { this.syncWithRemote(); }
+  public getCurrentUserIdentifier() { return this.currentUserIdentifier; }
 
-  public forceSync() {
-    this.syncWithRemote();
-  }
-
-  public getCurrentUserIdentifier() {
-    return this.currentUserIdentifier;
-  }
-
-  private async write() {
-    this.saveLocal();
-    this.persistRemote();
-  }
-  
-  private async writeImmediately() {
-    this.saveLocal();
-    await this.persistRemoteNoDebounce();
-  }
-
-  public getSettings = () => this.db.settings;
+  public getSettings = () => this.db.settings || { appName: 'TATU.' };
   public updateSettings = async (settings: AppSettings) => {
     this.db.settings = settings;
     this.notify('settings');
-    this.write();
+    this.saveLocal();
+    this.persistRemote();
   }
 
   public getAccounts = () => this.db.accounts;
-  public updateAccount = async (acc: Account) => {
-    this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a);
-    this.notify('accounts');
-    this.write();
-  }
-  public addAccount = async (acc: Account) => {
-    this.db.accounts = [...this.db.accounts, acc];
-    this.notify('accounts');
-    this.write();
-  }
-  public deleteAccount = async (id: string) => {
-    this.db.accounts = this.db.accounts.filter(a => a.id !== id);
-    this.notify('accounts');
-    await this.writeImmediately();
-  }
+  public updateAccount = async (acc: Account) => { this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
+  public addAccount = async (acc: Account) => { this.db.accounts = [...this.db.accounts, acc]; this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
+  public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
+
+  // Fix: Added updateMultipleAccounts method to handle batch updates
   public updateMultipleAccounts = async (accs: Account[]) => {
-    this.db.accounts = this.db.accounts.map(a => {
-        const updated = accs.find(ua => ua.id === a.id);
-        return updated || a;
-    });
+    const accsMap = new Map(accs.map(a => [a.id, a]));
+    this.db.accounts = this.db.accounts.map(a => accsMap.has(a.id) ? accsMap.get(a.id)! : a);
     this.notify('accounts');
-    this.write();
+    this.saveLocal();
+    this.persistRemote();
   }
 
   public getUsers = () => this.db.users;
-  public addUser = async (u: Omit<User, 'id'>) => {
-    const newUser = { ...u, id: `user-${Date.now()}` } as User;
-    this.db.users = [...this.db.users, newUser];
-    this.notify('users');
-    this.write();
-    return newUser;
-  }
-  public updateUser = async (u: User) => {
-    this.db.users = this.db.users.map(old => old.id === u.id ? u : old);
-    this.notify('users');
-    this.write();
-    return u;
-  }
-  public deleteUser = async (id: string) => {
-    this.db.users = this.db.users.filter(u => u.id !== id);
-    this.notify('users');
-    await this.writeImmediately();
-  }
+  public addUser = async (u: Omit<User, 'id'>) => { const newUser = { ...u, id: `user-${Date.now()}` } as User; this.db.users = [...this.db.users, newUser]; this.notify('users'); this.saveLocal(); this.persistRemote(); return newUser; }
+  public updateUser = async (u: User) => { this.db.users = this.db.users.map(old => old.id === u.id ? u : old); this.notify('users'); this.saveLocal(); this.persistRemote(); return u; }
+  public deleteUser = async (id: string) => { this.db.users = this.db.users.filter(u => u.id !== id); this.notify('users'); this.saveLocal(); this.persistRemote(); }
 
   public getGroups = () => this.db.groups;
-  public addGroup = async (g: Omit<Group, 'id'>) => {
-    const newGroup = { ...g, id: `group-${Date.now()}` } as Group;
-    this.db.groups = [...this.db.groups, newGroup];
-    this.notify('groups');
-    this.write();
-    return newGroup;
-  }
-  public updateGroup = async (g: Group) => {
-    this.db.groups = this.db.groups.map(old => old.id === g.id ? g : old);
-    this.notify('groups');
-    this.write();
-    return g;
-  }
-  public deleteGroup = async (id: string) => {
-    this.db.groups = this.db.groups.filter(g => g.id !== id);
-    this.notify('groups');
-    await this.writeImmediately();
-  }
+  public addGroup = async (g: Omit<Group, 'id'>) => { const newGroup = { ...g, id: `group-${Date.now()}` } as Group; this.db.groups = [...this.db.groups, newGroup]; this.notify('groups'); this.saveLocal(); this.persistRemote(); return newGroup; }
+  public updateGroup = async (g: Group) => { this.db.groups = this.db.groups.map(old => old.id === g.id ? g : old); this.notify('groups'); this.saveLocal(); this.persistRemote(); return g; }
+  public deleteGroup = async (id: string) => { this.db.groups = this.db.groups.filter(g => g.id !== id); this.notify('groups'); this.saveLocal(); this.persistRemote(); }
   
   public getIncomes = () => this.db.incomes;
-  public addIncome = async (i: Income) => {
-    this.db.incomes = [...this.db.incomes, i];
-    this.notify('incomes');
-    this.write();
-  }
-  public updateIncome = async (inc: Income) => {
-    this.db.incomes = this.db.incomes.map(i => i.id === inc.id ? inc : i);
-    this.notify('incomes');
-    this.write();
-    return inc;
-  }
-  public deleteIncome = async (id: string) => {
-    this.db.incomes = this.db.incomes.filter(i => i.id !== id);
-    this.notify('incomes');
-    await this.writeImmediately();
-  }
+  public addIncome = async (i: Income) => { this.db.incomes = [...this.db.incomes, i]; this.notify('incomes'); this.saveLocal(); this.persistRemote(); }
+  public updateIncome = async (inc: Income) => { this.db.incomes = this.db.incomes.map(i => i.id === inc.id ? inc : i); this.notify('incomes'); this.saveLocal(); this.persistRemote(); return inc; }
+  public deleteIncome = async (id: string) => { this.db.incomes = this.db.incomes.filter(i => i.id !== id); this.notify('incomes'); this.saveLocal(); this.persistRemote(); }
 
   public getCategories = () => this.db.categories;
-  public saveCategories = async (cats: string[]) => {
-    this.db.categories = cats;
-    this.notify('categories');
-    this.write();
-  }
+  public saveCategories = async (cats: string[]) => { this.db.categories = cats; this.notify('categories'); this.saveLocal(); this.persistRemote(); }
 
   public exportData = () => this.db;
-  public importData = (data: Db) => {
-    this.db = data;
-    this.notifyAll();
-    this.write();
-  }
+  public importData = (data: Db) => { this.db = data; this.notifyAll(); this.saveLocal(); this.persistRemote(); }
 }
 
 export default new RealtimeService();
