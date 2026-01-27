@@ -37,9 +37,9 @@ const ParticleNetwork: React.FC = () => {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 1;
-                this.speedX = (Math.random() * 2 - 1) * 0.5;
-                this.speedY = (Math.random() * 2 - 1) * 0.5;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedX = (Math.random() * 2 - 1) * 0.3;
+                this.speedY = (Math.random() * 2 - 1) * 0.3;
             }
             update() {
                 this.x += this.speedX;
@@ -49,7 +49,7 @@ const ParticleNetwork: React.FC = () => {
                 if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
             }
             draw() {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -59,7 +59,7 @@ const ParticleNetwork: React.FC = () => {
         let particles: Particle[];
         const init = () => {
             particles = [];
-            const particleDensity = window.innerWidth < 768 ? 18000 : 9000;
+            const particleDensity = window.innerWidth < 768 ? 20000 : 12000;
             let numberOfParticles = (canvas.height * canvas.width) / particleDensity;
             for (let i = 0; i < numberOfParticles; i++) {
                 particles.push(new Particle());
@@ -72,9 +72,9 @@ const ParticleNetwork: React.FC = () => {
                 for (let b = a; b < particles.length; b++) {
                     let distance = ((particles[a].x - particles[b].x) * (particles[a].x - particles[b].x))
                                  + ((particles[a].y - particles[b].y) * (particles[a].y - particles[b].y));
-                    if (distance < (canvas.width / 7) * (canvas.height / 7)) {
-                        opacityValue = 1 - (distance / 20000);
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacityValue})`;
+                    if (distance < (canvas.width / 8) * (canvas.height / 8)) {
+                        opacityValue = 1 - (distance / 25000);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacityValue * 0.2})`;
                         ctx.lineWidth = 0.5;
                         ctx.beginPath();
                         ctx.moveTo(particles[a].x, particles[a].y);
@@ -104,7 +104,7 @@ const ParticleNetwork: React.FC = () => {
         };
     }, []);
 
-    return <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full z-0"></canvas>;
+    return <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"></canvas>;
 };
 
 
@@ -114,11 +114,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentDateTime, setCurrentDateTime] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    // Sincroniza o logo antes do login caso já tenha sido carregado
     const settings = realtimeService.getSettings();
     if (settings) setLogoUrl(settings.logoUrl);
 
@@ -128,18 +126,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-      const timer = setInterval(() => {
-          const now = new Date();
-          const options: Intl.DateTimeFormatOptions = {
-              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-              hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'shortOffset'
-          };
-          setCurrentDateTime(now.toLocaleString('pt-BR', options));
-      }, 1000);
-      return () => clearInterval(timer);
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -147,109 +133,143 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
     
     const success = await onLogin(email, password);
     if (!success) {
-      setError('Credenciais incorretas. Verifique seu usuário e senha.');
+      setError('Acesso negado. Verifique usuário e senha.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] bg-gradient-to-br from-[#0b1f4c] via-[#1c3d7a] to-[#3b82f6] text-slate-800 relative overflow-hidden p-4">
+    <div className="relative flex items-center justify-center min-h-[100dvh] bg-[#020617] text-white overflow-hidden p-4">
+      {/* Background Dinâmico Aprimorado */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#0b1f4c] via-[#020617] to-[#1e3a8a] z-0">
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+      
       <ParticleNetwork />
 
-      <div className="absolute top-4 right-4 text-white/70 text-sm font-medium z-10">
-          {currentDateTime}
-      </div>
-
       <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
           className="relative z-10 w-full max-w-md"
       >
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-10">
-              <div className="text-center mb-8">
-                  <div className="inline-block p-1 bg-white rounded-full mb-4 shadow-sm w-20 h-20 overflow-hidden flex items-center justify-center">
+          {/* Logo Container Centralizado e Destacado */}
+          <div className="flex flex-col items-center mb-10">
+              <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.5, type: 'spring' }}
+                  className="relative group"
+              >
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                  <div className="relative w-28 h-28 bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-2 shadow-2xl flex items-center justify-center overflow-hidden">
                       {logoUrl ? (
-                          <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                          <img src={logoUrl} alt="Logo" className="w-full h-full object-contain drop-shadow-lg" />
                       ) : (
-                        <div className="bg-blue-100 w-full h-full flex items-center justify-center">
-                            <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <div className="bg-gradient-to-br from-primary to-indigo-600 w-full h-full rounded-full flex items-center justify-center shadow-inner">
+                            <span className="text-4xl">🐢</span>
                         </div>
                       )}
                   </div>
-                  <h1 className="text-3xl font-bold tracking-tight">TATU.</h1>
-                  <p className="text-slate-500 mt-1">Organizando a vida financeira a dois.</p>
+              </motion.div>
+              
+              <div className="text-center mt-6">
+                  <h1 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">
+                    TATU<span className="text-primary">.</span>
+                  </h1>
+                  <p className="text-white/40 text-sm font-medium uppercase tracking-[0.2em] mt-1">
+                    Finanças a Dois
+                  </p>
               </div>
+          </div>
 
-              <form className="space-y-4" onSubmit={handleSubmit}>
-                  <div>
-                       <label htmlFor="email" className="sr-only">Usuário</label>
-                       <input
-                          id="email"
-                          type="text"
-                          autoCapitalize="none"
-                          required
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg outline-none transition-all placeholder:text-slate-400"
-                          placeholder="Usuário"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                      />
-                  </div>
-                  <div>
-                      <label htmlFor="password" className="sr-only">Senha</label>
-                      <input
-                          id="password"
-                          type="password"
-                          required
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg outline-none transition-all placeholder:text-slate-400"
-                          placeholder="Senha"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                      />
+          {/* Cartão de Login Glassmorphism */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl p-8 sm:p-10 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+              
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                  <div className="space-y-4">
+                      <div className="relative group">
+                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-primary transition-colors">
+                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                           </div>
+                           <input
+                              type="text"
+                              autoCapitalize="none"
+                              required
+                              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:bg-white/10 rounded-2xl outline-none transition-all placeholder:text-white/20 text-white font-medium"
+                              placeholder="Usuário"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                          />
+                      </div>
+                      <div className="relative group">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-primary transition-colors">
+                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                          </div>
+                          <input
+                              type="password"
+                              required
+                              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:bg-white/10 rounded-2xl outline-none transition-all placeholder:text-white/20 text-white font-medium"
+                              placeholder="Senha"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                          />
+                      </div>
                   </div>
                   
                   {error && (
-                      <p className="text-xs text-center text-red-600 animate-fade-in">{error}</p>
+                      <motion.p 
+                        initial={{ opacity: 0, y: -10 }} 
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-xs text-center text-rose-400 font-bold uppercase tracking-wider bg-rose-500/10 py-2 rounded-lg"
+                      >
+                        {error}
+                      </motion.p>
                   )}
 
-                  <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center">
+                  <div className="flex items-center justify-between px-1">
+                      <label className="flex items-center cursor-pointer group">
                           <input 
-                              id="remember-me"
-                              name="remember-me"
-                              type="checkbox"
+                              type="checkbox" 
                               checked={rememberMe}
                               onChange={(e) => setRememberMe(e.target.checked)}
-                              className="h-4 w-4 text-primary focus:ring-primary border-slate-300 rounded"
+                              className="sr-only peer"
                           />
-                          <label htmlFor="remember-me" className="ml-2 block text-slate-600">
-                              Lembrar-me
-                          </label>
-                      </div>
+                          <div className="w-5 h-5 border-2 border-white/20 rounded peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
+                               <svg className={`w-3 h-3 text-white transition-opacity ${rememberMe ? 'opacity-100' : 'opacity-0'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                          </div>
+                          <span className="ml-3 text-sm text-white/40 group-hover:text-white/60 transition-colors">Lembrar acesso</span>
+                      </label>
                   </div>
 
                   <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg shadow-md shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center items-center gap-3"
+                      className="w-full py-4 bg-primary hover:bg-primary-dark text-white font-black rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 relative group overflow-hidden"
                   >
+                       <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                        {isLoading ? (
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      ) : "ENTRAR"}
+                          <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+                      ) : "ENTRAR NO DASHBOARD"}
                   </button>
                   
-                  <div className="text-center text-sm text-slate-500 pt-4">
-                      Não tem uma conta?{' '}
+                  <div className="text-center pt-2">
                       <button 
                           type="button"
                           onClick={onNavigateToRegister}
-                          className="font-semibold text-primary hover:underline"
+                          className="text-sm font-bold text-white/40 hover:text-white transition-colors"
                       >
-                          Cadastre-se.
+                          Novo por aqui? <span className="text-primary hover:underline">Crie uma conta</span>
                       </button>
                   </div>
               </form>
           </div>
+          
+          <p className="text-center mt-10 text-white/20 text-[10px] font-bold uppercase tracking-[0.3em]">
+              Sincronizado com Vercel Postgres
+          </p>
       </motion.div>
     </div>
   );
