@@ -1,4 +1,3 @@
-
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from '../utils/mockData';
 import { User, Group, Account, Income, AppSettings } from '../types';
 
@@ -19,6 +18,7 @@ type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
 const DB_STORAGE_KEY = 'ricka_local_db_v3'; // Versão incrementada para migração
 const RETRY_DELAY = 15000;
+const GLOBAL_SETTINGS_IDENTIFIER = 'tatu_global_settings_v1'; // Shared identifier for settings
 
 class RealtimeService {
   private db: Db;
@@ -97,26 +97,61 @@ class RealtimeService {
   }
 
   public async syncWithRemote() {
-    if (!this.currentUserIdentifier || this.currentSyncStatus === 'syncing') return;
+    if (this.currentSyncStatus === 'syncing') return;
     if (this.retryTimer) clearTimeout(this.retryTimer);
     this.retryTimer = null;
     this.setSyncStatus('syncing');
+
     try {
-      const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
-      if (res.ok) {
-        const remoteData = await res.json();
-        if (remoteData && remoteData.users) {
-          this.db = remoteData;
-          if (!this.db.settings) this.db.settings = { appName: 'TATU.' };
-          this.saveLocal();
-          this.notifyAll();
+        // Fetch global settings
+        const settingsRes = await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`);
+        const remoteSettingsData = settingsRes.ok ? await settingsRes.json() : null;
+
+        let userDataToPersist: Omit<Db, 'settings'> | null = null;
+        
+        // Fetch user-specific data if a user is logged in
+        if (this.currentUserIdentifier) {
+            const userRes = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
+            const remoteUserData = userRes.ok ? await userRes.json() : null;
+            
+            // Merge remote user data with defaults from local/mock
+            const mergedUserData = {
+                users: remoteUserData?.users || this.db.users,
+                groups: remoteUserData?.groups || this.db.groups,
+                accounts: remoteUserData?.accounts || this.db.accounts,
+                categories: remoteUserData?.categories || this.db.categories,
+                incomes: remoteUserData?.incomes || this.db.incomes,
+            };
+            this.db = { ...mergedUserData, settings: remoteSettingsData?.settings || this.db.settings };
+            
+            // If user had no data on remote, mark their current local data to be pushed up
+            if (!remoteUserData) {
+                userDataToPersist = mergedUserData;
+            }
+        } else {
+            // No user logged in, just load global settings
+            this.db.settings = remoteSettingsData?.settings || this.db.settings;
         }
+
+        this.saveLocal();
+        this.notifyAll();
+        
+        // After syncing, check if we need to create initial records on remote
+        if (!remoteSettingsData) {
+            console.log("No remote settings found. Creating initial record.");
+            this.updateSettings(this.db.settings); // This will persist the default/local settings
+        }
+        if (userDataToPersist) {
+            console.log("No remote user data found. Creating initial record for user.");
+            this.persistRemote(); // This will persist the local/mock data for the new user
+        }
+
         this.lastSyncTime = new Date();
         this.setSyncStatus('synced');
-        if (!remoteData) this.persistRemote();
-      } else { this.handleSyncError(); }
+
     } catch (e) { this.handleSyncError(); }
   }
+
 
   private handleSyncError() {
     this.setSyncStatus('error');
@@ -142,17 +177,19 @@ class RealtimeService {
   private async persistRemote() {
     if (!this.currentUserIdentifier) return;
     if (this.syncDebounceTimer) window.clearTimeout(this.syncDebounceTimer);
+    
     this.syncDebounceTimer = window.setTimeout(async () => {
-      this.setSyncStatus('syncing');
-      try {
-        await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.db)
-        });
-        this.lastSyncTime = new Date();
-        this.setSyncStatus('synced');
-      } catch (e) { this.handleSyncError(); }
+        this.setSyncStatus('syncing');
+        try {
+            const { settings, ...userData } = this.db;
+            await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+            this.lastSyncTime = new Date();
+            this.setSyncStatus('synced');
+        } catch (e) { this.handleSyncError(); }
     }, 2000);
   }
 
@@ -188,7 +225,21 @@ class RealtimeService {
     this.db.settings = settings;
     this.notify('settings');
     this.saveLocal();
-    this.persistRemote();
+    
+    // Persist settings remotely immediately, no debounce
+    this.setSyncStatus('syncing');
+    try {
+        const settingsPayload = { settings };
+        await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settingsPayload)
+        });
+        this.lastSyncTime = new Date();
+        this.setSyncStatus('synced');
+    } catch (e) {
+        this.handleSyncError();
+    }
   }
 
   public getAccounts = () => this.db.accounts;
@@ -224,7 +275,26 @@ class RealtimeService {
   public saveCategories = async (cats: string[]) => { this.db.categories = cats; this.notify('categories'); this.saveLocal(); this.persistRemote(); }
 
   public exportData = () => this.db;
-  public importData = (data: Db) => { this.db = data; this.notifyAll(); this.saveLocal(); this.persistRemote(); }
+  public importData = (data: Db) => {
+    this.db = data;
+    this.notifyAll();
+    this.saveLocal();
+    
+    // Persist imported data to remote
+    const { settings, ...userData } = data;
+    if (this.currentUserIdentifier) {
+        fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+    }
+    fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings })
+    });
+  }
 }
 
 export default new RealtimeService();

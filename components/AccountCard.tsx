@@ -34,7 +34,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
         className={`group relative p-3 rounded-2xl border transition-all duration-300 ${
             isPaid 
                 ? 'bg-white dark:bg-slate-900/40 border-emerald-500/30 shadow-sm' 
-                : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm'
+                : 'bg-white dark:bg-slate-800 border-danger/40 shadow-sm'
         }`}
     >
         {/* Badge de Status Pago (Sutil) */}
@@ -54,7 +54,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
                     <h3 className={`font-black text-sm tracking-tight leading-tight ${isPaid ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900 dark:text-white'}`}>
                         {account.name}
                     </h3>
-                    <p className={`text-base font-black mt-0.5 tracking-tight ${isPaid ? 'text-emerald-600/70' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                    <p className={`text-base font-black mt-0.5 tracking-tight ${isPaid ? 'text-emerald-600/70' : 'text-danger dark:text-rose-400'}`}>
                         {formatCurrency(account.value)}
                     </p>
                 </div>
@@ -65,7 +65,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
                     isPaid 
                         ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' 
-                        : 'bg-slate-50 dark:bg-slate-700 text-slate-400 hover:bg-indigo-600 hover:text-white'
+                        : 'bg-slate-50 dark:bg-slate-700 text-slate-400 hover:bg-danger/80 hover:text-white'
                 }`}
                 title={isPaid ? "Marcar como pendente" : "Marcar como pago"}
             >

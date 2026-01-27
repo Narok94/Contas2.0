@@ -75,14 +75,24 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
   }, [accounts, incomes, safeDate]);
 
   const filteredAccounts = useMemo(() => {
-    return accounts.filter(acc => {
-        const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
-        const matchesCategory = filterCategory === 'ALL' || acc.category === filterCategory;
-        const matchesRecurrent = !filterRecurrent || acc.isRecurrent;
-        const matchesInstallment = !filterInstallment || acc.isInstallment;
-        return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
-    });
+    return accounts
+        .filter(acc => {
+            const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
+            const matchesCategory = filterCategory === 'ALL' || acc.category === filterCategory;
+            const matchesRecurrent = !filterRecurrent || acc.isRecurrent;
+            const matchesInstallment = !filterInstallment || acc.isInstallment;
+            return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
+        })
+        .sort((a, b) => {
+            if (a.status === AccountStatus.PENDING && b.status === AccountStatus.PAID) {
+                return -1; // a (pending) comes first
+            }
+            if (a.status === AccountStatus.PAID && b.status === AccountStatus.PENDING) {
+                return 1; // b (pending) comes first
+            }
+            return 0; // Keep original order for same-status items
+        });
   }, [accounts, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
