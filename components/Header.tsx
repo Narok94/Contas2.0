@@ -63,7 +63,18 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const settings = realtimeService.getSettings();
+    if (settings) setLogoUrl(settings.logoUrl);
+
+    const unsub = realtimeService.subscribe('settings', (newSettings) => {
+        if (newSettings) setLogoUrl(newSettings.logoUrl);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,7 +93,16 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-primary leading-none whitespace-nowrap">Controle de Contas</h1>
+            <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white shadow-sm border border-border-color/30">
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                        <span className="text-lg">🐢</span>
+                    )}
+                </div>
+                <h1 className="text-xl font-black text-primary leading-none whitespace-nowrap hidden sm:block">TATU.</h1>
+            </div>
             <SyncStatusIndicator />
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">

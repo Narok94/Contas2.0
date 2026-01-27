@@ -287,7 +287,7 @@ const App: React.FC = () => {
       <BottomNavBar activeView={view} onViewChange={setView} onAddClick={() => setIsSelectionModalOpen(true)} isAdmin={currentUser.role === Role.ADMIN} />
       
       <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
-      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={() => {}} onImportData={() => {}} onExportToCsv={() => {}} />
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={() => {}} onImportData={() => {}} onExportToCsv={() => {}} currentUser={currentUser} />
       <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
           batch.forEach(acc => dataService.addAccount({...acc, id: `acc-batch-${Date.now()}-${Math.random()}`, groupId: activeGroupId}));
