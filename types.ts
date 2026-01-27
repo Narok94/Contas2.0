@@ -11,6 +11,11 @@ export enum AccountStatus {
   PAID = 'PAID',
 }
 
+export interface AppSettings {
+  appName: string;
+  logoUrl?: string;
+}
+
 export interface User {
   id: string;
   name: string;

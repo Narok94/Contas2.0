@@ -50,17 +50,11 @@ const App: React.FC = () => {
   const chatModalRef = useRef<AiChatModalRef>(null);
 
   useEffect(() => {
-    const handleUsersUpdate = (data: User[]) => setUsers(data);
-    const handleGroupsUpdate = (data: Group[]) => setGroups(data);
-    const handleAccountsUpdate = (data: Account[]) => setAccounts(data);
-    const handleIncomesUpdate = (data: Income[]) => setIncomes(data);
-    const handleCategoriesUpdate = (data: string[]) => setCategories(data);
-    
-    realtimeService.subscribe('users', handleUsersUpdate);
-    realtimeService.subscribe('groups', handleGroupsUpdate);
-    realtimeService.subscribe('accounts', handleAccountsUpdate);
-    realtimeService.subscribe('incomes', handleIncomesUpdate);
-    realtimeService.subscribe('categories', handleCategoriesUpdate);
+    const unsubUsers = realtimeService.subscribe('users', (data: User[]) => setUsers(data));
+    const unsubGroups = realtimeService.subscribe('groups', (data: Group[]) => setGroups(data));
+    const unsubAccounts = realtimeService.subscribe('accounts', (data: Account[]) => setAccounts(data));
+    const unsubIncomes = realtimeService.subscribe('incomes', (data: Income[]) => setIncomes(data));
+    const unsubCategories = realtimeService.subscribe('categories', (data: string[]) => setCategories(data));
     
     const initAuth = async () => {
         setIsLoading(true);
@@ -93,11 +87,11 @@ const App: React.FC = () => {
     initAuth();
 
     return () => {
-        realtimeService.unsubscribe('users', handleUsersUpdate);
-        realtimeService.unsubscribe('groups', handleGroupsUpdate);
-        realtimeService.unsubscribe('accounts', handleAccountsUpdate);
-        realtimeService.unsubscribe('incomes', handleIncomesUpdate);
-        realtimeService.unsubscribe('categories', handleCategoriesUpdate);
+        unsubUsers();
+        unsubGroups();
+        unsubAccounts();
+        unsubIncomes();
+        unsubCategories();
     };
   }, []);
   
@@ -234,6 +228,45 @@ const App: React.FC = () => {
       }
   };
 
+  const handleExportData = () => {
+    const data = realtimeService.exportData();
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
+    const link = document.createElement('a');
+    link.href = jsonString;
+    link.download = `backup_tatu_${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+  };
+
+  const handleImportData = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const json = JSON.parse(e.target?.result as string);
+            realtimeService.importData(json);
+        } catch (err) {
+            alert("Erro ao importar dados. Verifique o arquivo.");
+        }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleExportToCsv = () => {
+    const data = realtimeService.getAccounts();
+    const headers = ["ID", "Grupo", "Nome", "Categoria", "Valor", "Status", "Parcelado", "Data Pagamento"];
+    const rows = data.map(a => [
+        a.id, a.groupId, a.name, a.category, a.value, a.status, a.isInstallment ? "Sim" : "Não", a.paymentDate || ""
+    ]);
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+        + headers.join(",") + "\n"
+        + rows.map(e => e.join(",")).join("\n");
+
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = `contas_tatu_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+  };
+
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background">
@@ -286,7 +319,16 @@ const App: React.FC = () => {
       <BottomNavBar activeView={view} onViewChange={setView} onAddClick={() => setIsSelectionModalOpen(true)} isAdmin={currentUser.role === Role.ADMIN} />
       
       <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
-      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={() => {}} onImportData={() => {}} onExportToCsv={() => {}} />
+      <SettingsModal 
+        isOpen={isSettingsModalOpen} 
+        onClose={() => setIsSettingsModalOpen(false)} 
+        theme={theme} 
+        toggleTheme={toggleTheme} 
+        onExportData={handleExportData} 
+        onImportData={handleImportData} 
+        onExportToCsv={handleExportToCsv} 
+        currentUser={currentUser}
+      />
       <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
           batch.forEach(acc => dataService.addAccount({...acc, id: `acc-batch-${Date.now()}-${Math.random()}`, groupId: activeGroupId}));

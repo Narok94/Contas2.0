@@ -1,8 +1,8 @@
 
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from '../utils/mockData';
-import { User, Group, Account, Income } from '../types';
+import { User, Group, Account, Income, AppSettings } from '../types';
 
-type CollectionKey = 'users' | 'groups' | 'accounts' | 'categories' | 'incomes';
+type CollectionKey = 'users' | 'groups' | 'accounts' | 'categories' | 'incomes' | 'settings';
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'local';
 
 type Db = {
@@ -11,6 +11,7 @@ type Db = {
   accounts: Account[];
   categories: string[];
   incomes: Income[];
+  settings: AppSettings;
 };
 
 type ListenerCallback<T> = (data: T) => void;
@@ -40,7 +41,7 @@ class RealtimeService {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.db) return parsed.db;
+        if (parsed.db && parsed.db.settings) return parsed.db;
       } catch (e) {}
     }
     return {
@@ -49,6 +50,7 @@ class RealtimeService {
       accounts: MOCK_ACCOUNTS,
       categories: ACCOUNT_CATEGORIES,
       incomes: MOCK_INCOMES,
+      settings: { appName: 'TATU.' }
     };
   }
 
@@ -196,7 +198,7 @@ class RealtimeService {
     const callbacks = this.listeners[k] as any[] | undefined;
     if (callbacks) {
         const data = this.db[k];
-        const dataToSend = Array.isArray(data) ? [...data] : data;
+        const dataToSend = Array.isArray(data) ? [...data] : (typeof data === 'object' ? { ...data } : data);
         callbacks.forEach(cb => cb(dataToSend));
     }
   }
@@ -208,8 +210,9 @@ class RealtimeService {
     const currentListeners = this.listeners[k] as any[];
     currentListeners.push(cb);
     const data = this.db[k];
-    const dataToSend = Array.isArray(data) ? [...data] : data;
+    const dataToSend = Array.isArray(data) ? [...data] : (typeof data === 'object' ? { ...data } : data);
     cb(dataToSend as Db[K]);
+    return () => this.unsubscribe(k, cb);
   }
 
   public unsubscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
@@ -235,6 +238,13 @@ class RealtimeService {
   private async writeImmediately() {
     this.saveLocal();
     await this.persistRemoteNoDebounce();
+  }
+
+  public getSettings = () => this.db.settings;
+  public updateSettings = async (settings: AppSettings) => {
+    this.db.settings = settings;
+    this.notify('settings');
+    this.write();
   }
 
   public getAccounts = () => this.db.accounts;

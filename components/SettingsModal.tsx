@@ -1,6 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import realtimeService, { SyncStatus } from '../services/realtimeService';
+import { User, Role } from '../types';
 
 const CloudStatusCard: React.FC = () => {
     const [status, setStatus] = useState<SyncStatus>('local');
@@ -12,12 +13,12 @@ const CloudStatusCard: React.FC = () => {
             setStatus(syncStatus);
             setLastSync(lastSyncTime);
         });
-        return unsubscribe;
+        return () => unsubscribe();
     }, []);
 
     const getStatusInfo = () => {
         switch (status) {
-            case 'syncing': return { text: 'Sincronizando...', color: 'text-primary', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z' }; // Using a different icon for syncing
+            case 'syncing': return { text: 'Sincronizando...', color: 'text-primary', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z' };
             case 'synced': return { text: 'Conectado e Sincronizado', color: 'text-success', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' };
             case 'error': return { text: 'Falha na conexão', color: 'text-danger', icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' };
             default: return { text: 'Dados salvos localmente', color: 'text-text-muted', icon: 'M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z' };
@@ -59,10 +60,25 @@ interface SettingsModalProps {
     onExportData: () => void;
     onImportData: (file: File) => void;
     onExportToCsv: () => void;
+    currentUser: User | null;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onImportData, onExportToCsv }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onImportData, onExportToCsv, currentUser }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
+    const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+    const isAdmin = currentUser?.role === Role.ADMIN;
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const settings = realtimeService.getSettings();
+        setLogoUrl(settings.logoUrl);
+
+        const unsub = realtimeService.subscribe('settings', (newSettings) => {
+            setLogoUrl(newSettings.logoUrl);
+        });
+        return () => unsub();
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -73,22 +89,111 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            if (window.confirm("Restaurar um backup substituirá todos os dados atuais (localmente e na nuvem na próxima sincronização). Deseja continuar?")) {
+            if (window.confirm("Restaurar um backup substituirá todos os dados atuais. Deseja continuar?")) {
                 onImportData(file);
             }
         }
         if(event.target) event.target.value = '';
     };
 
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 128; // Mantemos o logo pequeno para performance
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedLogo = canvas.toDataURL('image/jpeg', 0.8);
+                    realtimeService.updateSettings({
+                        ...realtimeService.getSettings(),
+                        logoUrl: compressedLogo
+                    });
+                }
+            };
+            img.src = event.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeLogo = () => {
+        if (window.confirm("Deseja remover o logo personalizado e usar o padrão?")) {
+            realtimeService.updateSettings({
+                ...realtimeService.getSettings(),
+                logoUrl: undefined
+            });
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
-            <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-md animate-fade-in-up">
+            <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-md animate-fade-in-up max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary">Configurações</h2>
                     <button onClick={onClose} className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-3xl">&times;</button>
                 </div>
 
                 <div className="space-y-6">
+                     {isAdmin && (
+                        <div className="border-b border-border-color dark:border-dark-border-color pb-6">
+                            <h3 className="text-lg font-semibold mb-3 text-text-primary dark:text-dark-text-primary">Logo do Sistema (Admin)</h3>
+                            <div className="flex items-center gap-4 bg-surface-light dark:bg-dark-surface-light p-4 rounded-xl">
+                                <div className="w-16 h-16 bg-white rounded-lg border border-border-color flex items-center justify-center overflow-hidden shadow-inner">
+                                    {logoUrl ? (
+                                        <img src={logoUrl} alt="Preview" className="w-full h-full object-contain" />
+                                    ) : (
+                                        <span className="text-2xl">🐢</span>
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <button 
+                                        onClick={() => logoInputRef.current?.click()}
+                                        className="text-xs font-bold py-2 px-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all"
+                                    >
+                                        Mudar Logo
+                                    </button>
+                                    {logoUrl && (
+                                        <button 
+                                            onClick={removeLogo}
+                                            className="text-[10px] font-bold py-1 px-3 text-danger hover:bg-danger/10 rounded-lg transition-all"
+                                        >
+                                            Remover
+                                        </button>
+                                    )}
+                                    <input 
+                                        type="file" 
+                                        ref={logoInputRef} 
+                                        onChange={handleLogoUpload} 
+                                        accept="image/*" 
+                                        className="hidden" 
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                     )}
+
                      <CloudStatusCard />
                      <div>
                         <h3 className="text-lg font-semibold mb-2 text-text-primary dark:text-dark-text-primary">Aparência</h3>
