@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import realtimeService from '../services/realtimeService';
@@ -7,6 +6,25 @@ interface LoginScreenProps {
   onLogin: (username: string, password: string) => Promise<boolean>;
   onNavigateToRegister: () => void;
 }
+
+const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Corpo/Casco do Tatu */}
+    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#2D9F75" />
+    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#4ADE80" />
+    {/* Segmentos do Casco */}
+    <path d="M40 36V65M50 35V65M60 36V65" stroke="#2D9F75" strokeWidth="1.5" />
+    {/* Cabeça */}
+    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#A3E635" />
+    {/* Olho */}
+    <circle cx="20" cy="58" r="1.5" fill="#2D9F75" />
+    {/* Rabo */}
+    <path d="M80 60L88 65H80V60Z" fill="#A3E635" />
+    {/* Patas */}
+    <rect x="30" y="65" width="10" height="5" rx="1" fill="#A3E635" />
+    <rect x="60" y="65" width="10" height="5" rx="1" fill="#A3E635" />
+  </svg>
+);
 
 const ParticleNetwork: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -154,7 +172,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
           transition={{ duration: 0.6, ease: 'easeOut' }}
           className="relative z-10 w-full max-w-md"
       >
-          {/* Logo Container Centralizado e Destacado */}
+          {/* Logo Container Centralizado e Destacado com estilo Azul Transparente */}
           <div className="flex flex-col items-center mb-10">
               <motion.div 
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -162,14 +180,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
                   transition={{ delay: 0.2, duration: 0.5, type: 'spring' }}
                   className="relative group"
               >
-                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                  <div className="relative w-28 h-28 bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-2 shadow-2xl flex items-center justify-center overflow-hidden">
+                  {/* Glowing Rings (conforme a imagem) */}
+                  <div className="absolute -inset-4 bg-indigo-500/10 rounded-full blur-xl animate-pulse"></div>
+                  <div className="absolute -inset-2 border border-indigo-500/20 rounded-full"></div>
+                  
+                  <div className="relative w-32 h-32 bg-indigo-500/80 backdrop-blur-xl rounded-full border border-white/30 p-4 shadow-2xl flex items-center justify-center overflow-hidden">
                       {logoUrl ? (
                           <img src={logoUrl} alt="Logo" className="w-full h-full object-contain drop-shadow-lg" />
                       ) : (
-                        <div className="bg-gradient-to-br from-primary to-indigo-600 w-full h-full rounded-full flex items-center justify-center shadow-inner">
-                            <span className="text-4xl">🐢</span>
-                        </div>
+                        <TatuIcon className="w-10/12 h-10/12 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]" />
                       )}
                   </div>
               </motion.div>
@@ -200,7 +219,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
                               required
                               className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:bg-white/10 rounded-2xl outline-none transition-all placeholder:text-white/20 text-white font-medium"
                               placeholder="Usuário"
-                              value={email}
+                              email={email}
                               onChange={(e) => setEmail(e.target.value)}
                           />
                       </div>
