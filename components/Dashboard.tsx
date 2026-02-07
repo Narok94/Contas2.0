@@ -46,15 +46,24 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
   }, [selectedDate]);
 
-  const stats = useMemo(() => {
+  // Filtra as contas do mês selecionado ANTES de qualquer outra operação
+  const currentMonthAccounts = useMemo(() => {
     const m = safeDate.getMonth();
     const y = safeDate.getFullYear();
 
-    const currentMonthAccounts = accounts.filter(acc => {
+    return accounts.filter(acc => {
+        // Se não tem data de pagamento, mas é recorrente, pertence ao dashboard do mês atual
         if (!acc.paymentDate) return acc.isRecurrent; 
+        
+        // Se tem data, verifica se coincide com o mês/ano selecionado
         const d = new Date(acc.paymentDate);
         return d.getMonth() === m && d.getFullYear() === y;
     });
+  }, [accounts, safeDate]);
+
+  const stats = useMemo(() => {
+    const m = safeDate.getMonth();
+    const y = safeDate.getFullYear();
 
     const totalIncome = incomes
         .filter(inc => {
@@ -72,10 +81,10 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         .reduce((sum, acc) => sum + acc.value, 0);
 
     return { totalIncome, paid, pending, balance: totalIncome - paid };
-  }, [accounts, incomes, safeDate]);
+  }, [currentMonthAccounts, incomes, safeDate]);
 
   const filteredAccounts = useMemo(() => {
-    return accounts
+    return currentMonthAccounts
         .filter(acc => {
             const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
@@ -85,15 +94,14 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
         })
         .sort((a, b) => {
-            if (a.status === AccountStatus.PENDING && b.status === AccountStatus.PAID) {
-                return -1; // a (pending) comes first
+            // Regra de Ouro: PENDENTE sempre vem antes de PAGO
+            if (a.status !== b.status) {
+                return a.status === AccountStatus.PENDING ? -1 : 1;
             }
-            if (a.status === AccountStatus.PAID && b.status === AccountStatus.PENDING) {
-                return 1; // b (pending) comes first
-            }
-            return 0; // Keep original order for same-status items
+            // Critério de desempate: Ordem alfabética
+            return a.name.localeCompare(b.name);
         });
-  }, [accounts, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
+  }, [currentMonthAccounts, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -144,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                 
                 {filteredAccounts.length === 0 && (
                     <div className="text-center py-10 bg-slate-50 dark:bg-slate-900/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                        <p className="text-slate-400 font-bold text-xs tracking-tight">Nenhuma conta encontrada.</p>
+                        <p className="text-slate-400 font-bold text-xs tracking-tight">Nenhuma conta encontrada para este mês.</p>
                     </div>
                 )}
             </div>
