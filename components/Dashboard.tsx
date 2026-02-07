@@ -32,13 +32,13 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
     <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`${isMain ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color shadow-sm'} p-5 rounded-[2.5rem] relative overflow-hidden group transition-all hover:translate-y-[-4px] active:scale-[0.98] cursor-default`}
+        className={`${isMain ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/15' : 'bg-surface dark:bg-dark-surface border border-slate-100 dark:border-slate-800 shadow-sm'} p-4 rounded-[2rem] relative overflow-hidden group transition-all hover:translate-y-[-3px] active:scale-[0.98] cursor-default`}
     >
-        <div className={`flex items-center text-[10px] font-black uppercase tracking-[0.2em] ${isMain ? 'text-indigo-100' : 'text-slate-400'}`}>
-            <span className={`p-2 rounded-xl bg-current/10 mr-2.5 ${!isMain ? colorClass : ''}`}>{icon}</span>
+        <div className={`flex items-center text-[9px] font-black uppercase tracking-[0.2em] ${isMain ? 'text-indigo-100' : 'text-slate-400'}`}>
+            <span className={`p-1.5 rounded-xl bg-current/10 mr-2 ${!isMain ? colorClass : ''}`}>{icon}</span>
             <span>{title}</span>
         </div>
-        <p className={`mt-3 text-2xl font-black tracking-tighter truncate ${isMain ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+        <p className={`mt-2 text-xl font-black tracking-tighter truncate ${isMain ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
             {value}
         </p>
     </motion.div>
@@ -60,13 +60,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const selectedMonth = safeDate.getMonth();
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
     
-    // 1. SNAPSHOTS
     const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
-    
-    // 2. RECUPERAÇÃO
     const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
 
-    // 3. RECORRENTES
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
@@ -76,7 +72,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         return acc;
     });
 
-    // 4. PROJEÇÕES (Correção: Busca o teto da série em todo o DB)
     const projectedInstallments: Account[] = [];
     const seriesAnchors = new Map<string, Account>();
     accounts.forEach(acc => {
@@ -162,32 +157,32 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <div className="space-y-6 animate-fade-in-up max-w-7xl mx-auto py-2">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4 sm:px-0">
+    <div className="space-y-5 animate-fade-in-up max-w-7xl mx-auto py-1">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 px-4 sm:px-0">
             <div>
-              <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] mb-1">Olá, {currentUser?.name}</p>
-              <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
-                Minhas Contas<span className="text-indigo-600">.</span>
+              <p className="text-slate-400 font-black text-[9px] uppercase tracking-[0.25em] mb-0.5">Visão Geral</p>
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
+                Finanças<span className="text-indigo-600">.</span>
               </h1>
             </div>
-            <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2 w-full md:w-auto">
                 <MonthPicker selectedDate={safeDate} onSelectDate={setSelectedDate} />
-                <button onClick={onOpenMoveModal} className="p-3 rounded-2xl bg-white dark:bg-dark-surface border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-indigo-600 transition-all shadow-sm active:scale-95 flex items-center justify-center" title="Mover Contas">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <button onClick={onOpenMoveModal} className="p-2.5 rounded-xl bg-white dark:bg-dark-surface border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-indigo-600 transition-all shadow-sm active:scale-95" title="Mover Contas">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                 </button>
             </div>
         </header>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 sm:px-0">
-            <StatCard title="Saldo" value={formatCurrency(stats.balance)} isMain={true} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
-            <StatCard title="Falta Pagar" value={formatCurrency(stats.pending)} colorClass="text-rose-500" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
-            <StatCard title="Entradas" value={formatCurrency(stats.totalIncome)} colorClass="text-emerald-500" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 11l5-5m0 0l5 5m-5-5v12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
-            <StatCard title="Já Pago" value={formatCurrency(stats.paid)} colorClass="text-slate-400" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 sm:px-0">
+            <StatCard title="Disponível" value={formatCurrency(stats.balance)} isMain={true} icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <StatCard title="A Pagar" value={formatCurrency(stats.pending)} colorClass="text-rose-500" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <StatCard title="Renda" value={formatCurrency(stats.totalIncome)} colorClass="text-emerald-500" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 11l5-5m0 0l5 5m-5-5v12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <StatCard title="Pagas" value={formatCurrency(stats.paid)} colorClass="text-slate-400" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
         </section>
 
-        <div className="grid grid-cols-1 gap-6 pb-24 px-4 sm:px-0">
-            <div className="space-y-6">
-                <div className="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-1 gap-5 pb-24 px-4 sm:px-0">
+            <div className="space-y-5">
+                <div className="bg-slate-50/50 dark:bg-slate-900/40 p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800">
                     <SearchBar 
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
                         filterStatus={filterStatus} setFilterStatus={setFilterStatus}
@@ -198,8 +193,11 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                     />
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <AnimatePresence mode="popLayout">
+                <motion.div 
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+                >
+                    <AnimatePresence mode="popLayout" initial={false}>
                         {currentMonthAccounts.map(acc => (
                             <AccountCard 
                                 key={acc.id} 
@@ -210,12 +208,11 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                             />
                         ))}
                     </AnimatePresence>
-                </div>
+                </motion.div>
                 
                 {currentMonthAccounts.length === 0 && (
-                    <div className="text-center py-16 bg-slate-50 dark:bg-slate-900/20 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-800">
-                        <div className="text-4xl mb-4">🔍</div>
-                        <p className="text-slate-400 font-black text-xs uppercase tracking-widest">Nenhuma conta encontrada</p>
+                    <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-900/10 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800">
+                        <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Nada por aqui</p>
                     </div>
                 )}
             </div>
