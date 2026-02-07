@@ -80,12 +80,14 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const projectedInstallments: Account[] = [];
     
     // Mapeamos a última parcela física de cada série para projetar a partir dela
+    // Usamos installmentId como chave primária, e (nome+grupo) como fallback para contas antigas
     const seriesAnchors = new Map<string, Account>();
     accounts.forEach(acc => {
-        if (acc.isInstallment && acc.installmentId && acc.paymentDate) {
-            const current = seriesAnchors.get(acc.installmentId);
+        if (acc.isInstallment && acc.paymentDate) {
+            const anchorKey = acc.installmentId || `legacy-${acc.name}-${acc.groupId}`;
+            const current = seriesAnchors.get(anchorKey);
             if (!current || new Date(acc.paymentDate) > new Date(current.paymentDate!)) {
-                seriesAnchors.set(acc.installmentId, acc);
+                seriesAnchors.set(anchorKey, acc);
             }
         }
     });
@@ -98,18 +100,24 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
 
         // Se o mês selecionado é posterior ao último registro físico desta série
         if (monthDiff > 0) {
-            const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
+            const currentInst = Number(acc.currentInstallment || 1);
+            const targetInstallment = currentInst + monthDiff;
             
             // Pega o maior totalInstallments registrado para esta série específica
+            const seriesMatch = (a: Account) => 
+                (acc.installmentId && a.installmentId === acc.installmentId) || 
+                (!acc.installmentId && a.name === acc.name && a.groupId === acc.groupId);
+
             const maxTotalInSeries = Math.max(
-                acc.totalInstallments || 0,
-                ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => a.totalInstallments || 0)
+                Number(acc.totalInstallments || 0),
+                ...accounts.filter(seriesMatch).map(a => Number(a.totalInstallments || 0))
             );
 
             if (targetInstallment <= maxTotalInSeries) {
                 // Verifica se já existe um snapshot real para esta parcela específica desta série
                 const alreadyHasSnapshot = snapshots.some(s => 
-                    s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment
+                    (acc.installmentId && s.installmentId === acc.installmentId && Number(s.currentInstallment) === targetInstallment) ||
+                    (!acc.installmentId && s.name === acc.name && Number(s.currentInstallment) === targetInstallment)
                 );
 
                 if (!alreadyHasSnapshot) {

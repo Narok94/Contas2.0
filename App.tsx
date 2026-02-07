@@ -179,54 +179,67 @@ const App: React.FC = () => {
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const targetDate = `${year}-${month}-10T12:00:00Z`;
 
+      // Sanitização de valores para garantir que sejam números
+      const sanitizedValue = Number(data.value);
+      const sanitizedTotal = data.totalInstallments ? Number(data.totalInstallments) : undefined;
+      const sanitizedCurrent = data.currentInstallment ? Number(data.currentInstallment) : undefined;
+
       if (data.id && (existingAccount || isEditingProjection)) {
-          // Se for edição de projeção ou template recorrente, transformamos em snapshot real
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
-              // Extração robusta do ID original
               let baseId = data.id.toString().replace(/^projected-/, '');
               const parts = baseId.split('-');
-              // Se tiver data no ID (YYYY-MM), removemos os dois últimos segmentos
               if (parts.length > 2 && /^\d{4}$/.test(parts[parts.length-2])) {
                   baseId = parts.slice(0, -2).join('-');
               }
               
               const original = accounts.find(a => a.id === baseId);
 
+              // REPARO DE SÉRIE: Se o original era parcela mas não tinha ID de série, cria um agora
+              const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `repair-series-${Date.now()}` : undefined);
+
               const newSnapshot: Account = { 
                   ...data, 
                   id: `acc-snap-${Date.now()}`, 
+                  value: sanitizedValue,
                   paymentDate: targetDate, 
                   status: data.status || AccountStatus.PENDING,
-                  currentInstallment: data.currentInstallment,
-                  installmentId: data.installmentId || original?.installmentId,
-                  totalInstallments: data.totalInstallments || original?.totalInstallments
+                  currentInstallment: sanitizedCurrent,
+                  totalInstallments: sanitizedTotal || original?.totalInstallments,
+                  installmentId: finalInstallmentId
               };
               dataService.addAccount(newSnapshot);
               
-              // Se mudou o total de parcelas, sincroniza a série inteira também
               if (newSnapshot.installmentId) {
                   realtimeService.updateAccountAndSeries(newSnapshot);
               }
               return;
           }
-          // Atualização de registro físico já existente
-          realtimeService.updateAccountAndSeries(data);
+          
+          // REPARO DE SÉRIE EM EDIÇÃO DE CONTA REAL:
+          const updateData = {
+              ...data,
+              value: sanitizedValue,
+              totalInstallments: sanitizedTotal,
+              currentInstallment: sanitizedCurrent,
+              installmentId: data.installmentId || (data.isInstallment ? `manual-repair-${Date.now()}` : undefined)
+          };
+          
+          realtimeService.updateAccountAndSeries(updateData);
       } else {
-          // Nova conta criada do zero
           const finalId = `acc-${Date.now()}`;
           const isVar = isVariableExpense(data);
           const isRec = isVar ? true : data.isRecurrent;
           const isInst = data.isInstallment;
-          const val = isVar && !data.value ? 0 : data.value;
           
           dataService.addAccount({
               ...data,
               id: finalId,
-              value: val,
+              value: sanitizedValue,
               isRecurrent: isRec,
               isInstallment: isInst,
               installmentId: isInst ? `inst-series-${Date.now()}` : undefined,
-              currentInstallment: isInst ? (data.currentInstallment || 1) : undefined,
+              currentInstallment: isInst ? (sanitizedCurrent || 1) : undefined,
+              totalInstallments: sanitizedTotal,
               status: AccountStatus.PENDING,
               paymentDate: (isRec && !isInst) ? undefined : targetDate
           });

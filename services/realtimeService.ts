@@ -216,29 +216,38 @@ class RealtimeService {
   }
 
   public updateAccountAndSeries = async (acc: Account) => {
-      if (acc.isInstallment && acc.installmentId) {
-          // Atualização atômica de toda a série para evitar sumiço por limite de parcelas
+      // Se for parcela e tiver installmentId, atualiza a série inteira
+      if (acc.isInstallment) {
+          const sId = acc.installmentId;
+          
           this.db.accounts = this.db.accounts.map(a => {
-              if (a.installmentId === acc.installmentId) {
+              // Condição de vínculo: ou pelo installmentId oficial, ou pelo nome se o ID oficial faltar nas antigas
+              const isMatch = sId ? (a.installmentId === sId) : (a.isInstallment && a.name === acc.name && a.groupId === acc.groupId);
+              
+              if (isMatch) {
                   return { 
                       ...a, 
                       name: acc.name, 
-                      totalInstallments: acc.totalInstallments,
+                      totalInstallments: Number(acc.totalInstallments),
                       category: acc.category,
-                      // O valor é mantido individual ou alterado se for o registro exato sendo editado
-                      value: a.id === acc.id ? acc.value : a.value 
+                      installmentId: sId || a.installmentId || `migrated-inst-${Date.now()}`,
+                      // O valor só muda se for o registro exato
+                      value: a.id === acc.id ? Number(acc.value) : a.value 
                   };
               }
-              // Caso o ID seja o mesmo mas por algum motivo o installmentId estivesse diferente
-              return a.id === acc.id ? acc : a;
+              return a.id === acc.id ? { ...acc, value: Number(acc.value), totalInstallments: Number(acc.totalInstallments) } : a;
           });
       } else {
-          this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a);
+          this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? { ...acc, value: Number(acc.value) } : a);
       }
       this.notify('accounts'); this.saveLocal(); this.persistRemote();
   }
 
-  public addAccount = async (acc: Account) => { this.db.accounts = [...this.db.accounts, acc]; this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
+  public addAccount = async (acc: Account) => { 
+      this.db.accounts = [...this.db.accounts, { ...acc, value: Number(acc.value), totalInstallments: acc.totalInstallments ? Number(acc.totalInstallments) : undefined }]; 
+      this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
+  }
+  
   public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public updateMultipleAccounts = async (accs: Account[]) => {
     const accsMap = new Map(accs.map(a => [a.id, a]));
