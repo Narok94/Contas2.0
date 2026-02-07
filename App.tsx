@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
@@ -33,7 +34,6 @@ const App: React.FC = () => {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [view, setView] = useState<View>('login');
-  // Sincronizado com a data atual do dispositivo (PC/Celular)
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -49,17 +49,11 @@ const App: React.FC = () => {
   const chatModalRef = useRef<AiChatModalRef>(null);
 
   useEffect(() => {
-    const handleUsersUpdate = (data: User[]) => setUsers(data);
-    const handleGroupsUpdate = (data: Group[]) => setGroups(data);
-    const handleAccountsUpdate = (data: Account[]) => setAccounts(data);
-    const handleIncomesUpdate = (data: Income[]) => setIncomes(data);
-    const handleCategoriesUpdate = (data: string[]) => setCategories(data);
-    
-    const unsubUsers = realtimeService.subscribe('users', handleUsersUpdate);
-    const unsubGroups = realtimeService.subscribe('groups', handleGroupsUpdate);
-    const unsubAccounts = realtimeService.subscribe('accounts', handleAccountsUpdate);
-    const unsubIncomes = realtimeService.subscribe('incomes', handleIncomesUpdate);
-    const unsubCategories = realtimeService.subscribe('categories', handleCategoriesUpdate);
+    const unsubUsers = realtimeService.subscribe('users', setUsers);
+    const unsubGroups = realtimeService.subscribe('groups', setGroups);
+    const unsubAccounts = realtimeService.subscribe('accounts', setAccounts);
+    const unsubIncomes = realtimeService.subscribe('incomes', setIncomes);
+    const unsubCategories = realtimeService.subscribe('categories', setCategories);
     
     const initAuth = async () => {
         setIsLoading(true);
@@ -80,7 +74,6 @@ const App: React.FC = () => {
                     setView('login');
                 }
             } catch (e) {
-                console.error("Erro ao carregar sessão", e);
                 setView('login');
             }
         } else {
@@ -92,11 +85,7 @@ const App: React.FC = () => {
     initAuth();
 
     return () => {
-        unsubUsers();
-        unsubGroups();
-        unsubAccounts();
-        unsubIncomes();
-        unsubCategories();
+        unsubUsers(); unsubGroups(); unsubAccounts(); unsubIncomes(); unsubCategories();
     };
   }, []);
   
@@ -122,8 +111,6 @@ const App: React.FC = () => {
         handleGroupSelect(user.groupIds[0]);
     } else if (user.groupIds.length > 1) {
         setView('groupSelection');
-    } else {
-        setView('login');
     }
     return true;
   };
@@ -133,16 +120,10 @@ const App: React.FC = () => {
     if (existing) return false;
 
     const newUser = await dataService.addUser({
-        name,
-        username,
-        password,
-        role: Role.USER,
-        groupIds: ['group-3'],
+        name, username, password, role: Role.USER, groupIds: ['group-3'],
     });
 
-    if (newUser) {
-        return handleLogin(username, password);
-    }
+    if (newUser) return handleLogin(username, password);
     return false;
   };
 
@@ -174,7 +155,6 @@ const App: React.FC = () => {
             setIsAccountModalOpen(true);
             return;
         }
-
         const snapshot: Account = {
             ...acc,
             id: `acc-snap-${acc.id}-${selectedDate.toISOString().slice(0, 7)}`,
@@ -182,7 +162,6 @@ const App: React.FC = () => {
             status: AccountStatus.PAID,
             paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
         };
-        
         dataService.addAccount(snapshot);
     } else {
         dataService.updateAccount({
@@ -200,17 +179,10 @@ const App: React.FC = () => {
       if (data.id) {
           if (isVariableUtility) {
               const existingSnapshot = accounts.find(a => 
-                !a.isRecurrent && 
-                a.name === data.name && 
-                a.category === data.category && 
-                a.paymentDate?.startsWith(monthKey)
+                !a.isRecurrent && a.name === data.name && a.category === data.category && a.paymentDate?.startsWith(monthKey)
               );
-
               if (existingSnapshot) {
-                  dataService.updateAccount({
-                      ...existingSnapshot,
-                      value: data.value,
-                  });
+                  dataService.updateAccount({ ...existingSnapshot, value: data.value });
               } else {
                   const snapshot: Account = {
                       ...data,
@@ -224,11 +196,14 @@ const App: React.FC = () => {
               dataService.updateAccount(data);
           }
       } else {
+          // CORREÇÃO: Define data de pagamento para que a conta apareça no mês atual do Dashboard
+          const defaultDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
           dataService.addAccount({
               ...data, 
               id: `acc-${Date.now()}`, 
               status: AccountStatus.PENDING,
-              value: isVariableUtility ? 0 : data.value
+              value: isVariableUtility ? 0 : data.value,
+              paymentDate: data.isRecurrent ? undefined : defaultDate
           });
       }
   };
@@ -248,9 +223,7 @@ const App: React.FC = () => {
   if (view === 'register') return <RegisterScreen onRegister={handleRegister} onNavigateToLogin={() => setView('login')} />;
   if (view === 'groupSelection' && currentUser) return <GroupSelectionScreen user={currentUser} groups={groups} onSelectGroup={handleGroupSelect} onLogout={handleLogout} />;
 
-  if (!currentUser || !activeGroupId) {
-      return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
-  }
+  if (!currentUser || !activeGroupId) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
 
   return (
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-hidden">
@@ -259,16 +232,13 @@ const App: React.FC = () => {
       <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-32">
         {view === 'dashboard' && (
             <Dashboard 
-                accounts={userAccounts} 
-                incomes={userIncomes} 
+                accounts={userAccounts} incomes={userIncomes} 
                 onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                 onDeleteAccount={(id) => dataService.deleteAccount(id)} 
                 onToggleStatus={handleToggleAccountStatus} 
-                selectedDate={selectedDate} 
-                setSelectedDate={setSelectedDate} 
+                selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
                 onOpenBatchModal={() => setIsBatchModalOpen(true)} 
-                currentUser={currentUser} 
-                onOpenMoveModal={() => setIsMoveModalOpen(true)} 
+                currentUser={currentUser} onOpenMoveModal={() => setIsMoveModalOpen(true)} 
                 categories={categories}
             />
         )}
@@ -288,11 +258,14 @@ const App: React.FC = () => {
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={() => {}} onImportData={() => {}} onExportToCsv={() => {}} currentUser={currentUser} />
       <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
-          batch.forEach(acc => dataService.addAccount({...acc, id: `acc-batch-${Date.now()}-${Math.random()}`, groupId: activeGroupId}));
+          batch.forEach(acc => {
+              const defaultDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
+              dataService.addAccount({...acc, id: `acc-batch-${Date.now()}-${Math.random()}`, groupId: activeGroupId, paymentDate: acc.isRecurrent ? undefined : defaultDate});
+          });
       }} categories={categories} />
       <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => setIsAccountModalOpen(true)} onSelectBatch={() => setIsBatchModalOpen(true)} />
       <MoveAccountsModal isOpen={isMoveModalOpen} onClose={() => setIsMoveModalOpen(false)} onSubmit={(ids, to) => {
-          const accsToUpdate = accounts.filter(a => ids.includes(a.id)).map(a => ({...a, paymentDate: `${to}-01T12:00:00Z`}));
+          const accsToUpdate = accounts.filter(a => ids.includes(a.id)).map(a => ({...a, paymentDate: `${to}-10T12:00:00Z`}));
           dataService.updateMultipleAccounts(accsToUpdate);
       }} allAccounts={userAccounts} currentDashboardMonth={selectedDate.toISOString().slice(0, 7)} />
     </div>
