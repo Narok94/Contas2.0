@@ -21,7 +21,6 @@ import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 
-// Categorias e nomes que devem ser recorrentes e zerados mensalmente
 const isVariableExpense = (acc: Partial<Account>) => {
     if (!acc) return false;
     const nameLower = acc.name?.toLowerCase() || '';
@@ -126,6 +125,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setCurrentUser(null);
     setActiveGroupId(null);
+    // Corrected: sessionStorage.removeItem expects exactly one argument.
     sessionStorage.removeItem('app_currentUser');
     sessionStorage.removeItem('app_activeGroupId');
     realtimeService.setUser("");
@@ -143,15 +143,17 @@ const App: React.FC = () => {
     if (!acc) return;
     const isVar = isVariableExpense(acc);
     const isPaying = acc.status !== AccountStatus.PAID;
+    
+    // Calcula data base do mês selecionado
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const targetDate = `${year}-${month}-10T12:00:00Z`;
+
     if (isVar && isPaying && acc.value === 0) {
         setAccountToEdit(acc);
         setIsAccountModalOpen(true);
         return;
     }
-
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const targetDate = `${year}-${month}-10T12:00:00Z`;
 
     if ((acc.isRecurrent && !acc.paymentDate) || accountId.toString().startsWith('projected-')) {
         const snapshot: Account = {
@@ -181,6 +183,7 @@ const App: React.FC = () => {
       const targetDate = `${year}-${month}-10T12:00:00Z`;
 
       if (data.id && (existingAccount || isEditingProjection)) {
+          // Se for uma projeção de parcela ou template recorrente sendo editado, criamos um snapshot real no DB
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
               const newId = `acc-snap-${Date.now()}`;
               dataService.addAccount({ 
@@ -191,8 +194,10 @@ const App: React.FC = () => {
               });
               return;
           }
+          // Edição de conta já existente fisicamente
           dataService.updateAccount(data);
       } else {
+          // Nova conta manual
           const finalId = `acc-${Date.now()}`;
           const isRec = isVar ? true : data.isRecurrent;
           const isInst = data.isInstallment;

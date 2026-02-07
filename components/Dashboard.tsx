@@ -60,13 +60,13 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const selectedMonth = safeDate.getMonth();
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
     
-    // 1. SNAPSHOTS: Registros reais no banco para este mês
+    // 1. SNAPSHOTS (REGISTROS REAIS): Contas que existem fisicamente com data neste mês
     const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
     
-    // 2. RECUPERAÇÃO: Sem data e não são templates
+    // 2. RECUPERAÇÃO: Registros sem data que não são recorrentes nem parcelas templates
     const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
 
-    // 3. RECORRENTES: Templates que ainda não têm registro real neste mês
+    // 3. RECORRENTES FIXAS: Templates de contas fixas sem data (exibe apenas se não houver snapshot salvo para ela no mês)
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
@@ -76,7 +76,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         return acc;
     });
 
-    // 4. PROJEÇÃO DE PARCELAS: Onde a mágica (e o bug) acontecia
+    // 4. PROJEÇÃO DE PARCELAS: Calcula parcelas futuras a partir de um registro original
     const projectedInstallments: Account[] = [];
     accounts.forEach(acc => {
         if (acc.isInstallment && acc.paymentDate) {
@@ -89,9 +89,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                 const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
                 
                 if (targetInstallment <= (acc.totalInstallments || 1)) {
-                    // Detecção Inteligente: Evita duplicar se você já salvou essa parcela (snapshot)
+                    // Verifica se já existe um SNAPSHOT salvo para esta parcela específica desta série
                     const alreadyHasSnapshot = snapshots.some(s => 
-                        (s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment) ||
+                        (s.installmentId && s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment) ||
                         (s.name === acc.name && s.currentInstallment === targetInstallment)
                     );
 
@@ -119,7 +119,11 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
         })
         .sort((a, b) => {
-            if (a.status !== b.status) return a.status === AccountStatus.PENDING ? -1 : 1;
+            // ORDENAÇÃO: PENDENTES NO TOPO, PAGAS NO FINAL
+            if (a.status !== b.status) {
+                return a.status === AccountStatus.PENDING ? -1 : 1;
+            }
+            // Secundário: Nome
             return a.name.localeCompare(b.name);
         });
   }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
@@ -155,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             </div>
             <div className="flex items-center gap-2">
                 <MonthPicker selectedDate={safeDate} onSelectDate={setSelectedDate} />
-                <button onClick={onOpenMoveModal} className="p-2 rounded-xl bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color text-slate-400 hover:text-indigo-600 transition-all shadow-sm active:scale-95">
+                <button onClick={onOpenMoveModal} className="p-2 rounded-xl bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color text-slate-400 hover:text-indigo-600 transition-all shadow-sm active:scale-95" title="Mover Contas">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                 </button>
             </div>
@@ -180,16 +184,25 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                         categories={categories}
                     />
                 </div>
+                
+                {/* LISTA DE CONTAS COM SEPARAÇÃO VISUAL CLARA */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <AnimatePresence mode="popLayout">
                         {currentMonthAccounts.map(acc => (
-                            <AccountCard key={acc.id} account={acc} onEdit={onEditAccount} onDelete={onDeleteAccount} onToggleStatus={onToggleStatus} />
+                            <AccountCard 
+                                key={acc.id} 
+                                account={acc} 
+                                onEdit={onEditAccount} 
+                                onDelete={onDeleteAccount} 
+                                onToggleStatus={onToggleStatus} 
+                            />
                         ))}
                     </AnimatePresence>
                 </div>
+                
                 {currentMonthAccounts.length === 0 && (
                     <div className="text-center py-10 bg-slate-50 dark:bg-slate-900/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                        <p className="text-slate-400 font-bold text-xs tracking-tight">Nenhuma conta para este mês.</p>
+                        <p className="text-slate-400 font-bold text-xs tracking-tight">Nenhuma conta encontrada para os filtros aplicados.</p>
                     </div>
                 )}
             </div>
