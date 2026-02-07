@@ -16,9 +16,10 @@ type Db = {
 type ListenerCallback<T> = (data: T) => void;
 type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
-const DB_STORAGE_KEY = 'ricka_local_db_v3'; // Versão incrementada para migração
-const RETRY_DELAY = 15000;
-const GLOBAL_SETTINGS_IDENTIFIER = 'tatu_global_settings_v1'; // Shared identifier for settings
+// Lista de chaves antigas para migração
+const STORAGE_KEYS = ['ricka_local_db_v3', 'ricka_local_db_v2', 'ricka_local_db', 'app_db'];
+const DB_STORAGE_KEY = 'ricka_local_db_v3'; 
+const GLOBAL_SETTINGS_IDENTIFIER = 'tatu_global_settings_v1';
 
 class RealtimeService {
   private db: Db;
@@ -31,32 +32,42 @@ class RealtimeService {
   private retryTimer: number | null = null;
 
   constructor() {
-    this.db = this.loadInitialDb();
+    this.db = this.loadAndMigrateDb();
     this.init();
     window.addEventListener('storage', this.handleCrossTabSync);
   }
 
-  private loadInitialDb(): Db {
+  private loadAndMigrateDb(): Db {
     const defaultSettings: AppSettings = { appName: 'TATU.' };
-    const stored = localStorage.getItem(DB_STORAGE_KEY);
     
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.db) {
-            return {
-                users: parsed.db.users || MOCK_USERS,
-                groups: parsed.db.groups || MOCK_GROUPS,
-                accounts: parsed.db.accounts || MOCK_ACCOUNTS,
-                categories: parsed.db.categories || ACCOUNT_CATEGORIES,
-                incomes: parsed.db.incomes || MOCK_INCOMES,
-                settings: parsed.db.settings || defaultSettings,
-            };
+    // Tenta encontrar dados em qualquer uma das chaves conhecidas
+    let storedData: string | null = null;
+    for (const key of STORAGE_KEYS) {
+        const data = localStorage.getItem(key);
+        if (data) {
+            storedData = data;
+            console.log(`[MIGRAÇÃO] Dados encontrados na chave: ${key}`);
+            break;
         }
+    }
+    
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        const data = parsed.db || parsed; // Suporta formatos antigos e novos
+        return {
+            users: data.users || MOCK_USERS,
+            groups: data.groups || MOCK_GROUPS,
+            accounts: data.accounts || MOCK_ACCOUNTS,
+            categories: data.categories || ACCOUNT_CATEGORIES,
+            incomes: data.incomes || MOCK_INCOMES,
+            settings: data.settings || defaultSettings,
+        };
       } catch (e) {
-          console.error("Erro ao carregar DB local", e);
+          console.error("Erro ao migrar DB local", e);
       }
     }
+
     return {
       users: MOCK_USERS,
       groups: MOCK_GROUPS,
@@ -88,9 +99,10 @@ class RealtimeService {
   }
 
   private handleCrossTabSync = (e: StorageEvent) => {
-    if (e.key === DB_STORAGE_KEY && e.newValue) {
+    if (STORAGE_KEYS.includes(e.key || '') && e.newValue) {
       try {
-        this.db = JSON.parse(e.newValue).db;
+        const parsed = JSON.parse(e.newValue);
+        this.db = parsed.db || parsed;
         this.notifyAll();
       } catch (err) {}
     }
@@ -103,60 +115,34 @@ class RealtimeService {
     this.setSyncStatus('syncing');
 
     try {
-        // Fetch global settings
         const settingsRes = await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`);
         const remoteSettingsData = settingsRes.ok ? await settingsRes.json() : null;
 
-        let userDataToPersist: Omit<Db, 'settings'> | null = null;
-        
-        // Fetch user-specific data if a user is logged in
         if (this.currentUserIdentifier) {
             const userRes = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
             const remoteUserData = userRes.ok ? await userRes.json() : null;
             
-            // Merge remote user data with defaults from local/mock
-            const mergedUserData = {
-                users: remoteUserData?.users || this.db.users,
-                groups: remoteUserData?.groups || this.db.groups,
-                accounts: remoteUserData?.accounts || this.db.accounts,
-                categories: remoteUserData?.categories || this.db.categories,
-                incomes: remoteUserData?.incomes || this.db.incomes,
-            };
-            this.db = { ...mergedUserData, settings: remoteSettingsData?.settings || this.db.settings };
-            
-            // If user had no data on remote, mark their current local data to be pushed up
-            if (!remoteUserData) {
-                userDataToPersist = mergedUserData;
+            if (remoteUserData) {
+                this.db = { 
+                    ...remoteUserData, 
+                    settings: remoteSettingsData?.settings || this.db.settings 
+                };
             }
         } else {
-            // No user logged in, just load global settings
             this.db.settings = remoteSettingsData?.settings || this.db.settings;
         }
 
         this.saveLocal();
         this.notifyAll();
-        
-        // After syncing, check if we need to create initial records on remote
-        if (!remoteSettingsData) {
-            console.log("No remote settings found. Creating initial record.");
-            this.updateSettings(this.db.settings); // This will persist the default/local settings
-        }
-        if (userDataToPersist) {
-            console.log("No remote user data found. Creating initial record for user.");
-            this.persistRemote(); // This will persist the local/mock data for the new user
-        }
-
         this.lastSyncTime = new Date();
         this.setSyncStatus('synced');
-
     } catch (e) { this.handleSyncError(); }
   }
-
 
   private handleSyncError() {
     this.setSyncStatus('error');
     if (this.retryTimer) clearTimeout(this.retryTimer);
-    this.retryTimer = window.setTimeout(() => this.syncWithRemote(), RETRY_DELAY);
+    this.retryTimer = window.setTimeout(() => this.syncWithRemote(), 15000);
   }
 
   private setSyncStatus(status: SyncStatus) {
@@ -225,29 +211,22 @@ class RealtimeService {
     this.db.settings = settings;
     this.notify('settings');
     this.saveLocal();
-    
-    // Persist settings remotely immediately, no debounce
     this.setSyncStatus('syncing');
     try {
-        const settingsPayload = { settings };
         await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settingsPayload)
+            body: JSON.stringify({ settings })
         });
         this.lastSyncTime = new Date();
         this.setSyncStatus('synced');
-    } catch (e) {
-        this.handleSyncError();
-    }
+    } catch (e) { this.handleSyncError(); }
   }
 
   public getAccounts = () => this.db.accounts;
   public updateAccount = async (acc: Account) => { this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public addAccount = async (acc: Account) => { this.db.accounts = [...this.db.accounts, acc]; this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
-
-  // Fix: Added updateMultipleAccounts method to handle batch updates
   public updateMultipleAccounts = async (accs: Account[]) => {
     const accsMap = new Map(accs.map(a => [a.id, a]));
     this.db.accounts = this.db.accounts.map(a => accsMap.has(a.id) ? accsMap.get(a.id)! : a);
@@ -279,8 +258,6 @@ class RealtimeService {
     this.db = data;
     this.notifyAll();
     this.saveLocal();
-    
-    // Persist imported data to remote
     const { settings, ...userData } = data;
     if (this.currentUserIdentifier) {
         fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`, {
@@ -289,11 +266,6 @@ class RealtimeService {
             body: JSON.stringify(userData)
         });
     }
-    fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings })
-    });
   }
 }
 

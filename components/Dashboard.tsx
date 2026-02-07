@@ -46,20 +46,38 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
   }, [selectedDate]);
 
-  // Filtra as contas do mês selecionado ANTES de qualquer outra operação
   const currentMonthAccounts = useMemo(() => {
-    const m = safeDate.getMonth();
-    const y = safeDate.getFullYear();
+    const monthKey = safeDate.toISOString().slice(0, 7);
+    
+    // 1. Pegamos todas as contas que foram explicitamente pagas ou agendadas para este mês
+    const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
+    
+    // 2. Pegamos as contas recorrentes que ainda não têm um "snapshot" de pagamento neste mês
+    const recurrentTemplates = accounts.filter(acc => 
+        acc.isRecurrent && 
+        !acc.paymentDate &&
+        !snapshots.some(s => s.name === acc.name && s.category === acc.category)
+    );
 
-    return accounts.filter(acc => {
-        // Se não tem data de pagamento, mas é recorrente, pertence ao dashboard do mês atual
-        if (!acc.paymentDate) return acc.isRecurrent; 
-        
-        // Se tem data, verifica se coincide com o mês/ano selecionado
-        const d = new Date(acc.paymentDate);
-        return d.getMonth() === m && d.getFullYear() === y;
-    });
-  }, [accounts, safeDate]);
+    // 3. Mesclamos e aplicamos os filtros de interface
+    return [...snapshots, ...recurrentTemplates]
+        .filter(acc => {
+            const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
+            const matchesCategory = filterCategory === 'ALL' || acc.category === filterCategory;
+            const matchesRecurrent = !filterRecurrent || acc.isRecurrent;
+            const matchesInstallment = !filterInstallment || acc.isInstallment;
+            return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
+        })
+        .sort((a, b) => {
+            // Regra principal: PENDENTE (topo) vs PAGO (fim)
+            if (a.status !== b.status) {
+                return a.status === AccountStatus.PENDING ? -1 : 1;
+            }
+            // Regra secundária: Ordem alfabética
+            return a.name.localeCompare(b.name);
+        });
+  }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
   const stats = useMemo(() => {
     const m = safeDate.getMonth();
@@ -80,28 +98,8 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         .filter(acc => acc.status === AccountStatus.PENDING)
         .reduce((sum, acc) => sum + acc.value, 0);
 
-    return { totalIncome, paid, pending, balance: totalIncome - paid };
+    return { totalIncome, paid, pending, balance: totalIncome - (paid + pending) };
   }, [currentMonthAccounts, incomes, safeDate]);
-
-  const filteredAccounts = useMemo(() => {
-    return currentMonthAccounts
-        .filter(acc => {
-            const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
-            const matchesCategory = filterCategory === 'ALL' || acc.category === filterCategory;
-            const matchesRecurrent = !filterRecurrent || acc.isRecurrent;
-            const matchesInstallment = !filterInstallment || acc.isInstallment;
-            return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
-        })
-        .sort((a, b) => {
-            // Regra de Ouro: PENDENTE sempre vem antes de PAGO
-            if (a.status !== b.status) {
-                return a.status === AccountStatus.PENDING ? -1 : 1;
-            }
-            // Critério de desempate: Ordem alfabética
-            return a.name.localeCompare(b.name);
-        });
-  }, [currentMonthAccounts, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -123,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         </header>
 
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4">
-            <StatCard title="Saldo Livre" value={formatCurrency(stats.balance)} isMain={true} icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <StatCard title="Saldo Restante" value={formatCurrency(stats.balance)} isMain={true} icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
             <StatCard title="Pendente" value={formatCurrency(stats.pending)} colorClass="text-rose-500" icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
             <StatCard title="Entradas" value={formatCurrency(stats.totalIncome)} colorClass="text-emerald-500" icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 11l5-5m0 0l5 5m-5-5v12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
             <StatCard title="Total Pago" value={formatCurrency(stats.paid)} colorClass="text-slate-400" icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
@@ -144,15 +142,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <AnimatePresence mode="popLayout">
-                        {filteredAccounts.map(acc => (
+                        {currentMonthAccounts.map(acc => (
                             <AccountCard key={acc.id} account={acc} onEdit={onEditAccount} onDelete={onDeleteAccount} onToggleStatus={onToggleStatus} />
                         ))}
                     </AnimatePresence>
                 </div>
                 
-                {filteredAccounts.length === 0 && (
+                {currentMonthAccounts.length === 0 && (
                     <div className="text-center py-10 bg-slate-50 dark:bg-slate-900/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                        <p className="text-slate-400 font-bold text-xs tracking-tight">Nenhuma conta encontrada para este mês.</p>
+                        <p className="text-slate-400 font-bold text-xs tracking-tight">Nenhuma conta para este mês.</p>
                     </div>
                 )}
             </div>

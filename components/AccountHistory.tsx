@@ -37,10 +37,11 @@ const HistoryStatCard: React.FC<{ title: string; value: string; icon: React.Reac
 
 const TrendAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
     const trendData = useMemo(() => {
-        // Pega todos os meses presentes nos dados para não depender da data atual do sistema
         const monthlyStats: Record<string, { month: string; name: string; paid: number; pending: number }> = {};
+        const todayKey = new Date().toISOString().slice(0, 7);
         
         accounts.forEach(acc => {
+            // Se não tem data (pendente), projeta para o mês atual
             const dateStr = acc.paymentDate || new Date().toISOString();
             const monthKey = dateStr.slice(0, 7);
             
@@ -100,7 +101,8 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
     const monthlyData = useMemo(() => {
         const data: Record<string, Account[]> = {};
         accounts.forEach(acc => {
-            const monthKey = (acc.paymentDate || new Date().toISOString()).slice(0, 7);
+            const dateStr = acc.paymentDate || new Date().toISOString();
+            const monthKey = dateStr.slice(0, 7);
             if (!data[monthKey]) data[monthKey] = [];
             data[monthKey].push(acc);
         });
