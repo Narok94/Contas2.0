@@ -60,13 +60,13 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const selectedMonth = safeDate.getMonth();
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
     
-    // 1. SNAPSHOTS: Contas com data física salva para este mês
+    // 1. SNAPSHOTS: Contas reais no DB para este mês
     const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
     
-    // 2. RECUPERAÇÃO: Contas sem data que não são automáticas
+    // 2. RECUPERAÇÃO: Contas sem data que não são templates automáticos
     const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
 
-    // 3. RECORRENTES: Templates fixos (só exibe se não houver snapshot salvo hoje)
+    // 3. RECORRENTES: Templates fixos
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
@@ -76,7 +76,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         return acc;
     });
 
-    // 4. PROJEÇÕES: Parcelas calculadas
+    // 4. PROJEÇÕES: Parcelas futuras
     const projectedInstallments: Account[] = [];
     accounts.forEach(acc => {
         if (acc.isInstallment && acc.paymentDate) {
@@ -88,14 +88,14 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             if (monthDiff > 0) {
                 const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
                 
-                // Se a parcela alvo ainda cabe no total (usamos o maior total encontrado para essa série)
+                // Pega o maior totalInstallments registrado para esta série específica
                 const maxTotalInSeries = Math.max(
                     acc.totalInstallments || 0,
                     ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => a.totalInstallments || 0)
                 );
 
                 if (targetInstallment <= maxTotalInSeries) {
-                    // Verifica se já existe um snapshot para ESTA parcela específica da série
+                    // Verifica se já existe um snapshot real para esta parcela específica desta série
                     const alreadyHasSnapshot = snapshots.some(s => 
                         (s.installmentId && s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment) ||
                         (s.name === acc.name && s.currentInstallment === targetInstallment)
@@ -126,6 +126,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
         })
         .sort((a, b) => {
+            // PENDENTES PRIMEIRO, PAGOS POR ÚLTIMO
             if (a.status !== b.status) return a.status === AccountStatus.PENDING ? -1 : 1;
             return a.name.localeCompare(b.name);
         });
