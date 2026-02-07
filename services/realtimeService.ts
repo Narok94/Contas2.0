@@ -1,3 +1,4 @@
+
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from '../utils/mockData';
 import { User, Group, Account, Income, AppSettings } from '../types';
 
@@ -16,7 +17,6 @@ type Db = {
 type ListenerCallback<T> = (data: T) => void;
 type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
-// BLINDAGEM MÁXIMA: Chaves de redundância e legado
 const DB_MAIN_KEY = 'tatu_v4_main_db';
 const DB_BACKUP_KEY = 'tatu_emergency_backup';
 const LEGACY_KEYS = ['ricka_local_db_v3', 'ricka_local_db_v2', 'ricka_local_db', 'app_db', 'tatu_db', 'tatu_v4_main_db'];
@@ -39,8 +39,6 @@ class RealtimeService {
 
   private loadAndArmorData(): Db {
     const defaultSettings: AppSettings = { appName: 'TATU.' };
-    
-    // Objeto temporário para acumular tudo que for encontrado
     let recoveredAccounts: Account[] = [];
     let recoveredIncomes: Income[] = [];
     let recoveredUsers: User[] = [];
@@ -48,7 +46,6 @@ class RealtimeService {
     let recoveredSettings: AppSettings = defaultSettings;
     let recoveredCategories: string[] = ACCOUNT_CATEGORIES;
 
-    // VARREDURA TOTAL: Busca em todas as chaves possíveis já usadas no passado
     [DB_MAIN_KEY, DB_BACKUP_KEY, ...LEGACY_KEYS].forEach(key => {
         const raw = localStorage.getItem(key);
         if (!raw) return;
@@ -56,7 +53,6 @@ class RealtimeService {
             const parsed = JSON.parse(raw);
             const data = parsed.db || parsed;
             
-            // Mesclagem Unificadora (Garante que IDs únicos não se repitam mas todos sejam mantidos)
             if (data.accounts) {
                 data.accounts.forEach((acc: Account) => {
                     if (!recoveredAccounts.find(a => a.id === acc.id)) recoveredAccounts.push(acc);
@@ -108,7 +104,7 @@ class RealtimeService {
   private saveLocal() {
     const payload = JSON.stringify({ db: this.db, timestamp: Date.now() });
     localStorage.setItem(DB_MAIN_KEY, payload);
-    localStorage.setItem(DB_BACKUP_KEY, payload); // Redundância física
+    localStorage.setItem(DB_BACKUP_KEY, payload);
   }
 
   public setUser(username: string) {
@@ -214,7 +210,32 @@ class RealtimeService {
   public getUsers = () => this.db.users;
   public getGroups = () => this.db.groups;
 
-  public updateAccount = async (acc: Account) => { this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
+  public updateAccount = async (acc: Account) => { 
+      this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a); 
+      this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
+  }
+
+  public updateAccountAndSeries = async (acc: Account) => {
+      if (acc.isInstallment && acc.installmentId) {
+          // Se for parcela, atualiza nome e totalInstallments em TODAS as parcelas da série
+          this.db.accounts = this.db.accounts.map(a => {
+              if (a.installmentId === acc.installmentId) {
+                  return { 
+                      ...a, 
+                      name: acc.name, 
+                      totalInstallments: acc.totalInstallments,
+                      category: acc.category,
+                      value: a.id === acc.id ? acc.value : a.value // O valor pode ser diferente entre parcelas em casos raros, mas o total não
+                  };
+              }
+              return a.id === acc.id ? acc : a;
+          });
+      } else {
+          this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a);
+      }
+      this.notify('accounts'); this.saveLocal(); this.persistRemote();
+  }
+
   public addAccount = async (acc: Account) => { this.db.accounts = [...this.db.accounts, acc]; this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public updateMultipleAccounts = async (accs: Account[]) => {

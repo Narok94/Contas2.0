@@ -181,11 +181,9 @@ const App: React.FC = () => {
 
       if (data.id && (existingAccount || isEditingProjection)) {
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
-              // Extração de ID original robusta (remove 'projected-' e o sufixo de data 'YYYY-MM')
               let baseId = data.id.toString().replace(/^projected-/, '');
               if (isEditingProjection) {
                   const parts = baseId.split('-');
-                  // Remove os dois últimos gomos que formam o mêsKey (YYYY e MM)
                   if (parts.length > 2) {
                       baseId = parts.slice(0, -2).join('-');
                   }
@@ -198,13 +196,14 @@ const App: React.FC = () => {
                   id: `acc-snap-${Date.now()}`, 
                   paymentDate: targetDate, 
                   status: data.status || AccountStatus.PENDING,
-                  currentInstallment: data.currentInstallment, // Mantém o número da parcela calculado
-                  installmentId: data.installmentId || original?.installmentId // Mantém o vínculo da série
+                  currentInstallment: data.currentInstallment,
+                  installmentId: data.installmentId || original?.installmentId
               };
               dataService.addAccount(newSnapshot);
               return;
           }
-          dataService.updateAccount(data);
+          // Se for uma conta real já existente, usamos a atualização de série para manter consistência
+          realtimeService.updateAccountAndSeries(data);
       } else {
           const finalId = `acc-${Date.now()}`;
           const isVar = isVariableExpense(data);
