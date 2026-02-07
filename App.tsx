@@ -25,9 +25,12 @@ import MoveAccountsModal from './components/MoveAccountsModal';
 const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
 const isVariableExpense = (acc: Partial<Account>) => {
     if (!acc) return false;
-    const nameMatch = acc.name?.toLowerCase().includes('cartão');
-    const categoryMatch = acc.category && (VARIABLE_CATEGORIES.includes(acc.category) || acc.category.includes('Água') || acc.category.includes('Luz'));
-    return nameMatch || categoryMatch;
+    const nameLower = acc.name?.toLowerCase() || '';
+    const categoryLower = acc.category?.toLowerCase() || '';
+    const isCartao = nameLower.includes('cartão') || categoryLower.includes('cartão');
+    const isAgua = nameLower.includes('água') || categoryLower.includes('água');
+    const isLuz = nameLower.includes('luz') || categoryLower.includes('luz');
+    return isCartao || isAgua || isLuz;
 };
 
 const App: React.FC = () => {
@@ -183,31 +186,47 @@ const App: React.FC = () => {
   const handleAccountSubmit = (data: any) => {
       const isVar = isVariableExpense(data);
       const monthKey = selectedDate.toISOString().slice(0, 7);
-      
-      if (data.id) {
-          if (isVar && !data.paymentDate) {
-              const snapshot: Account = {
-                  ...data,
-                  id: `acc-snap-${data.id}-${monthKey}`,
-                  isRecurrent: false,
-                  paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
-              };
-              dataService.addAccount(snapshot);
-          } else {
-              dataService.updateAccount(data);
-          }
-      } else {
-          const defaultDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
-          const finalIsRecurrent = isVar ? true : data.isRecurrent;
-          const finalValue = isVar && !data.value ? 0 : data.value;
+      const isEditingProjection = data.id && data.id.toString().startsWith('projected-');
+      const existingAccount = accounts.find(a => a.id === data.id);
 
+      if (data.id && (existingAccount || isEditingProjection)) {
+          // Se estamos salvando uma projeção, ela vira um registro real (snapshot)
+          if (isEditingProjection) {
+              const newId = `acc-snap-${Date.now()}`;
+              const paymentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
+              dataService.addAccount({ 
+                  ...data, 
+                  id: newId, 
+                  paymentDate,
+                  status: data.status || AccountStatus.PENDING 
+              });
+              return;
+          }
+
+          // Se for utilidade variável sendo editada a partir do template (sem data), 
+          // cria um snapshot para o mês atual para não estragar o template zerado.
+          if (isVar && existingAccount?.isRecurrent && !existingAccount.paymentDate) {
+               const newId = `acc-snap-${existingAccount.id}-${monthKey}`;
+               const paymentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
+               dataService.addAccount({ ...data, id: newId, isRecurrent: false, paymentDate });
+               return;
+          }
+
+          dataService.updateAccount(data);
+      } else {
+          // Nova conta
+          const finalId = `acc-${Date.now()}`;
+          const isRec = isVar ? true : data.isRecurrent;
+          const val = isVar && !data.value ? 0 : data.value;
+          const defaultDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
+          
           dataService.addAccount({
-              ...data, 
-              id: `acc-${Date.now()}`, 
+              ...data,
+              id: finalId,
+              value: val,
+              isRecurrent: isRec,
               status: AccountStatus.PENDING,
-              value: finalValue,
-              isRecurrent: finalIsRecurrent,
-              paymentDate: finalIsRecurrent ? undefined : defaultDate
+              paymentDate: isRec ? undefined : defaultDate
           });
       }
   };
@@ -239,6 +258,7 @@ const App: React.FC = () => {
                 accounts={userAccounts} incomes={userIncomes} 
                 onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                 onDeleteAccount={(id) => dataService.deleteAccount(id)} 
+                // Fix: changed handleToggleStatus to handleToggleAccountStatus
                 onToggleStatus={handleToggleAccountStatus} 
                 selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
                 onOpenBatchModal={() => setIsBatchModalOpen(true)} 
