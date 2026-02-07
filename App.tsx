@@ -125,7 +125,6 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setCurrentUser(null);
     setActiveGroupId(null);
-    // Corrected: sessionStorage.removeItem expects exactly one argument.
     sessionStorage.removeItem('app_currentUser');
     sessionStorage.removeItem('app_activeGroupId');
     realtimeService.setUser("");
@@ -144,7 +143,6 @@ const App: React.FC = () => {
     const isVar = isVariableExpense(acc);
     const isPaying = acc.status !== AccountStatus.PAID;
     
-    // Calcula data base do mês selecionado
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const targetDate = `${year}-${month}-10T12:00:00Z`;
@@ -174,7 +172,6 @@ const App: React.FC = () => {
   };
 
   const handleAccountSubmit = (data: any) => {
-      const isVar = isVariableExpense(data);
       const isEditingProjection = data.id && data.id.toString().startsWith('projected-');
       const existingAccount = accounts.find(a => a.id === data.id);
       
@@ -183,22 +180,29 @@ const App: React.FC = () => {
       const targetDate = `${year}-${month}-10T12:00:00Z`;
 
       if (data.id && (existingAccount || isEditingProjection)) {
-          // Se for uma projeção de parcela ou template recorrente sendo editado, criamos um snapshot real no DB
+          // Se for uma projeção, transformamos em registro real no banco para o mês visualizado
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
-              const newId = `acc-snap-${Date.now()}`;
-              dataService.addAccount({ 
+              // Limpa o prefixo 'projected-' se houver
+              const baseId = data.id.toString().replace(/^projected-/, '').split('-')[0];
+              const original = accounts.find(a => a.id === baseId);
+
+              const newSnapshot: Account = { 
                   ...data, 
-                  id: newId, 
+                  id: `acc-snap-${Date.now()}`, 
                   paymentDate: targetDate, 
-                  status: data.status || AccountStatus.PENDING 
-              });
+                  status: data.status || AccountStatus.PENDING,
+                  // Mantém o ID de série de parcelas para não perder o vínculo
+                  installmentId: data.installmentId || original?.installmentId
+              };
+              dataService.addAccount(newSnapshot);
               return;
           }
-          // Edição de conta já existente fisicamente
+          // Edição normal de conta física
           dataService.updateAccount(data);
       } else {
-          // Nova conta manual
+          // Nova conta criada do zero
           const finalId = `acc-${Date.now()}`;
+          const isVar = isVariableExpense(data);
           const isRec = isVar ? true : data.isRecurrent;
           const isInst = data.isInstallment;
           const val = isVar && !data.value ? 0 : data.value;
@@ -209,7 +213,7 @@ const App: React.FC = () => {
               value: val,
               isRecurrent: isRec,
               isInstallment: isInst,
-              installmentId: isInst ? `inst-id-${Date.now()}` : undefined,
+              installmentId: isInst ? `inst-series-${Date.now()}` : undefined,
               currentInstallment: isInst ? (data.currentInstallment || 1) : undefined,
               status: AccountStatus.PENDING,
               paymentDate: (isRec && !isInst) ? undefined : targetDate

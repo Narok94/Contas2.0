@@ -60,13 +60,13 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const selectedMonth = safeDate.getMonth();
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
     
-    // 1. SNAPSHOTS (REGISTROS REAIS): Contas que existem fisicamente com data neste mês
+    // 1. SNAPSHOTS: Contas com data física salva para este mês
     const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
     
-    // 2. RECUPERAÇÃO: Registros sem data que não são recorrentes nem parcelas templates
+    // 2. RECUPERAÇÃO: Contas sem data que não são automáticas
     const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
 
-    // 3. RECORRENTES FIXAS: Templates de contas fixas sem data (exibe apenas se não houver snapshot salvo para ela no mês)
+    // 3. RECORRENTES: Templates fixos (só exibe se não houver snapshot salvo hoje)
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
@@ -76,7 +76,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         return acc;
     });
 
-    // 4. PROJEÇÃO DE PARCELAS: Calcula parcelas futuras a partir de um registro original
+    // 4. PROJEÇÕES: Parcelas calculadas
     const projectedInstallments: Account[] = [];
     accounts.forEach(acc => {
         if (acc.isInstallment && acc.paymentDate) {
@@ -88,8 +88,14 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             if (monthDiff > 0) {
                 const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
                 
-                if (targetInstallment <= (acc.totalInstallments || 1)) {
-                    // Verifica se já existe um SNAPSHOT salvo para esta parcela específica desta série
+                // Se a parcela alvo ainda cabe no total (usamos o maior total encontrado para essa série)
+                const maxTotalInSeries = Math.max(
+                    acc.totalInstallments || 0,
+                    ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => a.totalInstallments || 0)
+                );
+
+                if (targetInstallment <= maxTotalInSeries) {
+                    // Verifica se já existe um snapshot para ESTA parcela específica da série
                     const alreadyHasSnapshot = snapshots.some(s => 
                         (s.installmentId && s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment) ||
                         (s.name === acc.name && s.currentInstallment === targetInstallment)
@@ -100,6 +106,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                             ...acc,
                             id: `projected-${acc.id}-${monthKey}`,
                             currentInstallment: targetInstallment,
+                            totalInstallments: maxTotalInSeries,
                             status: AccountStatus.PENDING,
                             paymentDate: undefined 
                         });
@@ -119,11 +126,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
         })
         .sort((a, b) => {
-            // ORDENAÇÃO: PENDENTES NO TOPO, PAGAS NO FINAL
-            if (a.status !== b.status) {
-                return a.status === AccountStatus.PENDING ? -1 : 1;
-            }
-            // Secundário: Nome
+            if (a.status !== b.status) return a.status === AccountStatus.PENDING ? -1 : 1;
             return a.name.localeCompare(b.name);
         });
   }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
@@ -185,7 +188,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                     />
                 </div>
                 
-                {/* LISTA DE CONTAS COM SEPARAÇÃO VISUAL CLARA */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <AnimatePresence mode="popLayout">
                         {currentMonthAccounts.map(acc => (
