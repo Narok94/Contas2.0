@@ -63,20 +63,22 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     // 1. SNAPSHOTS: Contas que já têm data de pagamento neste mês específico
     const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
     
-    // 2. RECORRENTES: Templates de contas fixas que ainda não foram "criadas" como snapshot neste mês
+    // 2. CONTAS SEM DATA (Recuperação): Contas que por erro foram salvas sem data, aparecem no mês atual
+    const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
+
+    // 3. RECORRENTES: Templates de contas fixas que ainda não foram "criadas" como snapshot neste mês
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
         !snapshots.some(s => s.name === acc.name && s.category === acc.category)
     ).map(acc => {
-        // Se for uma despesa variável, o valor projetado deve ser 0
         if (isVariableExpense(acc)) {
             return { ...acc, value: 0 };
         }
         return acc;
     });
 
-    // 3. PROJEÇÃO DE PARCELAS: Encontra parcelas de outros meses e as projeta para o mês atual
+    // 4. PROJEÇÃO DE PARCELAS: Encontra parcelas de outros meses e as projeta para o mês atual
     const projectedInstallments: Account[] = [];
     accounts.forEach(acc => {
         if (acc.isInstallment && acc.paymentDate) {
@@ -90,9 +92,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             if (monthDiff > 0) {
                 const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
                 
-                // Se ainda está dentro do limite de parcelas
                 if (targetInstallment <= (acc.totalInstallments || 1)) {
-                    // Verifica se já não existe um snapshot real pago para esta parcela/mês
                     const alreadyHasSnapshot = snapshots.some(s => 
                         s.name === acc.name && 
                         s.category === acc.category && 
@@ -105,7 +105,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                             id: `projected-${acc.id}-${monthKey}`,
                             currentInstallment: targetInstallment,
                             status: AccountStatus.PENDING,
-                            paymentDate: undefined // Projeção começa sempre pendente
+                            paymentDate: undefined 
                         });
                     }
                 }
@@ -114,7 +114,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     });
 
     // Mesclagem Final
-    return [...snapshots, ...recurrentTemplates, ...projectedInstallments]
+    return [...snapshots, ...orphanAccounts, ...recurrentTemplates, ...projectedInstallments]
         .filter(acc => {
             const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
@@ -124,7 +124,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
         })
         .sort((a, b) => {
-            // REGRA: PENDENTES NO TOPO
             if (a.status !== b.status) return a.status === AccountStatus.PENDING ? -1 : 1;
             return a.name.localeCompare(b.name);
         });

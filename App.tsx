@@ -25,9 +25,12 @@ import MoveAccountsModal from './components/MoveAccountsModal';
 const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
 const isVariableExpense = (acc: Partial<Account>) => {
     if (!acc) return false;
-    const nameMatch = acc.name?.toLowerCase().includes('cartão');
-    const categoryMatch = acc.category && (VARIABLE_CATEGORIES.includes(acc.category) || acc.category.includes('Água') || acc.category.includes('Luz'));
-    return nameMatch || categoryMatch;
+    const nameLower = acc.name?.toLowerCase() || '';
+    const categoryLower = acc.category?.toLowerCase() || '';
+    const isCartao = nameLower.includes('cartão') || categoryLower.includes('cartão');
+    const isAgua = nameLower.includes('água') || categoryLower.includes('água');
+    const isLuz = nameLower.includes('luz') || categoryLower.includes('luz');
+    return isCartao || isAgua || isLuz;
 };
 
 const App: React.FC = () => {
@@ -155,6 +158,7 @@ const App: React.FC = () => {
 
     const isVar = isVariableExpense(acc);
     const isPaying = acc.status !== AccountStatus.PAID;
+    const monthKey = selectedDate.toISOString().slice(0, 7);
     
     if (isVar && isPaying && acc.value === 0) {
         setAccountToEdit(acc);
@@ -162,12 +166,14 @@ const App: React.FC = () => {
         return;
     }
 
-    if (acc.isRecurrent && isPaying) {
+    // Se estamos alterando o status de uma conta que é RECORRENTE mas não tem data (Template)
+    // Ou se é uma PROJEÇÃO (id temporário)
+    if ((acc.isRecurrent && !acc.paymentDate) || accountId.toString().startsWith('projected-')) {
         const snapshot: Account = {
             ...acc,
-            id: `acc-snap-${acc.id}-${selectedDate.toISOString().slice(0, 7)}`,
-            isRecurrent: false,
-            status: AccountStatus.PAID,
+            id: `acc-snap-${Date.now()}`,
+            isRecurrent: false, // O snapshot não é o template recorrente
+            status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
             paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
         };
         dataService.addAccount(snapshot);
@@ -175,7 +181,7 @@ const App: React.FC = () => {
         dataService.updateAccount({
             ...acc, 
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING, 
-            paymentDate: isPaying ? new Date().toISOString() : undefined 
+            paymentDate: isPaying ? (acc.paymentDate || new Date().toISOString()) : undefined 
         });
     }
   };
@@ -183,31 +189,39 @@ const App: React.FC = () => {
   const handleAccountSubmit = (data: any) => {
       const isVar = isVariableExpense(data);
       const monthKey = selectedDate.toISOString().slice(0, 7);
+      const isEditingProjection = data.id && data.id.toString().startsWith('projected-');
+      const existingAccount = accounts.find(a => a.id === data.id);
       
-      if (data.id) {
-          if (isVar && !data.paymentDate) {
-              const snapshot: Account = {
-                  ...data,
-                  id: `acc-snap-${data.id}-${monthKey}`,
-                  isRecurrent: false,
-                  paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
-              };
-              dataService.addAccount(snapshot);
-          } else {
-              dataService.updateAccount(data);
-          }
-      } else {
-          const defaultDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
-          const finalIsRecurrent = isVar ? true : data.isRecurrent;
-          const finalValue = isVar && !data.value ? 0 : data.value;
+      // Data padrão para o mês que está sendo visualizado (dia 10)
+      const targetDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
 
+      if (data.id && (existingAccount || isEditingProjection)) {
+          // Se estamos salvando uma projeção ou um template, ela vira um registro real (snapshot) vinculado ao mês
+          if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
+              const newId = `acc-snap-${Date.now()}`;
+              dataService.addAccount({ 
+                  ...data, 
+                  id: newId, 
+                  paymentDate: targetDate, // CRUCIAL: Define a data para o mês atual
+                  status: data.status || AccountStatus.PENDING 
+              });
+              return;
+          }
+
+          dataService.updateAccount(data);
+      } else {
+          // Nova conta criada manualmente
+          const finalId = `acc-${Date.now()}`;
+          const isRec = isVar ? true : data.isRecurrent;
+          const val = isVar && !data.value ? 0 : data.value;
+          
           dataService.addAccount({
-              ...data, 
-              id: `acc-${Date.now()}`, 
+              ...data,
+              id: finalId,
+              value: val,
+              isRecurrent: isRec,
               status: AccountStatus.PENDING,
-              value: finalValue,
-              isRecurrent: finalIsRecurrent,
-              paymentDate: finalIsRecurrent ? undefined : defaultDate
+              paymentDate: isRec ? undefined : targetDate
           });
       }
   };
