@@ -58,45 +58,41 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
   const currentMonthAccounts = useMemo(() => {
     const selectedYear = safeDate.getFullYear();
     const selectedMonth = safeDate.getMonth();
-    const monthKey = safeDate.toISOString().slice(0, 7);
+    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
     
-    // 1. SNAPSHOTS: Contas que já têm data de pagamento neste mês específico
+    // 1. SNAPSHOTS: Registros reais no banco para este mês
     const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
     
-    // 2. CONTAS SEM DATA (Recuperação): Contas que por erro foram salvas sem data, aparecem no mês atual
+    // 2. RECUPERAÇÃO: Sem data e não são templates
     const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
 
-    // 3. RECORRENTES: Templates de contas fixas que ainda não foram "criadas" como snapshot neste mês
+    // 3. RECORRENTES: Templates que ainda não têm registro real neste mês
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
         !snapshots.some(s => s.name === acc.name && s.category === acc.category)
     ).map(acc => {
-        if (isVariableExpense(acc)) {
-            return { ...acc, value: 0 };
-        }
+        if (isVariableExpense(acc)) return { ...acc, value: 0 };
         return acc;
     });
 
-    // 4. PROJEÇÃO DE PARCELAS: Encontra parcelas de outros meses e as projeta para o mês atual
+    // 4. PROJEÇÃO DE PARCELAS: Onde a mágica (e o bug) acontecia
     const projectedInstallments: Account[] = [];
     accounts.forEach(acc => {
         if (acc.isInstallment && acc.paymentDate) {
             const startDate = new Date(acc.paymentDate);
             const startYear = startDate.getFullYear();
             const startMonth = startDate.getMonth();
-
-            // Diferença de meses entre a criação da parcela e o dashboard atual
             const monthDiff = (selectedYear - startYear) * 12 + (selectedMonth - startMonth);
 
             if (monthDiff > 0) {
                 const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
                 
                 if (targetInstallment <= (acc.totalInstallments || 1)) {
+                    // Detecção Inteligente: Evita duplicar se você já salvou essa parcela (snapshot)
                     const alreadyHasSnapshot = snapshots.some(s => 
-                        s.name === acc.name && 
-                        s.category === acc.category && 
-                        s.currentInstallment === targetInstallment
+                        (s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment) ||
+                        (s.name === acc.name && s.currentInstallment === targetInstallment)
                     );
 
                     if (!alreadyHasSnapshot) {
@@ -113,7 +109,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         }
     });
 
-    // Mesclagem Final
     return [...snapshots, ...orphanAccounts, ...recurrentTemplates, ...projectedInstallments]
         .filter(acc => {
             const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -132,22 +127,18 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
   const stats = useMemo(() => {
     const m = safeDate.getMonth();
     const y = safeDate.getFullYear();
-
     const totalIncome = incomes
         .filter(inc => {
             const d = new Date(inc.date);
             return d.getMonth() === m && d.getFullYear() === y;
         })
         .reduce((sum, inc) => sum + inc.value, 0);
-
     const paid = currentMonthAccounts
         .filter(acc => acc.status === AccountStatus.PAID)
         .reduce((sum, acc) => sum + acc.value, 0);
-
     const pending = currentMonthAccounts
         .filter(acc => acc.status === AccountStatus.PENDING)
         .reduce((sum, acc) => sum + acc.value, 0);
-
     return { totalIncome, paid, pending, balance: totalIncome - (paid + pending) };
   }, [currentMonthAccounts, incomes, safeDate]);
 
@@ -189,7 +180,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                         categories={categories}
                     />
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <AnimatePresence mode="popLayout">
                         {currentMonthAccounts.map(acc => (
@@ -197,7 +187,6 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                         ))}
                     </AnimatePresence>
                 </div>
-                
                 {currentMonthAccounts.length === 0 && (
                     <div className="text-center py-10 bg-slate-50 dark:bg-slate-900/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                         <p className="text-slate-400 font-bold text-xs tracking-tight">Nenhuma conta para este mês.</p>
@@ -208,5 +197,4 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     </div>
   );
 };
-
 export default Dashboard;
