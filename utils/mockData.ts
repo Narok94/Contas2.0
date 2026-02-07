@@ -1,3 +1,4 @@
+
 import { Role, AccountStatus, type User, type Group, type Account, type Income } from '../types';
 
 const today = new Date();
@@ -43,8 +44,9 @@ export const MOCK_ACCOUNTS: Account[] = [
   // --- Group 3: Família Tatu ---
   { id: 'acc-j1', groupId: 'group-3', name: 'Loja100 + Tomarello', category: '📦 Outros', value: 526.35, status: AccountStatus.PAID, isRecurrent: true, isInstallment: false, paymentDate: lastMonth.toISOString() },
   { id: 'acc-j3', groupId: 'group-3', name: 'Unimed', category: '🧸 Manuela', value: 348.69, status: AccountStatus.PAID, isRecurrent: true, isInstallment: false, paymentDate: lastMonth.toISOString() },
-  { id: 'acc-j6', groupId: 'group-3', name: 'Cartão', category: '💳 Cartão', value: 2118.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
-  { id: 'acc-j9', groupId: 'group-3', name: 'Cemig', category: '💡 Luz', value: 178.41, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-j6', groupId: 'group-3', name: 'Cartão', category: '💳 Cartão', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-j9', groupId: 'group-3', name: 'Cemig', category: '💡 Luz', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-j10', groupId: 'group-3', name: 'Copasa', category: '💧 Água', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
 ];
 
 export const MOCK_INCOMES: Income[] = [
