@@ -21,8 +21,14 @@ import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 
-// Categorias que devem ser recorrentes e zeradas mensalmente conforme pedido do usuário
-const VARIABLE_UTILITIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
+// Categorias e Nomes que devem ser recorrentes e zerados mensalmente
+const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
+const isVariableExpense = (acc: Partial<Account>) => {
+    if (!acc) return false;
+    const nameMatch = acc.name?.toLowerCase().includes('cartão');
+    const categoryMatch = acc.category && VARIABLE_CATEGORIES.includes(acc.category);
+    return nameMatch || categoryMatch;
+};
 
 const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -147,11 +153,10 @@ const App: React.FC = () => {
     const acc = accounts.find(a => a.id === accountId);
     if (!acc) return;
 
-    // Categorias variáveis forçam a edição do valor se estiver zerado ao tentar pagar
-    const isVariableUtility = VARIABLE_UTILITIES.includes(acc.category);
+    const isVar = isVariableExpense(acc);
     const isPaying = acc.status !== AccountStatus.PAID;
     
-    if (isVariableUtility && isPaying && acc.value === 0) {
+    if (isVar && isPaying && acc.value === 0) {
         setAccountToEdit(acc);
         setIsAccountModalOpen(true);
         return;
@@ -176,13 +181,11 @@ const App: React.FC = () => {
   };
 
   const handleAccountSubmit = (data: any) => {
-      const isVariableUtility = VARIABLE_UTILITIES.includes(data.category);
+      const isVar = isVariableExpense(data);
       const monthKey = selectedDate.toISOString().slice(0, 7);
       
       if (data.id) {
-          // Se for uma conta recorrente "template" (sem data), mas o usuário está editando no dashboard,
-          // criamos um snapshot se for uma utilidade variável para aquele mês.
-          if (isVariableUtility && !data.paymentDate) {
+          if (isVar && !data.paymentDate) {
               const snapshot: Account = {
                   ...data,
                   id: `acc-snap-${data.id}-${monthKey}`,
@@ -194,12 +197,9 @@ const App: React.FC = () => {
               dataService.updateAccount(data);
           }
       } else {
-          // Criação de nova conta
           const defaultDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
-          
-          // Se for categoria variável, forçamos recorrência e valor inicial 0 se não especificado
-          const finalIsRecurrent = isVariableUtility ? true : data.isRecurrent;
-          const finalValue = isVariableUtility && !data.value ? 0 : data.value;
+          const finalIsRecurrent = isVar ? true : data.isRecurrent;
+          const finalValue = isVar && !data.value ? 0 : data.value;
 
           dataService.addAccount({
               ...data, 

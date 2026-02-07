@@ -6,7 +6,13 @@ import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
 import MonthPicker from './MonthPicker';
 
-const VARIABLE_UTILITIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
+const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
+const isVariableExpense = (acc: Partial<Account>) => {
+    if (!acc) return false;
+    const nameMatch = acc.name?.toLowerCase().includes('cartão');
+    const categoryMatch = acc.category && VARIABLE_CATEGORIES.includes(acc.category);
+    return nameMatch || categoryMatch;
+};
 
 interface DashboardProps {
   accounts: Account[];
@@ -63,8 +69,8 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         !acc.paymentDate &&
         !snapshots.some(s => s.name === acc.name && s.category === acc.category)
     ).map(acc => {
-        // Se for uma utilidade variável (Água, Luz, Cartão), o valor deve começar zerado todo mês
-        if (VARIABLE_UTILITIES.includes(acc.category)) {
+        // Se for uma utilidade variável ou Cartão, o valor deve começar zerado todo mês
+        if (isVariableExpense(acc)) {
             return { ...acc, value: 0 };
         }
         return acc;
