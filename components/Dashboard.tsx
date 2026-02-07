@@ -47,20 +47,59 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
   }, [selectedDate]);
 
   const currentMonthAccounts = useMemo(() => {
+    const selectedYear = safeDate.getFullYear();
+    const selectedMonth = safeDate.getMonth();
     const monthKey = safeDate.toISOString().slice(0, 7);
     
-    // 1. Pegamos todas as contas que foram explicitamente pagas ou agendadas para este mês
+    // 1. SNAPSHOTS: Contas que já têm data de pagamento neste mês específico
     const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
     
-    // 2. Pegamos as contas recorrentes que ainda não têm um "snapshot" de pagamento neste mês
+    // 2. RECORRENTES: Templates de contas fixas que ainda não foram "criadas" como snapshot neste mês
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
         !snapshots.some(s => s.name === acc.name && s.category === acc.category)
     );
 
-    // 3. Mesclamos e aplicamos os filtros de interface
-    return [...snapshots, ...recurrentTemplates]
+    // 3. PROJEÇÃO DE PARCELAS: Encontra parcelas de outros meses e as projeta para o mês atual
+    const projectedInstallments: Account[] = [];
+    accounts.forEach(acc => {
+        if (acc.isInstallment && acc.paymentDate) {
+            const startDate = new Date(acc.paymentDate);
+            const startYear = startDate.getFullYear();
+            const startMonth = startDate.getMonth();
+
+            // Diferença de meses entre a criação da parcela e o dashboard atual
+            const monthDiff = (selectedYear - startYear) * 12 + (selectedMonth - startMonth);
+
+            if (monthDiff > 0) {
+                const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
+                
+                // Se ainda está dentro do limite de parcelas
+                if (targetInstallment <= (acc.totalInstallments || 1)) {
+                    // Verifica se já não existe um snapshot real pago para esta parcela/mês
+                    const alreadyHasSnapshot = snapshots.some(s => 
+                        s.name === acc.name && 
+                        s.category === acc.category && 
+                        s.currentInstallment === targetInstallment
+                    );
+
+                    if (!alreadyHasSnapshot) {
+                        projectedInstallments.push({
+                            ...acc,
+                            id: `projected-${acc.id}-${monthKey}`,
+                            currentInstallment: targetInstallment,
+                            status: AccountStatus.PENDING,
+                            paymentDate: undefined // Projeção começa sempre pendente
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+    // Mesclagem Final
+    return [...snapshots, ...recurrentTemplates, ...projectedInstallments]
         .filter(acc => {
             const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;
@@ -70,11 +109,8 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
         })
         .sort((a, b) => {
-            // Regra principal: PENDENTE (topo) vs PAGO (fim)
-            if (a.status !== b.status) {
-                return a.status === AccountStatus.PENDING ? -1 : 1;
-            }
-            // Regra secundária: Ordem alfabética
+            // REGRA: PENDENTES NO TOPO
+            if (a.status !== b.status) return a.status === AccountStatus.PENDING ? -1 : 1;
             return a.name.localeCompare(b.name);
         });
   }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);

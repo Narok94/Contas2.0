@@ -16,9 +16,10 @@ type Db = {
 type ListenerCallback<T> = (data: T) => void;
 type SyncStatusCallback = (status: SyncStatus, lastSync?: Date) => void;
 
-// Lista de chaves antigas para migração
-const STORAGE_KEYS = ['ricka_local_db_v3', 'ricka_local_db_v2', 'ricka_local_db', 'app_db'];
-const DB_STORAGE_KEY = 'ricka_local_db_v3'; 
+// BLINDAGEM MÁXIMA: Chaves de redundância e legado
+const DB_MAIN_KEY = 'tatu_v4_main_db';
+const DB_BACKUP_KEY = 'tatu_emergency_backup';
+const LEGACY_KEYS = ['ricka_local_db_v3', 'ricka_local_db_v2', 'ricka_local_db', 'app_db', 'tatu_db', 'tatu_v4_main_db'];
 const GLOBAL_SETTINGS_IDENTIFIER = 'tatu_global_settings_v1';
 
 class RealtimeService {
@@ -29,52 +30,68 @@ class RealtimeService {
   private currentUserIdentifier: string | null = null;
   private lastSyncTime: Date | undefined = undefined;
   private syncDebounceTimer: number | null = null;
-  private retryTimer: number | null = null;
 
   constructor() {
-    this.db = this.loadAndMigrateDb();
+    this.db = this.loadAndArmorData();
     this.init();
     window.addEventListener('storage', this.handleCrossTabSync);
   }
 
-  private loadAndMigrateDb(): Db {
+  private loadAndArmorData(): Db {
     const defaultSettings: AppSettings = { appName: 'TATU.' };
     
-    // Tenta encontrar dados em qualquer uma das chaves conhecidas
-    let storedData: string | null = null;
-    for (const key of STORAGE_KEYS) {
-        const data = localStorage.getItem(key);
-        if (data) {
-            storedData = data;
-            console.log(`[MIGRAÇÃO] Dados encontrados na chave: ${key}`);
-            break;
-        }
-    }
-    
-    if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData);
-        const data = parsed.db || parsed; // Suporta formatos antigos e novos
-        return {
-            users: data.users || MOCK_USERS,
-            groups: data.groups || MOCK_GROUPS,
-            accounts: data.accounts || MOCK_ACCOUNTS,
-            categories: data.categories || ACCOUNT_CATEGORIES,
-            incomes: data.incomes || MOCK_INCOMES,
-            settings: data.settings || defaultSettings,
-        };
-      } catch (e) {
-          console.error("Erro ao migrar DB local", e);
-      }
-    }
+    // Objeto temporário para acumular tudo que for encontrado
+    let recoveredAccounts: Account[] = [];
+    let recoveredIncomes: Income[] = [];
+    let recoveredUsers: User[] = [];
+    let recoveredGroups: Group[] = [];
+    let recoveredSettings: AppSettings = defaultSettings;
+    let recoveredCategories: string[] = ACCOUNT_CATEGORIES;
+
+    // VARREDURA TOTAL: Busca em todas as chaves possíveis já usadas no passado
+    [DB_MAIN_KEY, DB_BACKUP_KEY, ...LEGACY_KEYS].forEach(key => {
+        const raw = localStorage.getItem(key);
+        if (!raw) return;
+        try {
+            const parsed = JSON.parse(raw);
+            const data = parsed.db || parsed;
+            
+            // Mesclagem Unificadora (Garante que IDs únicos não se repitam mas todos sejam mantidos)
+            if (data.accounts) {
+                data.accounts.forEach((acc: Account) => {
+                    if (!recoveredAccounts.find(a => a.id === acc.id)) recoveredAccounts.push(acc);
+                });
+            }
+            if (data.incomes) {
+                data.incomes.forEach((inc: Income) => {
+                    if (!recoveredIncomes.find(i => i.id === inc.id)) recoveredIncomes.push(inc);
+                });
+            }
+            if (data.users) {
+                data.users.forEach((u: User) => {
+                    if (!recoveredUsers.find(user => user.id === u.id)) recoveredUsers.push(u);
+                });
+            }
+            if (data.groups) {
+                data.groups.forEach((g: Group) => {
+                    if (!recoveredGroups.find(group => group.id === g.id)) recoveredGroups.push(g);
+                });
+            }
+            if (data.settings) recoveredSettings = { ...recoveredSettings, ...data.settings };
+            if (data.categories?.length) recoveredCategories = Array.from(new Set([...recoveredCategories, ...data.categories]));
+            
+        } catch (e) { console.warn(`Erro ao ler chave ${key}`); }
+    });
+
+    const hasAnyData = recoveredAccounts.length > 0 || recoveredIncomes.length > 0;
 
     return {
-      users: MOCK_USERS,
-      groups: MOCK_GROUPS,
-      accounts: MOCK_ACCOUNTS,
-      categories: ACCOUNT_CATEGORIES,
-      incomes: MOCK_INCOMES,
-      settings: defaultSettings,
+      users: recoveredUsers.length ? recoveredUsers : MOCK_USERS,
+      groups: recoveredGroups.length ? recoveredGroups : MOCK_GROUPS,
+      accounts: recoveredAccounts.length ? recoveredAccounts : (hasAnyData ? [] : MOCK_ACCOUNTS),
+      categories: recoveredCategories,
+      incomes: recoveredIncomes.length ? recoveredIncomes : (hasAnyData ? [] : MOCK_INCOMES),
+      settings: recoveredSettings,
     };
   }
 
@@ -88,18 +105,22 @@ class RealtimeService {
     this.notifyAll();
   }
 
+  private saveLocal() {
+    const payload = JSON.stringify({ db: this.db, timestamp: Date.now() });
+    localStorage.setItem(DB_MAIN_KEY, payload);
+    localStorage.setItem(DB_BACKUP_KEY, payload); // Redundância física
+  }
+
   public setUser(username: string) {
     if (this.currentUserIdentifier !== username) {
       this.currentUserIdentifier = username;
-      if (this.retryTimer) clearTimeout(this.retryTimer);
-      this.retryTimer = null;
       if (username) this.syncWithRemote();
       else this.setSyncStatus('local');
     }
   }
 
   private handleCrossTabSync = (e: StorageEvent) => {
-    if (STORAGE_KEYS.includes(e.key || '') && e.newValue) {
+    if ((e.key === DB_MAIN_KEY || e.key === DB_BACKUP_KEY) && e.newValue) {
       try {
         const parsed = JSON.parse(e.newValue);
         this.db = parsed.db || parsed;
@@ -110,8 +131,6 @@ class RealtimeService {
 
   public async syncWithRemote() {
     if (this.currentSyncStatus === 'syncing') return;
-    if (this.retryTimer) clearTimeout(this.retryTimer);
-    this.retryTimer = null;
     this.setSyncStatus('syncing');
 
     try {
@@ -128,21 +147,12 @@ class RealtimeService {
                     settings: remoteSettingsData?.settings || this.db.settings 
                 };
             }
-        } else {
-            this.db.settings = remoteSettingsData?.settings || this.db.settings;
         }
-
         this.saveLocal();
         this.notifyAll();
         this.lastSyncTime = new Date();
         this.setSyncStatus('synced');
-    } catch (e) { this.handleSyncError(); }
-  }
-
-  private handleSyncError() {
-    this.setSyncStatus('error');
-    if (this.retryTimer) clearTimeout(this.retryTimer);
-    this.retryTimer = window.setTimeout(() => this.syncWithRemote(), 15000);
+    } catch (e) { this.setSyncStatus('error'); }
   }
 
   private setSyncStatus(status: SyncStatus) {
@@ -154,10 +164,6 @@ class RealtimeService {
     this.syncListeners.push(cb);
     cb(this.currentSyncStatus, this.lastSyncTime);
     return () => { this.syncListeners = this.syncListeners.filter(c => c !== cb); };
-  }
-
-  private saveLocal() {
-    localStorage.setItem(DB_STORAGE_KEY, JSON.stringify({ db: this.db, timestamp: Date.now() }));
   }
 
   private async persistRemote() {
@@ -175,7 +181,7 @@ class RealtimeService {
             });
             this.lastSyncTime = new Date();
             this.setSyncStatus('synced');
-        } catch (e) { this.handleSyncError(); }
+        } catch (e) { this.setSyncStatus('error'); }
     }, 2000);
   }
 
@@ -195,78 +201,54 @@ class RealtimeService {
   public subscribe<K extends CollectionKey>(k: K, cb: ListenerCallback<Db[K]>) {
     if (!this.listeners[k]) this.listeners[k] = [];
     this.listeners[k]!.push(cb);
-    const data = this.db[k];
-    const copy = Array.isArray(data) ? [...data] : { ...data };
-    cb(copy as Db[K]);
-    return () => {
-      this.listeners[k] = this.listeners[k]!.filter(c => c !== cb);
-    };
+    cb(this.db[k] as Db[K]);
+    return () => { this.listeners[k] = this.listeners[k]!.filter(c => c !== cb); };
   }
 
   public forceSync() { this.syncWithRemote(); }
   public getCurrentUserIdentifier() { return this.currentUserIdentifier; }
-
-  public getSettings = () => this.db.settings || { appName: 'TATU.' };
-  public updateSettings = async (settings: AppSettings) => {
-    this.db.settings = settings;
-    this.notify('settings');
-    this.saveLocal();
-    this.setSyncStatus('syncing');
-    try {
-        await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ settings })
-        });
-        this.lastSyncTime = new Date();
-        this.setSyncStatus('synced');
-    } catch (e) { this.handleSyncError(); }
-  }
-
+  public getSettings = () => this.db.settings;
   public getAccounts = () => this.db.accounts;
+  public getIncomes = () => this.db.incomes;
+  public getCategories = () => this.db.categories;
+  public getUsers = () => this.db.users;
+  public getGroups = () => this.db.groups;
+
   public updateAccount = async (acc: Account) => { this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public addAccount = async (acc: Account) => { this.db.accounts = [...this.db.accounts, acc]; this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public updateMultipleAccounts = async (accs: Account[]) => {
     const accsMap = new Map(accs.map(a => [a.id, a]));
     this.db.accounts = this.db.accounts.map(a => accsMap.has(a.id) ? accsMap.get(a.id)! : a);
-    this.notify('accounts');
-    this.saveLocal();
-    this.persistRemote();
+    this.notify('accounts'); this.saveLocal(); this.persistRemote();
   }
 
-  public getUsers = () => this.db.users;
   public addUser = async (u: Omit<User, 'id'>) => { const newUser = { ...u, id: `user-${Date.now()}` } as User; this.db.users = [...this.db.users, newUser]; this.notify('users'); this.saveLocal(); this.persistRemote(); return newUser; }
   public updateUser = async (u: User) => { this.db.users = this.db.users.map(old => old.id === u.id ? u : old); this.notify('users'); this.saveLocal(); this.persistRemote(); return u; }
   public deleteUser = async (id: string) => { this.db.users = this.db.users.filter(u => u.id !== id); this.notify('users'); this.saveLocal(); this.persistRemote(); }
 
-  public getGroups = () => this.db.groups;
   public addGroup = async (g: Omit<Group, 'id'>) => { const newGroup = { ...g, id: `group-${Date.now()}` } as Group; this.db.groups = [...this.db.groups, newGroup]; this.notify('groups'); this.saveLocal(); this.persistRemote(); return newGroup; }
   public updateGroup = async (g: Group) => { this.db.groups = this.db.groups.map(old => old.id === g.id ? g : old); this.notify('groups'); this.saveLocal(); this.persistRemote(); return g; }
   public deleteGroup = async (id: string) => { this.db.groups = this.db.groups.filter(g => g.id !== id); this.notify('groups'); this.saveLocal(); this.persistRemote(); }
   
-  public getIncomes = () => this.db.incomes;
   public addIncome = async (i: Income) => { this.db.incomes = [...this.db.incomes, i]; this.notify('incomes'); this.saveLocal(); this.persistRemote(); }
   public updateIncome = async (inc: Income) => { this.db.incomes = this.db.incomes.map(i => i.id === inc.id ? inc : i); this.notify('incomes'); this.saveLocal(); this.persistRemote(); return inc; }
   public deleteIncome = async (id: string) => { this.db.incomes = this.db.incomes.filter(i => i.id !== id); this.notify('incomes'); this.saveLocal(); this.persistRemote(); }
 
-  public getCategories = () => this.db.categories;
   public saveCategories = async (cats: string[]) => { this.db.categories = cats; this.notify('categories'); this.saveLocal(); this.persistRemote(); }
-
-  public exportData = () => this.db;
-  public importData = (data: Db) => {
-    this.db = data;
-    this.notifyAll();
-    this.saveLocal();
-    const { settings, ...userData } = data;
-    if (this.currentUserIdentifier) {
-        fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`, {
+  public updateSettings = async (settings: AppSettings) => { 
+    this.db.settings = settings; this.notify('settings'); this.saveLocal(); 
+    try {
+        await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
+            body: JSON.stringify({ settings })
         });
-    }
+    } catch (e) {}
   }
+
+  public exportData = () => this.db;
+  public importData = (data: Db) => { this.db = data; this.notifyAll(); this.saveLocal(); this.persistRemote(); }
 }
 
 export default new RealtimeService();
