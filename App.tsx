@@ -21,7 +21,8 @@ import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 
-const VARIABLE_UTILITIES = ['Água', 'Luz', 'Internet'];
+// Categorias que devem ser recorrentes e zeradas mensalmente conforme pedido do usuário
+const VARIABLE_UTILITIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
 
 const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -146,15 +147,17 @@ const App: React.FC = () => {
     const acc = accounts.find(a => a.id === accountId);
     if (!acc) return;
 
-    const isVariableUtility = VARIABLE_UTILITIES.includes(acc.category) && acc.isRecurrent;
+    // Categorias variáveis forçam a edição do valor se estiver zerado ao tentar pagar
+    const isVariableUtility = VARIABLE_UTILITIES.includes(acc.category);
     const isPaying = acc.status !== AccountStatus.PAID;
     
-    if (isVariableUtility && isPaying) {
-        if (acc.value === 0) {
-            setAccountToEdit(acc);
-            setIsAccountModalOpen(true);
-            return;
-        }
+    if (isVariableUtility && isPaying && acc.value === 0) {
+        setAccountToEdit(acc);
+        setIsAccountModalOpen(true);
+        return;
+    }
+
+    if (acc.isRecurrent && isPaying) {
         const snapshot: Account = {
             ...acc,
             id: `acc-snap-${acc.id}-${selectedDate.toISOString().slice(0, 7)}`,
@@ -173,37 +176,38 @@ const App: React.FC = () => {
   };
 
   const handleAccountSubmit = (data: any) => {
-      const isVariableUtility = VARIABLE_UTILITIES.includes(data.category) && data.isRecurrent;
+      const isVariableUtility = VARIABLE_UTILITIES.includes(data.category);
       const monthKey = selectedDate.toISOString().slice(0, 7);
       
       if (data.id) {
-          if (isVariableUtility) {
-              const existingSnapshot = accounts.find(a => 
-                !a.isRecurrent && a.name === data.name && a.category === data.category && a.paymentDate?.startsWith(monthKey)
-              );
-              if (existingSnapshot) {
-                  dataService.updateAccount({ ...existingSnapshot, value: data.value });
-              } else {
-                  const snapshot: Account = {
-                      ...data,
-                      id: `acc-snap-${data.id}-${monthKey}`,
-                      isRecurrent: false,
-                      paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
-                  };
-                  dataService.addAccount(snapshot);
-              }
+          // Se for uma conta recorrente "template" (sem data), mas o usuário está editando no dashboard,
+          // criamos um snapshot se for uma utilidade variável para aquele mês.
+          if (isVariableUtility && !data.paymentDate) {
+              const snapshot: Account = {
+                  ...data,
+                  id: `acc-snap-${data.id}-${monthKey}`,
+                  isRecurrent: false,
+                  paymentDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString()
+              };
+              dataService.addAccount(snapshot);
           } else {
               dataService.updateAccount(data);
           }
       } else {
-          // CORREÇÃO: Define data de pagamento para que a conta apareça no mês atual do Dashboard
+          // Criação de nova conta
           const defaultDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 10).toISOString();
+          
+          // Se for categoria variável, forçamos recorrência e valor inicial 0 se não especificado
+          const finalIsRecurrent = isVariableUtility ? true : data.isRecurrent;
+          const finalValue = isVariableUtility && !data.value ? 0 : data.value;
+
           dataService.addAccount({
               ...data, 
               id: `acc-${Date.now()}`, 
               status: AccountStatus.PENDING,
-              value: isVariableUtility ? 0 : data.value,
-              paymentDate: data.isRecurrent ? undefined : defaultDate
+              value: finalValue,
+              isRecurrent: finalIsRecurrent,
+              paymentDate: finalIsRecurrent ? undefined : defaultDate
           });
       }
   };

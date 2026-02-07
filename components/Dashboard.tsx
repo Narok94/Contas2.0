@@ -1,9 +1,12 @@
+
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Account, AccountStatus, type Income, type User } from '../types';
 import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
 import MonthPicker from './MonthPicker';
+
+const VARIABLE_UTILITIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
 
 interface DashboardProps {
   accounts: Account[];
@@ -59,7 +62,13 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         acc.isRecurrent && 
         !acc.paymentDate &&
         !snapshots.some(s => s.name === acc.name && s.category === acc.category)
-    );
+    ).map(acc => {
+        // Se for uma utilidade variável (Água, Luz, Cartão), o valor deve começar zerado todo mês
+        if (VARIABLE_UTILITIES.includes(acc.category)) {
+            return { ...acc, value: 0 };
+        }
+        return acc;
+    });
 
     // 3. PROJEÇÃO DE PARCELAS: Encontra parcelas de outros meses e as projeta para o mês atual
     const projectedInstallments: Account[] = [];
