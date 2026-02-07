@@ -217,7 +217,7 @@ class RealtimeService {
 
   public updateAccountAndSeries = async (acc: Account) => {
       if (acc.isInstallment && acc.installmentId) {
-          // Se for parcela, atualiza nome e totalInstallments em TODAS as parcelas da série
+          // Atualização atômica de toda a série para evitar sumiço por limite de parcelas
           this.db.accounts = this.db.accounts.map(a => {
               if (a.installmentId === acc.installmentId) {
                   return { 
@@ -225,9 +225,11 @@ class RealtimeService {
                       name: acc.name, 
                       totalInstallments: acc.totalInstallments,
                       category: acc.category,
-                      value: a.id === acc.id ? acc.value : a.value // O valor pode ser diferente entre parcelas em casos raros, mas o total não
+                      // O valor é mantido individual ou alterado se for o registro exato sendo editado
+                      value: a.id === acc.id ? acc.value : a.value 
                   };
               }
+              // Caso o ID seja o mesmo mas por algum motivo o installmentId estivesse diferente
               return a.id === acc.id ? acc : a;
           });
       } else {

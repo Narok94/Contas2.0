@@ -78,39 +78,49 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
 
     // 4. PROJEÇÕES: Parcelas futuras
     const projectedInstallments: Account[] = [];
+    
+    // Mapeamos a última parcela física de cada série para projetar a partir dela
+    const seriesAnchors = new Map<string, Account>();
     accounts.forEach(acc => {
-        if (acc.isInstallment && acc.paymentDate) {
-            const startDate = new Date(acc.paymentDate);
-            const startYear = startDate.getFullYear();
-            const startMonth = startDate.getMonth();
-            const monthDiff = (selectedYear - startYear) * 12 + (selectedMonth - startMonth);
+        if (acc.isInstallment && acc.installmentId && acc.paymentDate) {
+            const current = seriesAnchors.get(acc.installmentId);
+            if (!current || new Date(acc.paymentDate) > new Date(current.paymentDate!)) {
+                seriesAnchors.set(acc.installmentId, acc);
+            }
+        }
+    });
 
-            if (monthDiff > 0) {
-                const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
-                
-                // Pega o maior totalInstallments registrado para esta série específica
-                const maxTotalInSeries = Math.max(
-                    acc.totalInstallments || 0,
-                    ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => a.totalInstallments || 0)
+    seriesAnchors.forEach((acc) => {
+        const startDate = new Date(acc.paymentDate!);
+        const startYear = startDate.getFullYear();
+        const startMonth = startDate.getMonth();
+        const monthDiff = (selectedYear - startYear) * 12 + (selectedMonth - startMonth);
+
+        // Se o mês selecionado é posterior ao último registro físico desta série
+        if (monthDiff > 0) {
+            const targetInstallment = (acc.currentInstallment || 1) + monthDiff;
+            
+            // Pega o maior totalInstallments registrado para esta série específica
+            const maxTotalInSeries = Math.max(
+                acc.totalInstallments || 0,
+                ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => a.totalInstallments || 0)
+            );
+
+            if (targetInstallment <= maxTotalInSeries) {
+                // Verifica se já existe um snapshot real para esta parcela específica desta série
+                const alreadyHasSnapshot = snapshots.some(s => 
+                    s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment
                 );
 
-                if (targetInstallment <= maxTotalInSeries) {
-                    // Verifica se já existe um snapshot real para esta parcela específica desta série
-                    const alreadyHasSnapshot = snapshots.some(s => 
-                        (s.installmentId && s.installmentId === acc.installmentId && s.currentInstallment === targetInstallment) ||
-                        (s.name === acc.name && s.currentInstallment === targetInstallment)
-                    );
-
-                    if (!alreadyHasSnapshot) {
-                        projectedInstallments.push({
-                            ...acc,
-                            id: `projected-${acc.id}-${monthKey}`,
-                            currentInstallment: targetInstallment,
-                            totalInstallments: maxTotalInSeries,
-                            status: AccountStatus.PENDING,
-                            paymentDate: undefined 
-                        });
-                    }
+                if (!alreadyHasSnapshot) {
+                    projectedInstallments.push({
+                        ...acc,
+                        id: `projected-${acc.id}-${monthKey}`,
+                        currentInstallment: targetInstallment,
+                        totalInstallments: maxTotalInSeries,
+                        status: AccountStatus.PENDING,
+                        paymentDate: undefined 
+                    });
                 }
             }
         }

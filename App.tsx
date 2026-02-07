@@ -180,13 +180,14 @@ const App: React.FC = () => {
       const targetDate = `${year}-${month}-10T12:00:00Z`;
 
       if (data.id && (existingAccount || isEditingProjection)) {
+          // Se for edição de projeção ou template recorrente, transformamos em snapshot real
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
+              // Extração robusta do ID original
               let baseId = data.id.toString().replace(/^projected-/, '');
-              if (isEditingProjection) {
-                  const parts = baseId.split('-');
-                  if (parts.length > 2) {
-                      baseId = parts.slice(0, -2).join('-');
-                  }
+              const parts = baseId.split('-');
+              // Se tiver data no ID (YYYY-MM), removemos os dois últimos segmentos
+              if (parts.length > 2 && /^\d{4}$/.test(parts[parts.length-2])) {
+                  baseId = parts.slice(0, -2).join('-');
               }
               
               const original = accounts.find(a => a.id === baseId);
@@ -197,14 +198,21 @@ const App: React.FC = () => {
                   paymentDate: targetDate, 
                   status: data.status || AccountStatus.PENDING,
                   currentInstallment: data.currentInstallment,
-                  installmentId: data.installmentId || original?.installmentId
+                  installmentId: data.installmentId || original?.installmentId,
+                  totalInstallments: data.totalInstallments || original?.totalInstallments
               };
               dataService.addAccount(newSnapshot);
+              
+              // Se mudou o total de parcelas, sincroniza a série inteira também
+              if (newSnapshot.installmentId) {
+                  realtimeService.updateAccountAndSeries(newSnapshot);
+              }
               return;
           }
-          // Se for uma conta real já existente, usamos a atualização de série para manter consistência
+          // Atualização de registro físico já existente
           realtimeService.updateAccountAndSeries(data);
       } else {
+          // Nova conta criada do zero
           const finalId = `acc-${Date.now()}`;
           const isVar = isVariableExpense(data);
           const isRec = isVar ? true : data.isRecurrent;
