@@ -21,12 +21,12 @@ import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 
-// Categorias e Nomes que devem ser recorrentes e zerados mensalmente
+// Categorias e nomes que devem ser recorrentes e zerados mensalmente
 const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
 const isVariableExpense = (acc: Partial<Account>) => {
     if (!acc) return false;
     const nameMatch = acc.name?.toLowerCase().includes('cartão');
-    const categoryMatch = acc.category && VARIABLE_CATEGORIES.includes(acc.category);
+    const categoryMatch = acc.category && (VARIABLE_CATEGORIES.includes(acc.category) || acc.category.includes('Água') || acc.category.includes('Luz'));
     return nameMatch || categoryMatch;
 };
 

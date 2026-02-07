@@ -10,7 +10,7 @@ const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
 const isVariableExpense = (acc: Partial<Account>) => {
     if (!acc) return false;
     const nameMatch = acc.name?.toLowerCase().includes('cartão');
-    const categoryMatch = acc.category && VARIABLE_CATEGORIES.includes(acc.category);
+    const categoryMatch = acc.category && (VARIABLE_CATEGORIES.includes(acc.category) || acc.category.includes('Água') || acc.category.includes('Luz'));
     return nameMatch || categoryMatch;
 };
 
@@ -69,7 +69,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         !acc.paymentDate &&
         !snapshots.some(s => s.name === acc.name && s.category === acc.category)
     ).map(acc => {
-        // Se for uma utilidade variável ou Cartão, o valor deve começar zerado todo mês
+        // Se for uma despesa variável, o valor projetado deve ser 0
         if (isVariableExpense(acc)) {
             return { ...acc, value: 0 };
         }

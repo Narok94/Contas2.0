@@ -39,7 +39,7 @@ export const MOCK_ACCOUNTS: Account[] = [
   // --- Group 1: Família Silva ---
   { id: 'acc-s1', groupId: 'group-1', name: 'Aluguel', category: '🏠 Moradia', value: 1800.00, status: AccountStatus.PAID, isRecurrent: true, isInstallment: false, paymentDate: lastMonth.toISOString() },
   { id: 'acc-s2', groupId: 'group-1', name: 'Supermercado', category: '🍱 Alimentação', value: 950.50, status: AccountStatus.PAID, isRecurrent: false, isInstallment: false, paymentDate: lastMonth.toISOString() },
-  { id: 'acc-s3', groupId: 'group-1', name: 'Conta de Luz', category: '💡 Luz', value: 210.70, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-s3', groupId: 'group-1', name: 'Cemig', category: '💡 Luz', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
   
   // --- Group 3: Família Tatu ---
   { id: 'acc-j1', groupId: 'group-3', name: 'Loja100 + Tomarello', category: '📦 Outros', value: 526.35, status: AccountStatus.PAID, isRecurrent: true, isInstallment: false, paymentDate: lastMonth.toISOString() },
