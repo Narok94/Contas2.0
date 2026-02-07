@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
@@ -34,8 +33,8 @@ const App: React.FC = () => {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [view, setView] = useState<View>('login');
-  // Ajustado para começar em Janeiro de 2026
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 0, 1));
+  // Sincronizado com a data atual do dispositivo (PC/Celular)
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
@@ -49,7 +48,6 @@ const App: React.FC = () => {
   const constraintsRef = useRef<HTMLDivElement>(null);
   const chatModalRef = useRef<AiChatModalRef>(null);
 
-  // Fix: use the cleanup functions returned by subscribe instead of calling .unsubscribe
   useEffect(() => {
     const handleUsersUpdate = (data: User[]) => setUsers(data);
     const handleGroupsUpdate = (data: Group[]) => setGroups(data);

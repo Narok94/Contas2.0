@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,7 +11,7 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ selectedDate, onSelectDate })
   const containerRef = useRef<HTMLDivElement>(null);
   
   const validDate = useMemo(() => {
-    return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date(2026, 0, 1);
+    return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
   }, [selectedDate]);
 
   const currentYear = validDate.getFullYear();
@@ -45,9 +44,7 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ selectedDate, onSelectDate })
 
   const handleYearChange = (delta: number) => {
     const newYear = currentYear + delta;
-    if (newYear >= 2026) {
-      onSelectDate(new Date(newYear, currentMonth, 1));
-    }
+    onSelectDate(new Date(newYear, currentMonth, 1));
   };
 
   return (
@@ -80,15 +77,14 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ selectedDate, onSelectDate })
             <div className="flex items-center justify-between mb-3 px-1">
               <button 
                 onClick={(e) => { e.stopPropagation(); handleYearChange(-1); }} 
-                disabled={currentYear <= 2026}
-                className="p-1 rounded-lg hover:bg-surface-light dark:hover:bg-dark-surface-light disabled:opacity-20"
+                className="p-1 rounded-lg hover:bg-surface-light dark:hover:bg-dark-surface-light transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
               <span className="text-sm font-black text-primary">{currentYear}</span>
               <button 
                 onClick={(e) => { e.stopPropagation(); handleYearChange(1); }} 
-                className="p-1 rounded-lg hover:bg-surface-light dark:hover:bg-dark-surface-light"
+                className="p-1 rounded-lg hover:bg-surface-light dark:hover:bg-dark-surface-light transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
