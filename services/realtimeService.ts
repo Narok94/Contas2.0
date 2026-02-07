@@ -216,29 +216,27 @@ class RealtimeService {
   }
 
   public updateAccountAndSeries = async (acc: Account) => {
-      // Se for parcela e tiver installmentId, atualiza a série inteira
-      if (acc.isInstallment) {
-          const sId = acc.installmentId;
-          
+      // Forçamos a conversão de tipos para evitar erros de cálculo nas projeções
+      const updatedValue = Number(acc.value);
+      const updatedTotal = Number(acc.totalInstallments || 0);
+
+      if (acc.isInstallment && acc.installmentId) {
+          // Atualização sincronizada: se mudar o total de parcelas de uma, muda de todas as "irmãs"
           this.db.accounts = this.db.accounts.map(a => {
-              // Condição de vínculo: ou pelo installmentId oficial, ou pelo nome se o ID oficial faltar nas antigas
-              const isMatch = sId ? (a.installmentId === sId) : (a.isInstallment && a.name === acc.name && a.groupId === acc.groupId);
-              
-              if (isMatch) {
+              if (a.installmentId === acc.installmentId) {
                   return { 
                       ...a, 
                       name: acc.name, 
-                      totalInstallments: Number(acc.totalInstallments),
+                      totalInstallments: updatedTotal,
                       category: acc.category,
-                      installmentId: sId || a.installmentId || `migrated-inst-${Date.now()}`,
-                      // O valor só muda se for o registro exato
-                      value: a.id === acc.id ? Number(acc.value) : a.value 
+                      // O valor só é alterado no registro específico sendo editado
+                      value: a.id === acc.id ? updatedValue : a.value 
                   };
               }
-              return a.id === acc.id ? { ...acc, value: Number(acc.value), totalInstallments: Number(acc.totalInstallments) } : a;
+              return a.id === acc.id ? { ...acc, value: updatedValue, totalInstallments: updatedTotal } : a;
           });
       } else {
-          this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? { ...acc, value: Number(acc.value) } : a);
+          this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? { ...acc, value: updatedValue } : a);
       }
       this.notify('accounts'); this.saveLocal(); this.persistRemote();
   }
