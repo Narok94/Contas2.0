@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,7 +7,6 @@
     <title>Tatu - Gestão Financeira Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // Aplicação imediata do tema para evitar flash branco
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
       } else {
@@ -19,28 +19,49 @@
         theme: {
           extend: {
             colors: {
-              primary: { light: '#818cf8', DEFAULT: '#6366f1', dark: '#4f46e5' },
-              background: '#f8fafc',
-              surface: '#ffffff',
-              'surface-light': '#f1f5f9',
-              'border-color': '#e2e8f0',
-              dark: {
-                background: '#020617',
-                surface: '#0f172a',
-                'surface-light': '#1e293b',
-                'border-color': '#334155',
+              primary: { 
+                light: '#67e8f9', 
+                DEFAULT: '#06b6d4', 
+                dark: '#0891b2' 
               },
-              success: '#10b981',
-              danger: '#f43f5e',
+              secondary: { 
+                light: '#d8b4fe', 
+                DEFAULT: '#8b5cf6', 
+                dark: '#7e22ce' 
+              },
+              background: {
+                light: '#ffffff',
+                dark: '#020617'
+              },
+              surface: {
+                light: '#ffffff',
+                dark: '#0f172a'
+              },
+              status: {
+                unpaid: {
+                  light: '#fff5f5', 
+                  dark: '#450a0a30', 
+                  border: '#feb2b2'
+                },
+                paid: {
+                  light: '#f0fff4', 
+                  dark: '#064e3b30', 
+                  border: '#9ae6b4'
+                }
+              }
             },
-            borderRadius: { '3xl': '1.5rem', '4xl': '2rem' },
+            borderRadius: { '3xl': '1.25rem', '4xl': '2rem' },
+            boxShadow: {
+              'soft': '0 2px 10px -2px rgba(0, 0, 0, 0.05)',
+              'premium': '0 20px 40px -12px rgba(0, 0, 0, 0.08)',
+            },
             animation: {
-              'fade-in-up': 'fade-in-up 0.5s ease-out',
+              'fade-in-up': 'fade-in-up 0.3s ease-out',
             },
             keyframes: {
               'fade-in-up': {
-                '0%': { opacity: '0', transform: 'translateY(15px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
+                  '0%': { opacity: '0', transform: 'translateY(8px)' },
+                  '100%': { opacity: '1', transform: 'translateY(0)' },
               },
             }
           },
@@ -63,8 +84,19 @@
   }
 }
 </script>
+<style>
+    .glass-effect {
+        backdrop-filter: blur(12px);
+    }
+    body {
+        transition: background-color 0.2s ease;
+    }
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+</style>
 </head>
-<body class="bg-background text-slate-900 dark:bg-dark-background dark:text-slate-100 antialiased overflow-x-hidden">
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden min-h-screen">
     <div id="root"></div>
     <script type="module" src="bundle.js"></script>
 </body>
