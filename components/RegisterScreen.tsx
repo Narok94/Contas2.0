@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useTheme } from '../hooks/useTheme';
 import { motion } from 'framer-motion';
 
 interface RegisterScreenProps {
@@ -14,6 +15,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,54 +23,52 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
     setError('');
 
     if (password !== confirmPassword) {
-        setError('Senhas diferentes.');
+        setError('As senhas não coincidem.');
         setIsLoading(false);
         return;
     }
 
     const success = await onRegister(name, username, password);
     if (!success) {
-      setError('Usuário indisponível.');
+      setError('Este usuário já existe.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-slate-950 overflow-hidden p-6">
-        
-        {/* Background Dinâmico */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-1/4 -right-1/4 w-[60%] h-[60%] bg-indigo-600/10 rounded-full blur-[120px] animate-blob"></div>
-            <div className="absolute -bottom-1/4 -left-1/4 w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '3s' }}></div>
+    <div className="flex items-center justify-center min-h-[100dvh] bg-[#fdfdfd] dark:bg-[#020617] relative overflow-hidden transition-colors duration-500 p-4">
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-40 dark:opacity-20">
+            <div className="absolute top-[-10%] right-[-10%] w-[50rem] h-[50rem] bg-violet-200 dark:bg-violet-900 rounded-full blur-[120px] animate-mesh"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[45rem] h-[45rem] bg-sky-100 dark:bg-sky-900 rounded-full blur-[100px] animate-mesh" style={{animationDelay: '-3s'}}></div>
         </div>
 
         <motion.div 
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative z-10 w-full max-w-[420px]"
+            className="relative z-10 w-full max-w-md"
         >
-            <div className="glass-effect rounded-[2.5rem] p-8 sm:p-10 shadow-2xl border border-white/10">
+            <div className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/50 dark:border-slate-800/50 p-8 sm:p-12">
                 
-                <div className="text-center mb-8">
-                    <h2 className="text-3xl font-black text-white tracking-tighter">Novo por aqui?</h2>
-                    <p className="text-slate-500 font-bold mt-2 text-[11px] uppercase tracking-widest">Crie sua conta em segundos</p>
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Começar agora<span className="text-indigo-600">.</span></h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 text-sm">Junte-se a Ricka e domine sua grana.</p>
                 </div>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         <input
                             type="text"
                             required
-                            className="w-full px-5 py-3.5 bg-white/5 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none transition-all text-white font-bold text-sm placeholder:text-slate-600"
-                            placeholder="Nome Completo"
+                            className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
+                            placeholder="Seu nome completo"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                         />
                         <input
                             type="text"
                             required
-                            className="w-full px-5 py-3.5 bg-white/5 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none transition-all text-white font-bold text-sm placeholder:text-slate-600"
-                            placeholder="Usuário"
+                            className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
+                            placeholder="Nome de usuário (@exemplo)"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                         />
@@ -76,7 +76,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
                             <input
                                 type="password"
                                 required
-                                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none transition-all text-white font-bold text-sm placeholder:text-slate-600"
+                                className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
                                 placeholder="Senha"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -84,7 +84,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
                             <input
                                 type="password"
                                 required
-                                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none transition-all text-white font-bold text-sm placeholder:text-slate-600"
+                                className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
                                 placeholder="Confirma"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -93,24 +93,26 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
                     </div>
 
                     {error && (
-                        <p className="text-[10px] text-center text-rose-400 font-black uppercase tracking-widest">{error}</p>
+                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-center">
+                            {error}
+                        </div>
                     )}
 
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-4 bg-white hover:bg-slate-100 text-slate-900 font-black rounded-2xl shadow-xl transition-all active:scale-[0.97] disabled:opacity-50 text-xs uppercase tracking-widest mt-2"
+                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-[0.98] disabled:opacity-50"
                     >
-                         {isLoading ? "Criando..." : "Cadastrar"}
+                         {isLoading ? "Criando conta..." : "Criar minha conta"}
                     </button>
                     
-                    <div className="text-center pt-4">
+                    <div className="text-center pt-2">
                         <button 
                             type="button"
                             onClick={onNavigateToLogin}
-                            className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+                            className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 transition-colors"
                         >
-                            Já tem conta? <span className="text-cyan-400">Fazer Login</span>
+                            Já tenho conta, quero entrar
                         </button>
                     </div>
                 </form>

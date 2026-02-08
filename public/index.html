@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" class="">
 <head>
@@ -7,6 +6,7 @@
     <title>Controle de Contas Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      // Aplica o tema escuro antes que o restante da página seja carregado para evitar FOUC
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
       } else {
@@ -20,72 +20,77 @@
           extend: {
             colors: {
               primary: {
-                light: '#818cf8',
-                DEFAULT: '#4f46e5', // Indigo mais saturado
-                dark: '#4338ca',
+                light: '#818cf8',   // indigo-400
+                DEFAULT: '#6366f1', // indigo-500
+                dark: '#4f46e5',    // indigo-600
               },
               secondary: {
-                light: '#c084fc',
-                DEFAULT: '#a855f7', // Purple/Violet
-                dark: '#9333ea',
+                light: '#a78bfa',   // violet-400
+                DEFAULT: '#8b5cf6', // violet-500
+                dark: '#7c3aed',    // violet-600
               },
               accent: {
-                light: '#34d399',
-                DEFAULT: '#10b981', // Emerald
-                dark: '#059669',
+                light: '#5eead4',   // teal-300
+                DEFAULT: '#2dd4bf', // teal-400
+                dark: '#14b8a6',    // teal-500
               },
               
-              // Light theme - Neutros mais limpos
-              background: '#f8fafc',
-              surface: '#ffffff',
-              'surface-light': '#f1f5f9',
-              'border-color': '#e2e8f0',
-              'text-primary': '#0f172a',
-              'text-secondary': '#475569',
-              'text-muted': '#94a3b8',
+              // Light theme
+              background: '#f1f5f9',      // slate-100
+              surface: '#ffffff',         // white
+              'surface-light': '#f8fafc', // slate-50
+              'border-color': '#e2e8f0',  // slate-200
+              'text-primary': '#1e293b',  // slate-800
+              'text-secondary': '#64748b',// slate-500
+              'text-muted': '#94a3b8',    // slate-400
 
-              // Dark theme - "Deep Space" visual
+              // Dark theme
               dark: {
-                background: '#020617',      // Quase preto
-                surface: '#0f172a',         // Navy profundo
-                'surface-light': '#1e293b', 
-                'border-color': '#334155',
-                'text-primary': '#f8fafc',
-                'text-secondary': '#94a3b8',
-                'text-muted': '#64748b',
+                background: '#0f172a',      // slate-900
+                surface: '#1e293b',         // slate-800
+                'surface-light': '#334155', // slate-700
+                'border-color': '#475569',  // slate-600
+                'text-primary': '#f1f5f9',  // slate-100
+                'text-secondary': '#94a3b8',// slate-400
+                'text-muted': '#64748b',    // slate-500
               },
 
-              danger: '#fb7185', // Rose suave
-              success: '#34d399',// Emerald suave
-              warning: '#fbbf24',// Amber
+              // Semantic Colors (vibrant)
+              danger: '#ec4899', // pink-500
+              success: '#10b981',// emerald-500
+              warning: '#f59e0b',// amber-500
             },
             borderRadius: {
-                '4xl': '2.5rem',
+                '4xl': '2rem',
             },
             boxShadow: {
-              'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.2)',
-              'glow-primary': '0 0 20px 0 rgba(79, 70, 229, 0.4)',
+              'glow-primary': '0 0 20px 0 rgba(99, 102, 241, 0.3)',
             },
             keyframes: {
               'pulse-mic': {
-                '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(79, 70, 229, 0.7)' },
-                '50%': { transform: 'scale(1.1)', boxShadow: '0 0 0 15px rgba(79, 70, 229, 0)' },
+                '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(99, 102, 241, 0.7)' },
+                '50%': { transform: 'scale(1.1)', boxShadow: '0 0 0 10px rgba(99, 102, 241, 0)' },
               },
-              'skeleton-pulse': { '50%': { opacity: '0.4' } },
-              'fade-in': { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+              'skeleton-pulse': {
+                '50%': { opacity: '0.6' },
+              },
+              'fade-in': {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
               'fade-in-up': {
-                  '0%': { opacity: '0', transform: 'translateY(15px)' },
+                  '0%': { opacity: '0', transform: 'translateY(20px)' },
                   '100%': { opacity: '1', transform: 'translateY(0)' },
               },
               'orb-glow': {
-                '0%, 100%': { boxShadow: '0 0 20px 0px rgba(79, 70, 229, 0.3)' },
-                '50%': { boxShadow: '0 0 40px 10px rgba(168, 85, 247, 0.3)' },
+                '0%, 100%': { boxShadow: '0 0 15px 0px rgba(99, 102, 241, 0.5)' },
+                '50%': { boxShadow: '0 0 25px 5px rgba(139, 92, 246, 0.5)' },
               },
               'orb-glow-listening': {
-                '0%, 100%': { boxShadow: '0 0 25px 5px rgba(251, 113, 133, 0.6)', transform: 'scale(1)' },
-                '50%': { boxShadow: '0 0 50px 15px rgba(251, 113, 133, 0.8)', transform: 'scale(1.05)' },
+                '0%, 100%': { boxShadow: '0 0 20px 2px rgba(236, 72, 153, 0.6)', transform: 'scale(1)' },
+                '50%': { boxShadow: '0 0 35px 8px rgba(236, 72, 153, 0.8)', transform: 'scale(1.05)' },
               },
-              'scanner-beam': {
+               'scanner-beam': {
                 '0%': { transform: 'translateX(-100%) scaleX(0.1)', opacity: '0.1' },
                 '50%': { transform: 'translateX(0) scaleX(1)', opacity: '0.8' },
                 '100%': { transform: 'translateX(100%) scaleX(0.1)', opacity: '0.1' },
@@ -98,13 +103,13 @@
             },
             animation: {
               'pulse-mic': 'pulse-mic 2s infinite',
-              'skeleton-pulse': 'skeleton-pulse 1.8s ease-in-out infinite',
-              'fade-in': 'fade-in 0.4s ease-out',
-              'fade-in-up': 'fade-in-up 0.5s ease-out',
-              'orb-glow': 'orb-glow 5s ease-in-out infinite',
-              'orb-glow-listening': 'orb-glow-listening 1.2s ease-in-out infinite',
-              'scanner-beam': 'scanner-beam 2.5s ease-in-out infinite',
-              'gradient-pan': 'gradient-pan 12s ease infinite',
+              'skeleton-pulse': 'skeleton-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'fade-in': 'fade-in 0.3s ease-out',
+              'fade-in-up': 'fade-in-up 0.4s ease-out',
+              'orb-glow': 'orb-glow 4s ease-in-out infinite',
+              'orb-glow-listening': 'orb-glow-listening 1.5s ease-in-out infinite',
+              'scanner-beam': 'scanner-beam 2s ease-in-out infinite',
+              'gradient-pan': 'gradient-pan 15s ease infinite',
             },
           },
         },
@@ -125,7 +130,7 @@
     }
     </script>
 </head>
-<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased selection:bg-primary/20">
+<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased">
     <div id="root"></div>
     <script type="module" src="bundle.js"></script>
 </body>

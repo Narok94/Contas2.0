@@ -15,30 +15,26 @@ const NavItem: React.FC<{
     isActive: boolean;
     onClick: () => void;
 }> = ({ label, icon, isActive, onClick }) => (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center w-full transition-all duration-300 relative ${isActive ? 'text-primary' : 'text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}>
-        <div className={`mb-0.5 transition-transform duration-300 ${isActive ? 'scale-110' : 'scale-100'}`}>
-            {icon}
-        </div>
-        <span className={`text-[6px] font-black uppercase tracking-[0.25em] ${isActive ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
-        {isActive && (
-            <div className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-primary" />
-        )}
+    <button onClick={onClick} className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-primary' : 'text-text-muted dark:text-dark-text-muted'}`}>
+        {icon}
+        <span className="text-xs mt-1">{label}</span>
     </button>
 );
 
+
 const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, onAddClick, isAdmin }) => {
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm z-50">
-            <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[2.5rem] shadow-premium h-14 px-3 grid grid-cols-5 items-center border-2 border-slate-200 dark:border-white/5">
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface/80 dark:bg-dark-surface/80 backdrop-blur-lg border-t border-border-color/50 dark:border-dark-border-color/50 z-40">
+            <div className="max-w-7xl mx-auto h-full grid grid-cols-5 items-center">
                 <NavItem 
-                    label="Home"
-                    icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>}
+                    label="Dashboard"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>}
                     isActive={activeView === 'dashboard'}
                     onClick={() => onViewChange('dashboard')}
                 />
                  <NavItem 
-                    label="Hist"
-                    icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
+                    label="Histórico"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                     isActive={activeView === 'history'}
                     onClick={() => onViewChange('history')}
                 />
@@ -46,31 +42,31 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, o
                 <div className="flex items-center justify-center">
                     <button 
                         onClick={onAddClick}
-                        className="w-12 h-12 rounded-2xl bg-slate-950 dark:bg-primary text-white flex items-center justify-center shadow-lg transform transition-all hover:scale-110 active:scale-95 -mt-8 border-4 border-white dark:border-background-dark"
-                        aria-label="Adicionar"
+                        className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg hover:shadow-glow-primary transform transition-all hover:scale-105 active:scale-95"
+                        aria-label="Adicionar conta"
                     >
-                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                            <path d="M12 4v16m8-8H4" />
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </button>
                 </div>
 
                  <NavItem 
-                    label="Renda"
-                    icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" /></svg>}
+                    label="Entradas"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
                     isActive={activeView === 'income'}
                     onClick={() => onViewChange('income')}
                 />
                 
                 {isAdmin ? (
                     <NavItem 
-                        label="Gest"
-                        icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" /></svg>}
+                        label="Admin"
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
                         isActive={activeView === 'admin'}
                         onClick={() => onViewChange('admin')}
                     />
                 ) : (
-                    <div className="w-full h-1" />
+                    <div /> // Placeholder to keep the layout consistent
                 )}
             </div>
         </div>

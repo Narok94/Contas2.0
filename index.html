@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -7,6 +6,7 @@
     <title>Tatu - Gestão Financeira Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      // Aplicação imediata do tema para evitar flash branco
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
       } else {
@@ -19,63 +19,29 @@
         theme: {
           extend: {
             colors: {
-              primary: { 
-                light: '#67e8f9', 
-                DEFAULT: '#06b6d4', 
-                dark: '#0891b2' 
+              primary: { light: '#818cf8', DEFAULT: '#6366f1', dark: '#4f46e5' },
+              background: '#f8fafc',
+              surface: '#ffffff',
+              'surface-light': '#f1f5f9',
+              'border-color': '#e2e8f0',
+              dark: {
+                background: '#020617',
+                surface: '#0f172a',
+                'surface-light': '#1e293b',
+                'border-color': '#334155',
               },
-              secondary: { 
-                light: '#d8b4fe', 
-                DEFAULT: '#8b5cf6', 
-                dark: '#7e22ce' 
-              },
-              background: {
-                light: '#F1F5F9',
-                dark: '#020617'
-              },
-              surface: {
-                light: '#ffffff',
-                dark: '#0f172a'
-              },
-              status: {
-                unpaid: {
-                  light: '#FFF1F2', 
-                  dark: '#450a0a30', 
-                  border: '#FECDD3' 
-                },
-                paid: {
-                  light: '#ECFDF5', 
-                  dark: '#064e3b30', 
-                  border: '#D1FAE5' 
-                }
-              }
+              success: '#10b981',
+              danger: '#f43f5e',
             },
-            borderRadius: { '3xl': '1.25rem', '4xl': '2rem' },
-            boxShadow: {
-              'soft': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-              'premium': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-              'glow': '0 0 20px rgba(6, 182, 212, 0.3)'
-            },
+            borderRadius: { '3xl': '1.5rem', '4xl': '2rem' },
             animation: {
-              'fade-in-up': 'fade-in-up 0.3s ease-out',
-              'float': 'float 6s ease-in-out infinite',
-              'blob': 'blob 10s infinite',
+              'fade-in-up': 'fade-in-up 0.5s ease-out',
             },
             keyframes: {
               'fade-in-up': {
-                  '0%': { opacity: '0', transform: 'translateY(8px)' },
-                  '100%': { opacity: '1', transform: 'translateY(0)' },
+                '0%': { opacity: '0', transform: 'translateY(15px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
               },
-              'float': {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-20px)' },
-              },
-              'blob': {
-                '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                '100%': { transform: 'translate(0px, 0px) scale(1)' },
-              }
             }
           },
         },
@@ -97,23 +63,8 @@
   }
 }
 </script>
-<style>
-    .glass-effect {
-        backdrop-filter: blur(24px);
-        background: rgba(255, 255, 255, 0.03);
-    }
-    .text-glow {
-        text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
-    }
-    body {
-        transition: background-color 0.2s ease;
-    }
-    * {
-        -webkit-tap-highlight-color: transparent;
-    }
-</style>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden min-h-screen">
+<body class="bg-background text-slate-900 dark:bg-dark-background dark:text-slate-100 antialiased overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="bundle.js"></script>
 </body>
