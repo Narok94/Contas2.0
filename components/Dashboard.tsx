@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Account, AccountStatus, type Income, type User } from '../types';
@@ -32,7 +31,7 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`${isMain ? 'bg-indigo-600 text-white shadow-md' : 'bg-surface dark:bg-dark-surface border border-slate-100 dark:border-slate-800 shadow-sm'} p-2 sm:p-4 rounded-2xl sm:rounded-[2rem] relative overflow-hidden group transition-all hover:translate-y-[-2px] active:scale-[0.98] cursor-default`}
+        className={`${isMain ? 'bg-indigo-600 text-white shadow-md border-transparent' : 'bg-surface dark:bg-dark-surface border-2 border-slate-200 dark:border-slate-700 shadow-sm'} p-2 sm:p-4 rounded-2xl sm:rounded-[2rem] relative overflow-hidden group transition-all hover:translate-y-[-2px] active:scale-[0.98] cursor-default`}
     >
         <div className={`flex items-center text-[7px] sm:text-[9px] font-black uppercase tracking-wider sm:tracking-[0.2em] ${isMain ? 'text-indigo-100' : 'text-slate-400'}`}>
             <span className={`p-1 sm:p-1.5 rounded-lg bg-current/10 mr-1 sm:mr-2 ${!isMain ? colorClass : ''}`}>{icon}</span>
@@ -151,7 +150,8 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     return { totalIncome, paid, pending, balance: totalIncome - (paid + pending) };
   }, [currentMonthAccounts, incomes, safeDate]);
 
-  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  // Removido maximumFractionDigits: 0
+  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="space-y-4 sm:space-y-5 animate-fade-in-up max-w-7xl mx-auto py-1">
@@ -164,7 +164,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             </div>
             <div className="flex items-center gap-2 w-full md:w-auto">
                 <MonthPicker selectedDate={safeDate} onSelectDate={setSelectedDate} />
-                <button onClick={onOpenMoveModal} className="p-2 rounded-xl bg-white dark:bg-dark-surface border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-indigo-600 transition-all shadow-sm active:scale-95" title="Mover Contas">
+                <button onClick={onOpenMoveModal} className="p-2 rounded-xl bg-white dark:bg-dark-surface border-2 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-indigo-600 transition-all shadow-sm active:scale-95" title="Mover Contas">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                 </button>
             </div>
@@ -179,7 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
 
         <div className="grid grid-cols-1 gap-4 pb-24 px-2 sm:px-0">
             <div className="space-y-4">
-                <div className="bg-slate-50/50 dark:bg-slate-900/40 p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                <div className="bg-slate-50/50 dark:bg-slate-900/40 p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border-2 border-slate-200 dark:border-slate-700">
                     <SearchBar 
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
                         filterStatus={filterStatus} setFilterStatus={setFilterStatus}
@@ -208,7 +208,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
                 </motion.div>
                 
                 {currentMonthAccounts.length === 0 && (
-                    <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-900/10 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-900/10 rounded-[2.5rem] border-2 border-dashed border-slate-300 dark:border-slate-700">
                         <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Nada por aqui</p>
                     </div>
                 )}

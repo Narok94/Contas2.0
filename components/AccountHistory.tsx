@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { type Account, AccountStatus } from '../types';
 import { 
@@ -9,12 +8,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f43f5e'];
 
+// Removido maximumFractionDigits para precisão
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl text-xs">
+            <div className="p-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl text-xs">
                 <p className="font-black mb-1.5 border-b pb-1 border-slate-100 dark:border-slate-700">{label}</p>
                 {payload.map((entry: any, index: number) => (
                     <p key={index} className="font-bold flex items-center gap-2" style={{ color: entry.color || entry.fill }}>
@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const HistoryStatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; colorClass?: string; subtitle?: string }> = ({ title, value, icon, colorClass = "text-indigo-600", subtitle }) => (
-    <div className="bg-white dark:bg-slate-800/40 p-5 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+    <div className="bg-white dark:bg-slate-800/40 p-5 rounded-[2rem] border-2 border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
         <div className={`p-2.5 w-fit rounded-xl bg-slate-50 dark:bg-slate-900/50 ${colorClass} mb-3`}>{icon}</div>
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">{title}</p>
         <p className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">{value}</p>
@@ -68,7 +68,7 @@ const TrendAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
                     <div className="flex items-center gap-1.5 text-indigo-500"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Total Pago</div>
                 </div>
             </div>
-            <div className="h-80 bg-white dark:bg-slate-900/20 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-inner">
+            <div className="h-80 bg-white dark:bg-slate-900/20 p-6 rounded-[2.5rem] border-2 border-slate-200 dark:border-slate-700 shadow-inner">
                 {trendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={trendData}>
@@ -159,7 +159,7 @@ const OverallAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
+                <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border-2 border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center">
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Distribuição Histórica</h3>
                     <div className="w-full h-64">
                         <ResponsiveContainer width="100%" height="100%">
@@ -173,11 +173,11 @@ const OverallAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border-2 border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Resumo por Categoria</h3>
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
                         {chartData.map((item, index) => (
-                            <div key={index} className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                            <div key={index} className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                                 <span className="text-xs font-black text-slate-800 dark:text-white truncate">{item.name}</span>
                                 <span className="text-xs font-black text-indigo-500">{formatCurrency(item.value)}</span>
                             </div>
@@ -247,7 +247,7 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
                     <select 
                         value={selectedMonth} 
                         onChange={(e) => setSelectedMonth(e.target.value)} 
-                        className="w-full bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl text-xs font-black p-3 pr-10 appearance-none shadow-sm cursor-pointer"
+                        className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black p-3 pr-10 appearance-none shadow-sm cursor-pointer"
                     >
                         {availableMonths.map(month => (
                             <option key={month} value={month}>
@@ -288,7 +288,7 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
+            <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border-2 border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Contas Pagas por Categoria</h3>
                 {chartData.length > 0 ? (
                     <>
@@ -310,11 +310,11 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
                 )}
             </div>
 
-            <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border-2 border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Contas Pagas (Lista)</h3>
                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
                     {monthlyData[selectedMonth]?.filter(a => a.status === AccountStatus.PAID).sort((a,b) => b.value - a.value).map((acc, index) => (
-                        <div key={index} className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                        <div key={index} className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                             <div className="min-w-0">
                                 <p className="text-xs font-black text-slate-800 dark:text-white truncate">{acc.name}</p>
                                 <p className="text-[9px] text-slate-400 font-bold uppercase">{acc.category}</p>
@@ -340,7 +340,7 @@ const AccountHistory: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
                         Histórico<span className="text-emerald-500">.</span>
                     </h1>
                 </div>
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-[1.5rem] shadow-inner border border-slate-200 dark:border-slate-700">
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-[1.5rem] shadow-inner border-2 border-slate-200 dark:border-slate-700">
                     <button 
                         onClick={() => setView('monthly')} 
                         className={`px-4 py-2 rounded-xl text-[9px] font-black transition-all ${view === 'monthly' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}

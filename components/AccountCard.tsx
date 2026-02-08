@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { type Account, AccountStatus } from '../types';
@@ -12,7 +11,8 @@ interface AccountCardProps {
 
 const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, onToggleStatus }) => {
   const isPaid = account.status === AccountStatus.PAID;
-  const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  // Removido maximumFractionDigits: 0 para mostrar centavos
+  const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const springConfig = { 
     type: "spring", 
@@ -31,8 +31,8 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
         onDoubleClick={() => onToggleStatus(account.id)}
         className={`group relative p-1.5 sm:p-3 rounded-xl sm:rounded-[1.5rem] border-2 transition-colors duration-200 cursor-pointer select-none overflow-hidden h-full flex flex-col justify-between ${
             isPaid 
-                ? 'bg-slate-50/40 dark:bg-slate-900/10 border-emerald-500/5 opacity-60' 
-                : 'bg-white dark:bg-slate-800 border-rose-500/10 border-l-[3px] sm:border-l-[4px] border-l-rose-500 shadow-sm hover:shadow-md'
+                ? 'bg-slate-50/40 dark:bg-slate-900/10 border-slate-200 dark:border-slate-800 opacity-60' 
+                : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 border-l-[4px] border-l-rose-500 shadow-sm hover:shadow-md hover:border-slate-400 dark:hover:border-slate-500'
         }`}
     >
         {!isPaid && (
@@ -43,7 +43,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
 
         <div className="space-y-0.5 min-w-0">
             <div className="flex items-center gap-1">
-                <span className={`text-[6px] sm:text-[8px] font-black px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-700/50 text-slate-500 uppercase truncate max-w-full`}>
+                <span className={`text-[6px] sm:text-[8px] font-black px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-700/50 text-slate-500 uppercase truncate max-w-full border border-slate-200 dark:border-slate-600`}>
                     {account.category.split(' ')[1] || account.category}
                 </span>
             </div>
@@ -58,7 +58,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
             </div>
         </div>
 
-        <div className="mt-1 pt-1 border-t border-slate-100/30 dark:border-slate-700/20 flex justify-between items-center">
+        <div className="mt-1 pt-1 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
             <div className="flex items-center gap-1">
                 {account.isInstallment && (
                     <span className="text-[6px] sm:text-[8px] font-black text-slate-400 uppercase flex items-center gap-0.5">
@@ -73,10 +73,10 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
 
             <button 
                 onClick={(e) => { e.stopPropagation(); onToggleStatus(account.id); }}
-                className={`w-5 h-5 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center transition-all flex-shrink-0 shadow-sm active:scale-90 ${
+                className={`w-5 h-5 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center transition-all flex-shrink-0 shadow-sm border border-transparent active:scale-90 ${
                     isPaid 
                         ? 'bg-emerald-500 text-white' 
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
                 }`}
             >
                 {isPaid ? (
@@ -87,8 +87,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
             </button>
         </div>
 
-        {/* Menu de edição flutuante para economizar espaço fixo */}
-        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 py-1 bg-slate-900/80 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none group-hover:pointer-events-auto">
+        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 py-1 bg-slate-900/80 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none group-hover:pointer-events-auto border-t border-slate-700">
             <button 
                 onClick={(e) => { e.stopPropagation(); onEdit(account); }} 
                 className="p-1 text-white hover:text-indigo-400 transition-colors"
