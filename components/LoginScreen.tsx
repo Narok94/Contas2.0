@@ -32,51 +32,58 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
     setError('');
     const success = await onLogin(email, password);
     if (!success) {
-      setError('Acesso negado. Tente novamente.');
+      setError('Acesso negado. Verifique os dados.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-black overflow-hidden p-6">
-      {/* Background Aurora */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[120%] h-[120%] bg-gradient-to-br from-cyber-purple via-cyber-blue to-cyber-pink animate-aurora blur-[120px]" style={{backgroundSize: '400% 400%'}} />
+    <div className="relative flex items-center justify-center min-h-screen bg-slate-950 overflow-hidden p-6 selection:bg-cyan-500/30">
+      
+      {/* Background Dinâmico - Luzes em movimento */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 -left-1/4 w-[60%] h-[60%] bg-cyan-600/20 rounded-full blur-[120px] animate-blob"></div>
+          <div className="absolute top-1/2 -right-1/4 w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute -bottom-1/4 left-1/3 w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '4s' }}></div>
       </div>
       
       <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 w-full max-w-md"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 w-full max-w-[420px]"
       >
-          <div className="flex flex-col items-center mb-12">
-              <div className="w-24 h-24 text-primary animate-float mb-6">
+          <div className="flex flex-col items-center mb-10 text-center">
+              <motion.div 
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="w-20 h-20 text-cyan-400 mb-6 drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]"
+              >
                   <TatuIcon />
-              </div>
-              <h1 className="text-6xl font-black text-white tracking-tighter text-glow drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
-                TATU<span className="text-primary">.</span>
+              </motion.div>
+              <h1 className="text-5xl font-black text-white tracking-tighter text-glow">
+                TATU<span className="text-cyan-500">.</span>
               </h1>
-              <p className="text-slate-500 font-black text-xs uppercase tracking-[0.5em] mt-3">Sua grana sob controle</p>
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.4em] mt-3 opacity-70">Controle Financeiro Inteligente</p>
           </div>
 
-          <div className="glass-effect rounded-[2.5rem] p-8 sm:p-12 shadow-2xl border-white/5">
-              <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="glass-effect rounded-[2.5rem] p-8 sm:p-10 shadow-2xl border border-white/10">
+              <form className="space-y-5" onSubmit={handleSubmit}>
                   <div className="space-y-4">
-                      <div className="relative">
+                      <div className="relative group">
                            <input
                               type="text"
                               required
-                              className="w-full px-6 py-4 bg-black/40 border border-white/10 focus:border-primary rounded-2xl outline-none transition-all text-white font-bold placeholder:text-slate-600"
+                              className="w-full px-6 py-4 bg-white/5 border border-white/10 group-hover:border-white/20 focus:border-cyan-500 rounded-2xl outline-none transition-all text-white font-bold placeholder:text-slate-500"
                               placeholder="Usuário"
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
                           />
                       </div>
-                      <div className="relative">
+                      <div className="relative group">
                           <input
                               type="password"
                               required
-                              className="w-full px-6 py-4 bg-black/40 border border-white/10 focus:border-primary rounded-2xl outline-none transition-all text-white font-bold placeholder:text-slate-600"
+                              className="w-full px-6 py-4 bg-white/5 border border-white/10 group-hover:border-white/20 focus:border-cyan-500 rounded-2xl outline-none transition-all text-white font-bold placeholder:text-slate-500"
                               placeholder="Senha"
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
@@ -85,27 +92,37 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
                   </div>
                   
                   {error && (
-                      <p className="text-xs text-center text-rose-500 font-black uppercase tracking-widest animate-pulse">{error}</p>
+                      <motion.p 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-[10px] text-center text-rose-400 font-black uppercase tracking-widest"
+                      >
+                        {error}
+                      </motion.p>
                   )}
 
                   <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full py-5 bg-white hover:bg-primary text-slate-900 font-black rounded-2xl shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 uppercase tracking-[0.2em] text-sm"
+                      className="w-full py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-cyan-500/20 transition-all active:scale-[0.97] disabled:opacity-50 uppercase tracking-widest text-xs"
                   >
-                       {isLoading ? "Validando..." : "Entrar agora"}
+                       {isLoading ? "Validando..." : "Entrar no Tatu"}
                   </button>
                   
                   <div className="text-center pt-4">
                       <button 
                           type="button"
                           onClick={onNavigateToRegister}
-                          className="text-xs font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+                          className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400 transition-colors"
                       >
-                          Não tem conta? <span className="text-primary hover:underline">Cadastre-se</span>
+                          Primeira vez aqui? <span className="text-white">Criar Conta</span>
                       </button>
                   </div>
               </form>
+          </div>
+
+          <div className="mt-12 text-center">
+              <p className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">Protegido por Criptografia End-to-End</p>
           </div>
       </motion.div>
     </div>
