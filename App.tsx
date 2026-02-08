@@ -146,7 +146,7 @@ const App: React.FC = () => {
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const targetDate = `${year}-${month}-10T12:00:00Z`;
 
-    if (isVariableExpense(acc) && isPaying && acc.value === 0) {
+    if (isVariableExpense(acc) && isPaying && Number(acc.value) === 0) {
         setAccountToEdit(acc);
         setIsAccountModalOpen(true);
         return;
@@ -155,19 +155,23 @@ const App: React.FC = () => {
     const isVirtual = accountId.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
 
     if (isVirtual) {
+        // Criando um snapshot físico para uma projeção
         const snapshot: Account = {
             ...acc,
             id: `acc-snap-${Date.now()}`,
             isRecurrent: false,
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
-            paymentDate: targetDate
+            paymentDate: targetDate,
+            value: Number(acc.value)
         };
         dataService.addAccount(snapshot);
     } else {
+        // BLINDAGEM: Ao desmarcar como pago, mantemos o paymentDate para que ele não suma nem duplique com o template
         dataService.updateAccount({
             ...acc, 
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
-            paymentDate: acc.paymentDate || targetDate
+            paymentDate: acc.paymentDate || targetDate,
+            value: Number(acc.value)
         });
     }
   };
@@ -193,7 +197,7 @@ const App: React.FC = () => {
               }
               
               const original = accounts.find(a => a.id === baseId);
-              const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `repair-series-${Date.now()}` : undefined);
+              const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `series-${Date.now()}` : undefined);
 
               const newSnapshot: Account = { 
                   ...data, 
@@ -218,14 +222,14 @@ const App: React.FC = () => {
               value: sanitizedValue,
               totalInstallments: sanitizedTotal,
               currentInstallment: sanitizedCurrent,
-              installmentId: data.installmentId || (data.isInstallment ? `manual-repair-${Date.now()}` : undefined)
+              installmentId: data.installmentId || (data.isInstallment ? `repair-${Date.now()}` : undefined)
           };
           realtimeService.updateAccountAndSeries(updateData);
       } else {
           const finalId = `acc-${Date.now()}`;
           const isVar = isVariableExpense(data);
-          const isRec = isVar ? true : data.isRecurrent;
-          const isInst = data.isInstallment;
+          const isRec = isVar ? true : Boolean(data.isRecurrent);
+          const isInst = Boolean(data.isInstallment);
           
           dataService.addAccount({
               ...data,
@@ -233,7 +237,7 @@ const App: React.FC = () => {
               value: sanitizedValue,
               isRecurrent: isRec,
               isInstallment: isInst,
-              installmentId: isInst ? `inst-series-${Date.now()}` : undefined,
+              installmentId: isInst ? `inst-${Date.now()}` : undefined,
               currentInstallment: isInst ? (sanitizedCurrent || 1) : undefined,
               totalInstallments: sanitizedTotal,
               status: AccountStatus.PENDING,
@@ -288,25 +292,25 @@ const App: React.FC = () => {
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={() => {}} onImportData={() => {}} onExportToCsv={() => {}} currentUser={currentUser} />
       <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
-          batch.forEach(acc => {
-              const year = selectedDate.getFullYear();
-              const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-              const defaultDate = `${year}-${month}-10T12:00:00Z`;
-              
-              const isVar = isVariableExpense(acc);
-              const isRec = isVar ? true : !!acc.isRecurrent;
-              const isInst = !!acc.isInstallment;
+          const year = selectedDate.getFullYear();
+          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+          const defaultDate = `${year}-${month}-10T12:00:00Z`;
+
+          batch.forEach(item => {
+              const isVar = isVariableExpense(item);
+              const isRec = isVar ? true : Boolean(item.isRecurrent);
+              const isInst = Boolean(item.isInstallment);
               
               dataService.addAccount({
-                  ...acc,
-                  id: `acc-batch-${Date.now()}-${Math.random()}`,
+                  ...item,
+                  id: `batch-${Date.now()}-${Math.random()}`,
                   groupId: activeGroupId,
-                  value: Number(acc.value),
+                  value: Number(item.value),
                   isRecurrent: isRec,
                   isInstallment: isInst,
                   installmentId: isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined,
-                  currentInstallment: isInst ? (Number(acc.currentInstallment) || 1) : undefined,
-                  totalInstallments: acc.totalInstallments ? Number(acc.totalInstallments) : undefined,
+                  currentInstallment: isInst ? (Number(item.currentInstallment) || 1) : undefined,
+                  totalInstallments: item.totalInstallments ? Number(item.totalInstallments) : undefined,
                   paymentDate: (isRec && !isInst) ? undefined : defaultDate,
                   status: AccountStatus.PENDING
               });

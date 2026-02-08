@@ -60,23 +60,30 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
     const selectedMonth = safeDate.getMonth();
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
     
-    const snapshots = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
+    // 1. REGISTROS FÍSICOS (Snapshots salvos no banco)
+    const physicalRecords = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
+    
+    // 2. ÓRFÃOS (Contas sem data, sem recorrência - registros de transição)
     const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
 
+    // 3. TEMPLATES RECORRENTES (Fixas que não variam)
     const recurrentTemplates = accounts.filter(acc => 
         acc.isRecurrent && 
         !acc.paymentDate &&
-        !snapshots.some(s => s.name === acc.name && s.category === acc.category)
+        !physicalRecords.some(p => p.name === acc.name && p.category === acc.category)
     ).map(acc => {
         if (isVariableExpense(acc)) return { ...acc, value: 0 };
         return acc;
     });
 
+    // 4. PROJEÇÕES DE PARCELAMENTO (As próximas parcelas)
     const projectedInstallments: Account[] = [];
     const seriesAnchors = new Map<string, Account>();
+    
+    // Encontra o registro mais recente de cada série para projetar a partir dele
     accounts.forEach(acc => {
         if (acc.isInstallment && acc.paymentDate) {
-            const anchorKey = acc.installmentId || `legacy-${acc.name}-${acc.groupId}`;
+            const anchorKey = acc.installmentId || `legacy-${acc.name}`;
             const current = seriesAnchors.get(anchorKey);
             if (!current || new Date(acc.paymentDate) > new Date(current.paymentDate!)) {
                 seriesAnchors.set(anchorKey, acc);
@@ -92,22 +99,19 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
             const currentInst = Number(acc.currentInstallment || 1);
             const targetInstallment = currentInst + monthDiff;
             
-            const seriesMatch = (a: Account) => 
-                (acc.installmentId && a.installmentId === acc.installmentId) || 
-                (!acc.installmentId && a.name === acc.name && a.groupId === acc.groupId);
-
             const maxTotalInSeries = Math.max(
                 Number(acc.totalInstallments || 0),
-                ...accounts.filter(seriesMatch).map(a => Number(a.totalInstallments || 0))
+                ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => Number(a.totalInstallments || 0))
             );
 
             if (targetInstallment <= maxTotalInSeries) {
-                const alreadyHasSnapshot = snapshots.some(s => 
-                    (acc.installmentId && s.installmentId === acc.installmentId && Number(s.currentInstallment) === targetInstallment) ||
-                    (!acc.installmentId && s.name === acc.name && Number(s.currentInstallment) === targetInstallment)
+                // BLINDAGEM: Verifica se já existe um registro físico (PAGO ou PENDENTE) para este mês/parcela
+                const alreadyExists = physicalRecords.some(p => 
+                    p.installmentId === acc.installmentId && 
+                    Number(p.currentInstallment) === targetInstallment
                 );
 
-                if (!alreadyHasSnapshot) {
+                if (!alreadyExists) {
                     projectedInstallments.push({
                         ...acc,
                         id: `projected-${acc.id}-${monthKey}`,
@@ -121,7 +125,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, onEditAccount,
         }
     });
 
-    return [...snapshots, ...orphanAccounts, ...recurrentTemplates, ...projectedInstallments]
+    return [...physicalRecords, ...orphanAccounts, ...recurrentTemplates, ...projectedInstallments]
         .filter(acc => {
             const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;

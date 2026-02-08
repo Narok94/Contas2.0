@@ -210,45 +210,56 @@ class RealtimeService {
   public getUsers = () => this.db.users;
   public getGroups = () => this.db.groups;
 
+  // BLINDAGEM: Normalização forçada de tipos em todas as operações de escrita
+  private normalizeAccount(acc: Account): Account {
+      return {
+          ...acc,
+          value: Number(acc.value) || 0,
+          totalInstallments: acc.totalInstallments ? Number(acc.totalInstallments) : undefined,
+          currentInstallment: acc.currentInstallment ? Number(acc.currentInstallment) : undefined,
+          isRecurrent: Boolean(acc.isRecurrent),
+          isInstallment: Boolean(acc.isInstallment)
+      };
+  }
+
   public updateAccount = async (acc: Account) => { 
-      this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? acc : a); 
+      const normalized = this.normalizeAccount(acc);
+      this.db.accounts = this.db.accounts.map(a => a.id === normalized.id ? normalized : a); 
       this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
   }
 
   public updateAccountAndSeries = async (acc: Account) => {
-      // Forçamos a conversão de tipos para evitar erros de cálculo nas projeções
-      const updatedValue = Number(acc.value);
-      const updatedTotal = Number(acc.totalInstallments || 0);
+      const normalized = this.normalizeAccount(acc);
+      const updatedTotal = normalized.totalInstallments || 0;
 
-      if (acc.isInstallment && acc.installmentId) {
-          // Atualização sincronizada: se mudar o total de parcelas de uma, muda de todas as "irmãs"
+      if (normalized.isInstallment && normalized.installmentId) {
           this.db.accounts = this.db.accounts.map(a => {
-              if (a.installmentId === acc.installmentId) {
+              if (a.installmentId === normalized.installmentId) {
                   return { 
                       ...a, 
-                      name: acc.name, 
+                      name: normalized.name, 
                       totalInstallments: updatedTotal,
-                      category: acc.category,
-                      // O valor só é alterado no registro específico sendo editado
-                      value: a.id === acc.id ? updatedValue : a.value 
+                      category: normalized.category,
+                      value: a.id === normalized.id ? normalized.value : a.value 
                   };
               }
-              return a.id === acc.id ? { ...acc, value: updatedValue, totalInstallments: updatedTotal } : a;
+              return a.id === normalized.id ? normalized : a;
           });
       } else {
-          this.db.accounts = this.db.accounts.map(a => a.id === acc.id ? { ...acc, value: updatedValue } : a);
+          this.db.accounts = this.db.accounts.map(a => a.id === normalized.id ? normalized : a);
       }
       this.notify('accounts'); this.saveLocal(); this.persistRemote();
   }
 
   public addAccount = async (acc: Account) => { 
-      this.db.accounts = [...this.db.accounts, { ...acc, value: Number(acc.value), totalInstallments: acc.totalInstallments ? Number(acc.totalInstallments) : undefined }]; 
+      const normalized = this.normalizeAccount(acc);
+      this.db.accounts = [...this.db.accounts, normalized]; 
       this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
   }
   
   public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
   public updateMultipleAccounts = async (accs: Account[]) => {
-    const accsMap = new Map(accs.map(a => [a.id, a]));
+    const accsMap = new Map(accs.map(a => [a.id, this.normalizeAccount(a)]));
     this.db.accounts = this.db.accounts.map(a => accsMap.has(a.id) ? accsMap.get(a.id)! : a);
     this.notify('accounts'); this.saveLocal(); this.persistRemote();
   }
