@@ -140,33 +140,38 @@ const App: React.FC = () => {
   const handleToggleAccountStatus = (accountId: string) => {
     const acc = accounts.find(a => a.id === accountId);
     if (!acc) return;
-    const isVar = isVariableExpense(acc);
-    const isPaying = acc.status !== AccountStatus.PAID;
     
+    const isPaying = acc.status !== AccountStatus.PAID;
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const targetDate = `${year}-${month}-10T12:00:00Z`;
 
-    if (isVar && isPaying && acc.value === 0) {
+    // Se for variável e estiver sem valor, abre o modal para preencher
+    if (isVariableExpense(acc) && isPaying && acc.value === 0) {
         setAccountToEdit(acc);
         setIsAccountModalOpen(true);
         return;
     }
 
-    if ((acc.isRecurrent && !acc.paymentDate) || accountId.toString().startsWith('projected-')) {
+    // Lógica de "Snapshot": Se for uma projeção virtual ou um template recorrente original
+    const isVirtual = accountId.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
+
+    if (isVirtual) {
         const snapshot: Account = {
             ...acc,
             id: `acc-snap-${Date.now()}`,
-            isRecurrent: false,
+            isRecurrent: false, // snapshots não são templates
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
             paymentDate: targetDate
         };
         dataService.addAccount(snapshot);
     } else {
+        // Se já é um registro físico, apenas atualizamos o status e mantemos a data
+        // para evitar que ele "suma" do dashboard ou duplique com o template
         dataService.updateAccount({
             ...acc, 
-            status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING, 
-            paymentDate: isPaying ? (acc.paymentDate || targetDate) : undefined 
+            status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
+            paymentDate: acc.paymentDate || targetDate // Mantém a data original se existir
         });
     }
   };
@@ -179,7 +184,6 @@ const App: React.FC = () => {
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const targetDate = `${year}-${month}-10T12:00:00Z`;
 
-      // Sanitização de valores para garantir que sejam números
       const sanitizedValue = Number(data.value);
       const sanitizedTotal = data.totalInstallments ? Number(data.totalInstallments) : undefined;
       const sanitizedCurrent = data.currentInstallment ? Number(data.currentInstallment) : undefined;
@@ -193,8 +197,6 @@ const App: React.FC = () => {
               }
               
               const original = accounts.find(a => a.id === baseId);
-
-              // REPARO DE SÉRIE: Se o original era parcela mas não tinha ID de série, cria um agora
               const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `repair-series-${Date.now()}` : undefined);
 
               const newSnapshot: Account = { 
@@ -215,7 +217,6 @@ const App: React.FC = () => {
               return;
           }
           
-          // REPARO DE SÉRIE EM EDIÇÃO DE CONTA REAL:
           const updateData = {
               ...data,
               value: sanitizedValue,
@@ -223,7 +224,6 @@ const App: React.FC = () => {
               currentInstallment: sanitizedCurrent,
               installmentId: data.installmentId || (data.isInstallment ? `manual-repair-${Date.now()}` : undefined)
           };
-          
           realtimeService.updateAccountAndSeries(updateData);
       } else {
           const finalId = `acc-${Date.now()}`;
