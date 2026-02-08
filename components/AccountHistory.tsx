@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { type Account, AccountStatus } from '../types';
 import { 
@@ -27,21 +28,21 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-const HistoryStatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; colorClass?: string }> = ({ title, value, icon, colorClass = "text-indigo-600" }) => (
+const HistoryStatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; colorClass?: string; subtitle?: string }> = ({ title, value, icon, colorClass = "text-indigo-600", subtitle }) => (
     <div className="bg-white dark:bg-slate-800/40 p-5 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
         <div className={`p-2.5 w-fit rounded-xl bg-slate-50 dark:bg-slate-900/50 ${colorClass} mb-3`}>{icon}</div>
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">{title}</p>
         <p className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">{value}</p>
+        {subtitle && <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">{subtitle}</p>}
     </div>
 );
 
 const TrendAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
+    // No histórico, focamos no fluxo do que JÁ FOI PAGO
     const trendData = useMemo(() => {
-        const monthlyStats: Record<string, { month: string; name: string; paid: number; pending: number }> = {};
-        const todayKey = new Date().toISOString().slice(0, 7);
+        const monthlyStats: Record<string, { month: string; name: string; paid: number }> = {};
         
-        accounts.forEach(acc => {
-            // Se não tem data (pendente), projeta para o mês atual
+        accounts.filter(a => a.status === AccountStatus.PAID).forEach(acc => {
             const dateStr = acc.paymentDate || new Date().toISOString();
             const monthKey = dateStr.slice(0, 7);
             
@@ -51,16 +52,10 @@ const TrendAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
                 monthlyStats[monthKey] = {
                     month: monthKey,
                     name: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-                    paid: 0,
-                    pending: 0
+                    paid: 0
                 };
             }
-            
-            if (acc.status === AccountStatus.PAID) {
-                monthlyStats[monthKey].paid += acc.value;
-            } else {
-                monthlyStats[monthKey].pending += acc.value;
-            }
+            monthlyStats[monthKey].paid += acc.value;
         });
 
         return Object.values(monthlyStats).sort((a, b) => a.month.localeCompare(b.month));
@@ -69,29 +64,33 @@ const TrendAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black tracking-tighter">Fluxo de Gastos</h2>
+                <h2 className="text-2xl font-black tracking-tighter">Fluxo de Realizados</h2>
                 <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest">
-                    <div className="flex items-center gap-1.5 text-indigo-500"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Pago</div>
-                    <div className="flex items-center gap-1.5 text-rose-400"><span className="w-2 h-2 rounded-full bg-rose-400" /> Pendente</div>
+                    <div className="flex items-center gap-1.5 text-indigo-500"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Total Pago</div>
                 </div>
             </div>
             <div className="h-80 bg-white dark:bg-slate-900/20 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-inner">
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={trendData}>
-                        <defs>
-                            <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.3}/>
-                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} axisLine={false} tickLine={false} />
-                        <YAxis hide />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Area name="Pago" type="monotone" dataKey="paid" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorPaid)" />
-                        <Area name="Pendente" type="monotone" dataKey="pending" stroke="#fb7185" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
-                    </AreaChart>
-                </ResponsiveContainer>
+                {trendData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={trendData}>
+                            <defs>
+                                <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.3}/>
+                            <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} axisLine={false} tickLine={false} />
+                            <YAxis hide />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Area name="Pago" type="monotone" dataKey="paid" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorPaid)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="h-full flex items-center justify-center text-slate-400 font-bold text-xs uppercase tracking-widest">
+                        Sem dados de pagamento para exibir
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -101,6 +100,9 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
     const monthlyData = useMemo(() => {
         const data: Record<string, Account[]> = {};
         accounts.forEach(acc => {
+            // Se for fixa sem data, ela não entra no histórico (é apenas um template)
+            if (acc.isRecurrent && !acc.paymentDate) return;
+            
             const dateStr = acc.paymentDate || new Date().toISOString();
             const monthKey = dateStr.slice(0, 7);
             if (!data[monthKey]) data[monthKey] = [];
@@ -112,11 +114,13 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
     const availableMonths = useMemo(() => Object.keys(monthlyData).sort().reverse(), [monthlyData]);
     const [selectedMonth, setSelectedMonth] = useState(availableMonths[0] || '');
 
-    const { chartData, totalPaid, totalPending, topCategory, avgValue } = useMemo(() => {
-        if (!selectedMonth || !monthlyData[selectedMonth]) return { chartData: [], totalPaid: 0, totalPending: 0, topCategory: 'N/A', avgValue: 0 };
+    const { chartData, totalPaid, totalPending, topCategory, paidCount } = useMemo(() => {
+        if (!selectedMonth || !monthlyData[selectedMonth]) return { chartData: [], totalPaid: 0, totalPending: 0, topCategory: 'N/A', paidCount: 0 };
         
         const monthAccounts = monthlyData[selectedMonth];
-        const categoryTotals = monthAccounts.reduce((acc, account) => {
+        const paidOnly = monthAccounts.filter(a => a.status === AccountStatus.PAID);
+        
+        const categoryTotals = paidOnly.reduce((acc, account) => {
             acc[account.category] = (acc[account.category] || 0) + account.value;
             return acc;
         }, {} as Record<string, number>);
@@ -125,7 +129,7 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
             .map(([category, value]) => ({ name: category, value }))
             .sort((a, b) => Number(b.value) - Number(a.value));
 
-        const totalPaid = monthAccounts.filter(a => a.status === AccountStatus.PAID).reduce((sum, acc) => sum + acc.value, 0);
+        const totalPaid = paidOnly.reduce((sum, acc) => sum + acc.value, 0);
         const totalPending = monthAccounts.filter(a => a.status === AccountStatus.PENDING).reduce((sum, acc) => sum + acc.value, 0);
         
         return { 
@@ -133,14 +137,14 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
             totalPaid, 
             totalPending, 
             topCategory: chartData[0]?.name || 'N/A', 
-            avgValue: monthAccounts.length > 0 ? (totalPaid + totalPending) / monthAccounts.length : 0 
+            paidCount: paidOnly.length
         };
     }, [selectedMonth, monthlyData]);
 
     return (
       <div className="space-y-8 animate-fade-in">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 className="text-2xl font-black tracking-tighter">Detalhamento Mensal</h2>
+            <h2 className="text-2xl font-black tracking-tighter">Detalhamento de Gastos</h2>
             {availableMonths.length > 0 && (
                 <div className="relative group w-full sm:w-auto">
                     <select 
@@ -162,53 +166,76 @@ const MonthlyAnalysis: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
         </div>
         
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <HistoryStatCard title="Total Pago" value={formatCurrency(totalPaid)} colorClass="text-emerald-500" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
-            <HistoryStatCard title="Pendente" value={formatCurrency(totalPending)} colorClass="text-rose-500" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <HistoryStatCard 
+                title="Total Pago" 
+                value={formatCurrency(totalPaid)} 
+                colorClass="text-emerald-500" 
+                subtitle={`${paidCount} contas liquidadas`}
+                icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} 
+            />
+            <HistoryStatCard 
+                title="Falta Pagar" 
+                value={formatCurrency(totalPending)} 
+                colorClass="text-rose-500" 
+                subtitle="Ainda pendente no mês"
+                icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} 
+            />
             <HistoryStatCard title="Top Categoria" value={topCategory} colorClass="text-amber-500" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
-            <HistoryStatCard title="Média P/ Conta" value={formatCurrency(avgValue)} colorClass="text-indigo-400" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} />
+            <HistoryStatCard 
+                title="Economia Estimada" 
+                value={formatCurrency(totalPaid * 0.1)} 
+                colorClass="text-indigo-400" 
+                subtitle="Meta de 10% de sobra"
+                icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>} 
+            />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Divisão por Categoria</h3>
-                <div className="w-full h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie data={chartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                                {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                            </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-                <div className="mt-4 flex flex-wrap justify-center gap-3">
-                    {chartData.slice(0, 4).map((entry, index) => (
-                        <div key={index} className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                            {entry.name}
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Contas Pagas por Categoria</h3>
+                {chartData.length > 0 ? (
+                    <>
+                        <div className="w-full h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={chartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                        {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip />} />
+                                </PieChart>
+                            </ResponsiveContainer>
                         </div>
-                    ))}
-                </div>
+                        <div className="mt-4 flex flex-wrap justify-center gap-3">
+                            {chartData.slice(0, 4).map((entry, index) => (
+                                <div key={index} className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase">
+                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                    {entry.name}
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <div className="h-64 flex items-center justify-center text-slate-400 font-bold text-xs uppercase tracking-widest">
+                        Nenhuma conta paga
+                    </div>
+                )}
             </div>
 
-            <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Top 5 Gastos</h3>
-                <div className="space-y-4">
-                    {chartData.slice(0, 5).map((item, index) => (
-                        <div key={index} className="space-y-1.5">
-                            <div className="flex justify-between text-[11px] font-black uppercase">
-                                <span className="text-slate-700 dark:text-slate-300">{item.name}</span>
-                                <span className="text-indigo-600">{formatCurrency(item.value)}</span>
+            <div className="bg-white dark:bg-slate-900/20 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Detalhamento do Mês (Pagos)</h3>
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
+                    {monthlyData[selectedMonth]?.filter(a => a.status === AccountStatus.PAID).sort((a,b) => b.value - a.value).map((acc, index) => (
+                        <div key={index} className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                            <div className="min-w-0">
+                                <p className="text-xs font-black text-slate-800 dark:text-white truncate">{acc.name}</p>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase">{acc.category}</p>
                             </div>
-                            <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${(item.value / chartData[0].value) * 100}%` }}
-                                    className="h-full bg-indigo-500 rounded-full"
-                                />
-                            </div>
+                            <span className="text-xs font-black text-emerald-500">{formatCurrency(acc.value)}</span>
                         </div>
                     ))}
+                    {(!monthlyData[selectedMonth] || monthlyData[selectedMonth].filter(a => a.status === AccountStatus.PAID).length === 0) && (
+                        <p className="text-center text-slate-400 py-10 font-bold text-[10px] uppercase tracking-widest">Nenhum registro</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -224,20 +251,20 @@ const AccountHistory: React.FC<{ accounts: Account[] }> = ({ accounts }) => {
             <header className="flex flex-col sm:flex-row justify-between items-center gap-6">
                 <div>
                     <h1 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white text-center sm:text-left">
-                        Análise de Gastos<span className="text-indigo-600">.</span>
+                        Histórico<span className="text-emerald-500">.</span>
                     </h1>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1 text-center sm:text-left">Histórico detalhado e tendências</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1 text-center sm:text-left">Acompanhando o que já foi liquidado</p>
                 </div>
                 <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-[1.5rem] shadow-inner border border-slate-200 dark:border-slate-700">
                     <button 
                         onClick={() => setView('monthly')} 
-                        className={`px-6 py-2.5 rounded-2xl text-[10px] font-black transition-all ${view === 'monthly' ? 'bg-white dark:bg-slate-700 shadow-lg text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`px-6 py-2.5 rounded-2xl text-[10px] font-black transition-all ${view === 'monthly' ? 'bg-white dark:bg-slate-700 shadow-lg text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         MENSAL
                     </button>
                     <button 
                         onClick={() => setView('trend')} 
-                        className={`px-6 py-2.5 rounded-2xl text-[10px] font-black transition-all ${view === 'trend' ? 'bg-white dark:bg-slate-700 shadow-lg text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`px-6 py-2.5 rounded-2xl text-[10px] font-black transition-all ${view === 'trend' ? 'bg-white dark:bg-slate-700 shadow-lg text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         TENDÊNCIA
                     </button>
