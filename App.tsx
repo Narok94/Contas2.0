@@ -146,32 +146,28 @@ const App: React.FC = () => {
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const targetDate = `${year}-${month}-10T12:00:00Z`;
 
-    // Se for variável e estiver sem valor, abre o modal para preencher
     if (isVariableExpense(acc) && isPaying && acc.value === 0) {
         setAccountToEdit(acc);
         setIsAccountModalOpen(true);
         return;
     }
 
-    // Lógica de "Snapshot": Se for uma projeção virtual ou um template recorrente original
     const isVirtual = accountId.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
 
     if (isVirtual) {
         const snapshot: Account = {
             ...acc,
             id: `acc-snap-${Date.now()}`,
-            isRecurrent: false, // snapshots não são templates
+            isRecurrent: false,
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
             paymentDate: targetDate
         };
         dataService.addAccount(snapshot);
     } else {
-        // Se já é um registro físico, apenas atualizamos o status e mantemos a data
-        // para evitar que ele "suma" do dashboard ou duplique com o template
         dataService.updateAccount({
             ...acc, 
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
-            paymentDate: acc.paymentDate || targetDate // Mantém a data original se existir
+            paymentDate: acc.paymentDate || targetDate
         });
     }
   };
@@ -296,7 +292,24 @@ const App: React.FC = () => {
               const year = selectedDate.getFullYear();
               const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
               const defaultDate = `${year}-${month}-10T12:00:00Z`;
-              dataService.addAccount({...acc, id: `acc-batch-${Date.now()}-${Math.random()}`, groupId: activeGroupId, paymentDate: acc.isRecurrent ? undefined : defaultDate});
+              
+              const isVar = isVariableExpense(acc);
+              const isRec = isVar ? true : !!acc.isRecurrent;
+              const isInst = !!acc.isInstallment;
+              
+              dataService.addAccount({
+                  ...acc,
+                  id: `acc-batch-${Date.now()}-${Math.random()}`,
+                  groupId: activeGroupId,
+                  value: Number(acc.value),
+                  isRecurrent: isRec,
+                  isInstallment: isInst,
+                  installmentId: isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined,
+                  currentInstallment: isInst ? (Number(acc.currentInstallment) || 1) : undefined,
+                  totalInstallments: acc.totalInstallments ? Number(acc.totalInstallments) : undefined,
+                  paymentDate: (isRec && !isInst) ? undefined : defaultDate,
+                  status: AccountStatus.PENDING
+              });
           });
       }} categories={categories} />
       <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => setIsAccountModalOpen(true)} onSelectBatch={() => setIsBatchModalOpen(true)} />

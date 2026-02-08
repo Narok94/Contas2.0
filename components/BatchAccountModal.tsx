@@ -52,7 +52,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
       if (row.id === id) {
         const updatedRow = { ...row, [field]: value };
         
-        // Mutual exclusivity logic
+        // Mutual exclusivity logic: Se for parcelado, não pode ser recorrente livre, e vice-versa.
         if (field === 'isInstallment' && value === true) {
             updatedRow.isRecurrent = false;
         }
@@ -81,11 +81,12 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
 
     const accountsData = validRows.map(row => ({
       name: row.name,
-      value: parseFloat(row.value.replace(',', '.')), // Handle comma decimal
+      value: row.value.replace(',', '.'), // O App.tsx fará o cast definitivo para Number
       category: row.category,
-      isRecurrent: row.isRecurrent,
-      isInstallment: row.isInstallment,
-      totalInstallments: row.isInstallment ? parseInt(row.totalInstallments, 10) : undefined,
+      isRecurrent: Boolean(row.isRecurrent),
+      isInstallment: Boolean(row.isInstallment),
+      totalInstallments: row.isInstallment ? row.totalInstallments : undefined,
+      currentInstallment: row.isInstallment ? 1 : undefined,
       status: 'PENDING'
     }));
 
@@ -97,8 +98,8 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
-      <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-5xl max-h-[90vh] flex flex-col animate-fade-in-up">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in" onClick={onClose}>
+      <div className="bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-5xl max-h-[90vh] flex flex-col animate-fade-in-up" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
             <div>
                 <h2 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary">Adicionar em Lote</h2>
@@ -130,19 +131,18 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                     placeholder="Ex: Luz, Mercado"
                                     value={row.name}
                                     onChange={(e) => updateRow(row.id, 'name', e.target.value)}
-                                    className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary"
+                                    className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary font-medium"
                                     autoFocus={index === 0}
                                 />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="md:hidden text-xs text-text-muted">Valor</label>
                                 <input 
-                                    type="number" 
-                                    step="0.01"
+                                    type="text" 
                                     placeholder="0,00"
                                     value={row.value}
                                     onChange={(e) => updateRow(row.id, 'value', e.target.value)}
-                                    className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary"
+                                    className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary font-bold text-primary"
                                 />
                             </div>
                             <div className="md:col-span-3">
@@ -165,7 +165,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                             onChange={(e) => updateRow(row.id, 'isRecurrent', e.target.checked)}
                                             className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded"
                                         />
-                                        <span className="md:hidden text-sm text-text-secondary">Recorrente</span>
+                                        <span className="md:hidden text-xs font-bold text-text-secondary uppercase">Recor.</span>
                                     </label>
                                 </div>
                                 
@@ -175,9 +175,9 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                             type="checkbox" 
                                             checked={row.isInstallment}
                                             onChange={(e) => updateRow(row.id, 'isInstallment', e.target.checked)}
-                                            className="h-5 w-5 text-secondary focus:ring-secondary border-gray-300 rounded"
+                                            className="h-5 w-5 text-rose-500 focus:ring-rose-500 border-gray-300 rounded"
                                         />
-                                        <span className="md:hidden text-sm text-text-secondary">Parcelado</span>
+                                        <span className="md:hidden text-xs font-bold text-text-secondary uppercase">Parc.</span>
                                     </label>
                                 </div>
                                 
@@ -188,7 +188,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                             min="2"
                                             value={row.totalInstallments}
                                             onChange={(e) => updateRow(row.id, 'totalInstallments', e.target.value)}
-                                            className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary text-center"
+                                            className="w-full p-2 text-sm rounded bg-indigo-50 dark:bg-slate-700 border border-indigo-200 dark:border-slate-600 focus:ring-1 focus:ring-primary focus:border-primary text-center font-black"
                                             placeholder="Qtd"
                                             title="Quantidade de Parcelas"
                                         />
@@ -219,11 +219,13 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
             <button 
                 type="button" 
                 onClick={handleAddRow}
-                className="flex items-center space-x-2 text-primary hover:text-primary-dark font-medium transition-colors"
+                className="flex items-center space-x-2 text-primary hover:text-primary-dark font-black text-xs uppercase tracking-widest transition-all"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
+                <div className="p-1 rounded-full bg-primary/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                </div>
                 <span>Adicionar Linha</span>
             </button>
 
@@ -231,7 +233,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="flex-1 sm:flex-none px-4 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors font-medium"
+                    className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-surface-light hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold text-xs uppercase tracking-wider"
                 >
                     Cancelar
                 </button>
@@ -239,7 +241,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                     type="submit" 
                     form="batch-form"
                     disabled={isSubmitting}
-                    className="flex-1 sm:flex-none px-6 py-2 rounded-md bg-primary text-white hover:bg-primary-dark transition-colors font-bold shadow-md disabled:opacity-70"
+                    className="flex-1 sm:flex-none px-8 py-2.5 rounded-xl bg-primary text-white hover:bg-primary-dark transition-all font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 disabled:opacity-70 active:scale-95"
                 >
                     {isSubmitting ? 'Salvando...' : 'Salvar Todas'}
                 </button>
