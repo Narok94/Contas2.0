@@ -5,8 +5,8 @@ import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
+import AccountsView from './components/AccountsView';
 import AdminPanel from './components/AdminPanel';
-import AccountHistory from './components/AccountHistory';
 import AccountFormModal from './components/AccountFormModal';
 import BatchAccountModal from './components/BatchAccountModal';
 import AddSelectionModal from './components/AddSelectionModal';
@@ -265,17 +265,23 @@ const App: React.FC = () => {
       <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-32">
         {view === 'dashboard' && (
             <Dashboard 
-                accounts={userAccounts} incomes={userIncomes} 
+                accounts={userAccounts} 
+                incomes={userIncomes} 
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+            />
+        )}
+        {view === 'accounts' && (
+            <AccountsView 
+                accounts={userAccounts} 
                 onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                 onDeleteAccount={(id) => dataService.deleteAccount(id)} 
                 onToggleStatus={handleToggleAccountStatus} 
                 selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
-                onOpenBatchModal={() => setIsBatchModalOpen(true)} 
-                currentUser={currentUser} onOpenMoveModal={() => setIsMoveModalOpen(true)} 
+                onOpenMoveModal={() => setIsMoveModalOpen(true)} 
                 categories={categories}
             />
         )}
-        {view === 'history' && <AccountHistory accounts={userAccounts} />}
         {view === 'income' && <IncomeManagement incomes={userIncomes} onAddOrUpdate={(data) => {
             if (data.id) dataService.updateIncome({...data, date: new Date().toISOString()} as any);
             else dataService.addIncome({...data, date: new Date().toISOString(), id: `inc-${Date.now()}`} as any);
