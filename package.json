@@ -1,16 +1,16 @@
-
 {
   "name": "tatu-financeiro",
   "version": "1.0.0",
   "description": "Um software de controle de contas moderno e intuitivo.",
   "private": true,
   "scripts": {
-    "build": "mkdir -p public && cp index.html public/index.html && esbuild index.tsx --bundle --format=esm --outfile=public/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --define:process.env.API_KEY='\"'$API_KEY'\"'"
+    "build": "mkdir -p public && cp index.html public/index.html && esbuild index.tsx --bundle --format=esm --outfile=public/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --define:process.env.API_KEY='\"'$API_KEY'\"'",
+    "dev": "npm run build && npx -y serve public -p 3000"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "@vercel/node": "^3.2.0",
     "esbuild": "0.23.0",
-    "@vercel/node": "^3.2.0"
+    "typescript": "^5.0.0"
   },
   "dependencies": {
     "@vercel/postgres": "^0.9.0"

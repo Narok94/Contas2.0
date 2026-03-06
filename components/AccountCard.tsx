@@ -28,18 +28,32 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
         transition={springConfig}
-        onDoubleClick={() => onToggleStatus(account.id)}
-        className={`group relative p-1.5 sm:p-3 rounded-xl sm:rounded-[1.5rem] border-2 transition-colors duration-200 cursor-pointer select-none overflow-hidden h-full flex flex-col justify-between ${
+        onClick={() => onToggleStatus(account.id)}
+        className={`group relative p-1.5 sm:p-3 rounded-xl sm:rounded-[1.5rem] border-2 transition-all duration-200 cursor-pointer select-none overflow-hidden h-full flex flex-col justify-between active:scale-[0.98] ${
             isPaid 
                 ? 'bg-slate-50/40 dark:bg-slate-900/10 border-slate-200 dark:border-slate-800 opacity-60' 
-                : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 border-l-[4px] border-l-rose-500 shadow-sm hover:shadow-md hover:border-slate-400 dark:hover:border-slate-500'
+                : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 border-l-[4px] border-l-rose-500 shadow-sm hover:shadow-md hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/30'
         }`}
     >
-        {!isPaid && (
-            <div className="absolute top-1 right-1 flex gap-0.5">
-                <div className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-rose-500 animate-pulse" />
-            </div>
-        )}
+        <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-20">
+            <button 
+                onClick={(e) => { e.stopPropagation(); onEdit(account); }} 
+                className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all sm:opacity-0 sm:group-hover:opacity-100"
+                title="Editar"
+            >
+                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <button 
+                onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar?')) onDelete(account.id); }} 
+                className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all sm:opacity-0 sm:group-hover:opacity-100"
+                title="Excluir"
+            >
+                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            {!isPaid && (
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse sm:group-hover:hidden" />
+            )}
+        </div>
 
         <div className="space-y-0.5 min-w-0">
             <div className="flex items-center gap-1">
@@ -73,7 +87,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
 
             <button 
                 onClick={(e) => { e.stopPropagation(); onToggleStatus(account.id); }}
-                className={`w-5 h-5 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center transition-all flex-shrink-0 shadow-sm border border-transparent active:scale-90 ${
+                className={`w-5 h-5 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center transition-all flex-shrink-0 shadow-sm border border-transparent active:scale-90 group-hover:scale-110 ${
                     isPaid 
                         ? 'bg-emerald-500 text-white' 
                         : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
@@ -87,20 +101,6 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
             </button>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 py-1 bg-slate-900/80 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none group-hover:pointer-events-auto border-t border-slate-700">
-            <button 
-                onClick={(e) => { e.stopPropagation(); onEdit(account); }} 
-                className="p-1 text-white hover:text-indigo-400 transition-colors"
-            >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-            <button 
-                onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar?')) onDelete(account.id); }} 
-                className="p-1 text-rose-400 transition-colors"
-            >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-        </div>
     </motion.div>
   );
 };
