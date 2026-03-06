@@ -137,10 +137,7 @@ const App: React.FC = () => {
     setView('dashboard');
   };
 
-  const handleToggleAccountStatus = (accountId: string) => {
-    const acc = accounts.find(a => a.id === accountId);
-    if (!acc) return;
-    
+  const handleToggleAccountStatus = (acc: Account) => {
     const isPaying = acc.status !== AccountStatus.PAID;
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
@@ -152,10 +149,10 @@ const App: React.FC = () => {
         return;
     }
 
-    const isVirtual = accountId.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
+    const isVirtual = acc.id.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
 
     if (isVirtual) {
-        // Criando um snapshot físico para uma projeção
+        // Criando um snapshot físico para uma projeção ou template recorrente
         const snapshot: Account = {
             ...acc,
             id: `acc-snap-${Date.now()}`,
@@ -166,7 +163,7 @@ const App: React.FC = () => {
         };
         dataService.addAccount(snapshot);
     } else {
-        // BLINDAGEM: Ao desmarcar como pago, mantemos o paymentDate para que ele não suma nem duplique com o template
+        // Atualizando um registro físico existente
         dataService.updateAccount({
             ...acc, 
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,

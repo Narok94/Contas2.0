@@ -18,7 +18,7 @@ interface DashboardProps {
   incomes: Income[];
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (accountId: string) => void;
-  onToggleStatus: (accountId: string) => void;
+  onToggleStatus: (account: Account) => void;
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   onOpenBatchModal: () => void;

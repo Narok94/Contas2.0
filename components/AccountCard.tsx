@@ -6,7 +6,7 @@ interface AccountCardProps {
   account: Account;
   onEdit: (account: Account) => void;
   onDelete: (accountId: string) => void;
-  onToggleStatus: (accountId: string) => void;
+  onToggleStatus: (account: Account) => void;
 }
 
 const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, onToggleStatus }) => {
@@ -28,7 +28,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
         transition={springConfig}
-        onClick={() => onToggleStatus(account.id)}
+        onClick={() => onToggleStatus(account)}
         className={`group relative p-1.5 sm:p-3 rounded-xl sm:rounded-[1.5rem] border-2 transition-all duration-300 cursor-pointer select-none overflow-hidden h-full flex flex-col justify-between active:scale-[0.98] ${
             isPaid 
                 ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 dark:border-emerald-600 shadow-inner ring-1 ring-emerald-400/20' 
@@ -88,7 +88,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
             </div>
 
             <button 
-                onClick={(e) => { e.stopPropagation(); onToggleStatus(account.id); }}
+                onClick={(e) => { e.stopPropagation(); onToggleStatus(account); }}
                 className={`w-full py-2 sm:py-3 rounded-xl flex items-center justify-center gap-2 transition-all flex-shrink-0 shadow-sm border font-black text-[10px] sm:text-xs uppercase tracking-widest active:scale-95 ${
                     isPaid 
                         ? 'bg-emerald-600 text-white border-emerald-700 shadow-emerald-200/50' 
