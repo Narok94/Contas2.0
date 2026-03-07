@@ -243,6 +243,54 @@ const App: React.FC = () => {
       }
   };
 
+  const handleExportJson = () => {
+    const data = realtimeService.exportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tatu_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportJson = async (file: File) => {
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (window.confirm('Atenção: Importar um backup irá substituir TODOS os dados atuais. Deseja continuar?')) {
+            realtimeService.importData(data);
+            alert('Backup importado com sucesso!');
+            window.location.reload(); // Recarregar para garantir que tudo sincronize
+        }
+    } catch (e) {
+        alert('Erro ao importar backup. Verifique se o arquivo é um JSON válido.');
+    }
+  };
+
+  const handleExportCsv = () => {
+    const accounts = realtimeService.getAccounts();
+    const incomes = realtimeService.getIncomes();
+    
+    let csv = 'Tipo,Nome,Valor,Categoria,Data,Status\n';
+    
+    accounts.forEach(acc => {
+        csv += `Despesa,"${acc.name}",${acc.value},"${acc.category}",${acc.paymentDate || acc.dueDate},${acc.status}\n`;
+    });
+    
+    incomes.forEach(inc => {
+        csv += `Receita,"${inc.name}",${inc.value},"${inc.category}",${inc.date},PAGO\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tatu_relatorio_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background">
@@ -292,7 +340,16 @@ const App: React.FC = () => {
       <FloatingAiButton onClick={() => setIsChatOpen(true)} onLongPress={() => {}} constraintsRef={constraintsRef} isListening={isAiListening} />
       <BottomNavBar activeView={view} onViewChange={setView} onAddClick={() => setIsSelectionModalOpen(true)} isAdmin={currentUser.role === Role.ADMIN} />
       <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
-      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} theme={theme} toggleTheme={toggleTheme} onExportData={() => {}} onImportData={() => {}} onExportToCsv={() => {}} currentUser={currentUser} />
+      <SettingsModal 
+        isOpen={isSettingsModalOpen} 
+        onClose={() => setIsSettingsModalOpen(false)} 
+        theme={theme} 
+        toggleTheme={toggleTheme} 
+        onExportData={handleExportJson} 
+        onImportData={handleImportJson} 
+        onExportToCsv={handleExportCsv} 
+        currentUser={currentUser} 
+      />
       <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
       <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
           const year = selectedDate.getFullYear();
