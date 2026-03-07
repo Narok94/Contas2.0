@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tatu - Gestão Financeira Inteligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       // Aplicação imediata do tema para evitar flash branco
@@ -18,20 +21,26 @@
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+              serif: ['Cormorant Garamond', 'serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
             colors: {
-              primary: { light: '#818cf8', DEFAULT: '#6366f1', dark: '#4f46e5' },
-              background: '#f8fafc',
-              surface: '#ffffff',
-              'surface-light': '#f1f5f9',
-              'border-color': '#e2e8f0',
+              primary: { light: '#D4AF37', DEFAULT: '#C5A059', dark: '#B38B4D' },
+              background: '#F5F2ED',
+              surface: '#FFFFFF',
+              'surface-light': '#FAF9F6',
+              'border-color': '#E5E1D8',
               dark: {
-                background: '#020617',
-                surface: '#0f172a',
-                'surface-light': '#1e293b',
-                'border-color': '#334155',
+                background: '#050B18',
+                surface: '#0A1224',
+                'surface-light': '#121C31',
+                'border-color': '#1E2B45',
               },
               success: '#10b981',
               danger: '#f43f5e',
+              gold: '#C5A059',
             },
             borderRadius: { '3xl': '1.5rem', '4xl': '2rem' },
             animation: {

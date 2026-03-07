@@ -66,7 +66,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
                 <h3 className={`font-bold text-[9px] sm:text-xs truncate leading-tight ${isPaid ? 'text-emerald-900 line-through decoration-emerald-500/50' : 'text-rose-900 dark:text-rose-100'}`}>
                     {account.name}
                 </h3>
-                <p className={`text-[10px] sm:text-base font-black tracking-tighter ${isPaid ? 'text-emerald-700' : 'text-rose-700 dark:text-rose-400'}`}>
+                <p className={`text-[10px] sm:text-base font-mono font-black tracking-tighter ${isPaid ? 'text-emerald-700' : 'text-rose-700 dark:text-rose-400'}`}>
                     {formatCurrency(account.value)}
                 </p>
             </div>

@@ -22,7 +22,11 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, setSelectedDate }) => {
   const [activeTab, setActiveTab] = useState<'summary' | 'trends' | 'history'>('summary');
-  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatCurrency = (val: number) => (
+    <span className="font-mono tracking-tighter">
+        {val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+    </span>
+  );
 
   // 1. Stats for the selected month
   const stats = useMemo(() => {
@@ -94,19 +98,19 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
   }, [accounts, incomes, selectedDate]);
 
   return (
-    <div className="space-y-6 animate-fade-in pb-20">
+    <div className="space-y-6 animate-fade-in pb-20 font-sans">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
-                    Dashboard B.I<span className="text-indigo-600">.</span>
+                <h1 className="text-4xl font-serif italic text-slate-900 dark:text-white tracking-tight">
+                    Dashboard B.I<span className="text-gold">.</span>
                 </h1>
                 <p className="text-slate-500 font-medium text-sm">Visão analítica de {format(selectedDate, 'MMMM yyyy', { locale: ptBR })}</p>
             </div>
             <div className="flex items-center gap-3">
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <button onClick={() => setActiveTab('summary')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'summary' ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Resumo</button>
-                    <button onClick={() => setActiveTab('trends')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'trends' ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Tendências</button>
-                    <button onClick={() => setActiveTab('history')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'history' ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Histórico</button>
+                <div className="flex bg-surface-light dark:bg-dark-surface-light p-1 rounded-xl border border-border-color dark:border-dark-border-color">
+                    <button onClick={() => setActiveTab('summary')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'summary' ? 'bg-white dark:bg-dark-surface text-gold shadow-sm' : 'text-slate-400'}`}>Resumo</button>
+                    <button onClick={() => setActiveTab('trends')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'trends' ? 'bg-white dark:bg-dark-surface text-gold shadow-sm' : 'text-slate-400'}`}>Tendências</button>
+                    <button onClick={() => setActiveTab('history')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'history' ? 'bg-white dark:bg-dark-surface text-gold shadow-sm' : 'text-slate-400'}`}>Histórico</button>
                 </div>
                 <MonthPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
             </div>
@@ -127,9 +131,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                             { label: 'Entradas', value: stats.totalIncome, icon: <TrendingUp className="w-5 h-5" />, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
                             { label: 'Saídas Pagas', value: stats.paid, icon: <TrendingDown className="w-5 h-5" />, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
                             { label: 'Saídas Pendentes', value: stats.pending, icon: <Calendar className="w-5 h-5" />, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-                            { label: 'Saldo Final', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+                            { label: 'Saldo Final', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-gold', bg: 'bg-gold/10 dark:bg-gold/20' },
                         ].map((stat, i) => (
-                            <div key={i} className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <div key={i} className="bg-surface dark:bg-dark-surface p-4 sm:p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm">
                                 <div className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.bg} ${stat.color} rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4`}>
                                     {stat.icon}
                                 </div>
@@ -141,9 +145,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Category Chart */}
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
-                            <h3 className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                <PieIcon className="w-4 h-4 text-indigo-600" />
+                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm">
+                            <h3 className="font-serif italic text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                                <PieIcon className="w-4 h-4 text-gold" />
                                 Gastos por Categoria
                             </h3>
                             <div className="h-[250px] w-full flex items-center">
@@ -167,9 +171,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                         </div>
 
                         {/* Quick History */}
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
-                            <h3 className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                <History className="w-4 h-4 text-indigo-600" />
+                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm">
+                            <h3 className="font-serif italic text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                                <History className="w-4 h-4 text-gold" />
                                 Últimas Transações
                             </h3>
                             <div className="space-y-3">
@@ -178,14 +182,14 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                     .sort((a, b) => new Date(('paymentDate' in b ? b.paymentDate : b.date)!).getTime() - new Date(('paymentDate' in a ? a.paymentDate : a.date)!).getTime())
                                     .slice(0, 4)
                                     .map((item, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/30">
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color/50 dark:border-dark-border-color/50">
                                             <div className="flex items-center gap-3">
                                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${'date' in item ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                                                     {'date' in item ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                                                 </div>
                                                 <span className="text-[10px] font-bold text-slate-900 dark:text-white truncate max-w-[100px]">{item.name}</span>
                                             </div>
-                                            <span className={`text-[10px] font-black ${'date' in item ? 'text-emerald-600' : 'text-rose-600'}`}>{formatCurrency(item.value)}</span>
+                                            <span className={`text-[10px] font-mono font-black ${'date' in item ? 'text-emerald-600' : 'text-rose-600'}`}>{formatCurrency(item.value)}</span>
                                         </div>
                                     ))}
                             </div>
@@ -200,10 +204,10 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="bg-white dark:bg-slate-800 p-8 rounded-[3rem] border border-slate-200 dark:border-slate-700 shadow-sm"
+                    className="bg-surface dark:bg-dark-surface p-8 rounded-[3rem] border border-border-color dark:border-dark-border-color shadow-sm"
                 >
-                    <h3 className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-8">
-                        <BarChart3 className="w-5 h-5 text-indigo-600" />
+                    <h3 className="font-serif italic text-2xl text-slate-900 dark:text-white flex items-center gap-2 mb-8">
+                        <BarChart3 className="w-5 h-5 text-gold" />
                         Fluxo de Caixa (6 Meses)
                     </h3>
                     <div className="h-[400px] w-full">
@@ -220,8 +224,8 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontFamily: 'JetBrains Mono' }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontFamily: 'JetBrains Mono' }} />
                                 <Tooltip contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                                 <Area type="monotone" dataKey="entradas" stroke="#10b981" fillOpacity={1} fill="url(#colorEntradas)" strokeWidth={3} />
                                 <Area type="monotone" dataKey="saidas" stroke="#ef4444" fillOpacity={1} fill="url(#colorSaidas)" strokeWidth={3} />
@@ -237,15 +241,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="bg-white dark:bg-slate-800 p-8 rounded-[3rem] border border-slate-200 dark:border-slate-700 shadow-sm"
+                    className="bg-surface dark:bg-dark-surface p-8 rounded-[3rem] border border-border-color dark:border-dark-border-color shadow-sm"
                 >
-                    <h3 className="font-black text-slate-900 dark:text-white mb-8">Histórico Completo do Mês</h3>
+                    <h3 className="font-serif italic text-2xl text-slate-900 dark:text-white mb-8">Histórico Completo do Mês</h3>
                     <div className="space-y-4">
                         {[...accounts, ...incomes]
                             .filter(item => ('paymentDate' in item ? item.paymentDate : item.date)?.startsWith(format(selectedDate, 'yyyy-MM')))
                             .sort((a, b) => new Date(('paymentDate' in b ? b.paymentDate : b.date)!).getTime() - new Date(('paymentDate' in a ? a.paymentDate : a.date)!).getTime())
                             .map((item, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${'date' in item ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                                             {'date' in item ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
@@ -256,10 +260,10 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className={`font-black text-sm ${'date' in item ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        <p className={`font-mono font-black text-sm ${'date' in item ? 'text-emerald-600' : 'text-rose-600'}`}>
                                             {'date' in item ? '+' : '-'} {formatCurrency(item.value)}
                                         </p>
-                                        <p className="text-[10px] text-slate-400">{format(new Date(('paymentDate' in item ? item.paymentDate : item.date)!), 'dd/MM/yyyy')}</p>
+                                        <p className="text-[10px] text-slate-400 font-mono">{format(new Date(('paymentDate' in item ? item.paymentDate : item.date)!), 'dd/MM/yyyy')}</p>
                                     </div>
                                 </div>
                             ))}

@@ -106,14 +106,14 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-indigo-500/80 shadow-inner border border-white/20">
+                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-gold/80 shadow-inner border border-white/20">
                     {logoUrl ? (
                         <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                     ) : (
                         <TatuIcon className="w-8 h-8" />
                     )}
                 </div>
-                <h1 className="text-xl font-black text-primary leading-none whitespace-nowrap hidden sm:block">TATU.</h1>
+                <h1 className="text-xl font-serif italic font-black text-primary leading-none whitespace-nowrap hidden sm:block">TATU.</h1>
             </div>
             <SyncStatusIndicator />
           </div>
