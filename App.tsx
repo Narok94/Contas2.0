@@ -20,6 +20,7 @@ import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
+import { notifyPaymentViaWhatsApp } from './utils/whatsapp';
 
 const isVariableExpense = (acc: Partial<Account>) => {
     if (!acc) return false;
@@ -52,6 +53,7 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isAiListening, setIsAiListening] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   
   const constraintsRef = useRef<HTMLDivElement>(null);
   const chatModalRef = useRef<AiChatModalRef>(null);
@@ -62,6 +64,9 @@ const App: React.FC = () => {
     const unsubAccounts = realtimeService.subscribe('accounts', setAccounts);
     const unsubIncomes = realtimeService.subscribe('incomes', setIncomes);
     const unsubCategories = realtimeService.subscribe('categories', setCategories);
+    const unsubSettings = realtimeService.subscribe('settings', (s) => {
+        setWhatsappEnabled(!!s?.whatsappEnabled);
+    });
     
     const initAuth = async () => {
         setIsLoading(true);
@@ -86,7 +91,7 @@ const App: React.FC = () => {
     };
     initAuth();
     return () => {
-        unsubUsers(); unsubGroups(); unsubAccounts(); unsubIncomes(); unsubCategories();
+        unsubUsers(); unsubGroups(); unsubAccounts(); unsubIncomes(); unsubCategories(); unsubSettings();
     };
   }, []);
   
@@ -162,6 +167,13 @@ const App: React.FC = () => {
             value: Number(acc.value)
         };
         dataService.addAccount(snapshot);
+        
+        if (isPaying) {
+            const settings = realtimeService.getSettings();
+            if (settings?.whatsappEnabled) {
+                notifyPaymentViaWhatsApp(snapshot.name, snapshot.value, settings.whatsappGroupLink);
+            }
+        }
     } else {
         // Atualizando um registro físico existente
         dataService.updateAccount({
@@ -170,6 +182,13 @@ const App: React.FC = () => {
             paymentDate: acc.paymentDate || targetDate,
             value: Number(acc.value)
         });
+
+        if (isPaying) {
+            const settings = realtimeService.getSettings();
+            if (settings?.whatsappEnabled) {
+                notifyPaymentViaWhatsApp(acc.name, Number(acc.value), settings.whatsappGroupLink);
+            }
+        }
     }
   };
 
@@ -325,6 +344,11 @@ const App: React.FC = () => {
                 onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                 onDeleteAccount={(id) => dataService.deleteAccount(id)} 
                 onToggleStatus={handleToggleAccountStatus} 
+                onNotifyWhatsApp={(acc) => {
+                    const settings = realtimeService.getSettings();
+                    notifyPaymentViaWhatsApp(acc.name, acc.value, settings?.whatsappGroupLink);
+                }}
+                whatsappEnabled={whatsappEnabled}
                 selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
                 onOpenMoveModal={() => setIsMoveModalOpen(true)} 
                 categories={categories}

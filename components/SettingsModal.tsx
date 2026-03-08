@@ -147,12 +147,22 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onExportToCsv, currentUser }) => {
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+    const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+    const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
     const isAdmin = currentUser?.role === Role.ADMIN;
 
     useEffect(() => {
         if (!isOpen) return;
-        setLogoUrl(realtimeService.getSettings()?.logoUrl);
-        return realtimeService.subscribe('settings', (s) => setLogoUrl(s?.logoUrl));
+        const settings = realtimeService.getSettings();
+        setLogoUrl(settings?.logoUrl);
+        setWhatsappEnabled(!!settings?.whatsappEnabled);
+        setWhatsappGroupLink(settings?.whatsappGroupLink || '');
+        
+        return realtimeService.subscribe('settings', (s) => {
+            setLogoUrl(s?.logoUrl);
+            setWhatsappEnabled(!!s?.whatsappEnabled);
+            setWhatsappGroupLink(s?.whatsappGroupLink || '');
+        });
     }, [isOpen]);
 
     if (!isOpen) return null;
@@ -198,6 +208,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                         <button onClick={toggleTheme} className={`relative inline-flex items-center h-7 rounded-full w-12 ${theme === 'dark' ? 'bg-indigo-600' : 'bg-slate-300'}`}>
                             <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
+                    </div>
+                    <div className="flex flex-col gap-4 p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+                        <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Notificar WhatsApp</span>
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Abrir WhatsApp ao pagar conta</span>
+                            </div>
+                            <button 
+                                onClick={() => realtimeService.updateSettings({ ...realtimeService.getSettings(), whatsappEnabled: !whatsappEnabled })} 
+                                className={`relative inline-flex items-center h-7 rounded-full w-12 ${whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                            >
+                                <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${whatsappEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+                        
+                        {whatsappEnabled && (
+                            <div className="space-y-2 animate-fade-in">
+                                <label className="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-widest">Link do Grupo (Opcional)</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="https://chat.whatsapp.com/..." 
+                                    value={whatsappGroupLink}
+                                    onChange={(e) => realtimeService.updateSettings({ ...realtimeService.getSettings(), whatsappGroupLink: e.target.value })}
+                                    className="w-full p-3 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-100 outline-none focus:ring-2 ring-emerald-500/20"
+                                />
+                                <p className="text-[9px] text-emerald-600/60 dark:text-emerald-400/40 italic">Se preenchido, o app tentará abrir o grupo diretamente.</p>
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-3">
                         <button onClick={onExportData} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">

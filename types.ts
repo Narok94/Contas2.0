@@ -14,6 +14,8 @@ export enum AccountStatus {
 export interface AppSettings {
   appName: string;
   logoUrl?: string;
+  whatsappEnabled?: boolean;
+  whatsappGroupLink?: string;
 }
 
 export interface User {

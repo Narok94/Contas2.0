@@ -20,13 +20,15 @@ interface AccountsViewProps {
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (accountId: string) => void;
   onToggleStatus: (account: Account) => void;
+  onNotifyWhatsApp?: (account: Account) => void;
+  whatsappEnabled?: boolean;
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   onOpenMoveModal: () => void;
   categories: string[];
 }
 
-const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, onDeleteAccount, onToggleStatus, selectedDate, setSelectedDate, onOpenMoveModal, categories }) => {
+const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, onDeleteAccount, onToggleStatus, onNotifyWhatsApp, whatsappEnabled, selectedDate, setSelectedDate, onOpenMoveModal, categories }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
@@ -164,6 +166,8 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                 onEdit={onEditAccount} 
                                 onDelete={onDeleteAccount} 
                                 onToggleStatus={onToggleStatus} 
+                                onNotifyWhatsApp={onNotifyWhatsApp}
+                                whatsappEnabled={whatsappEnabled}
                             />
                         ))}
                     </AnimatePresence>

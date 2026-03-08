@@ -174,26 +174,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
       >
           {/* Logo Container Centralizado e Destacado com estilo Azul Transparente */}
           <div className="flex flex-col items-center mb-10">
-              <motion.div 
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.5, type: 'spring' }}
-                  className="relative group"
-              >
-                  {/* Glowing Rings (conforme a imagem) */}
-                  <div className="absolute -inset-4 bg-gold/10 rounded-full blur-xl animate-pulse"></div>
-                  <div className="absolute -inset-2 border border-gold/20 rounded-full"></div>
-                  
-                  <div className="relative w-32 h-32 bg-gold/80 backdrop-blur-xl rounded-full border border-white/30 p-4 shadow-2xl flex items-center justify-center overflow-hidden">
-                      {logoUrl ? (
-                          <img src={logoUrl} alt="Logo" className="w-full h-full object-contain drop-shadow-lg" />
-                      ) : (
-                        <TatuIcon className="w-10/12 h-10/12 drop-shadow-[0_0_15px_rgba(197,160,89,0.5)]" />
-                      )}
-                  </div>
-              </motion.div>
-              
-              <div className="text-center mt-6">
+              <div className="text-center">
                   <h1 className="text-5xl font-serif italic font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">
                     TATU<span className="text-gold">.</span>
                   </h1>
