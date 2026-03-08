@@ -118,6 +118,83 @@ const AiLogoGenerator: React.FC<{ onLogoGenerated: (url: string) => void }> = ({
     );
 };
 
+const WhatsappSettings: React.FC = () => {
+    const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+    const [link, setLink] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const settings = realtimeService.getSettings();
+        setWhatsappEnabled(!!settings?.whatsappEnabled);
+        setLink(settings?.whatsappGroupLink || '');
+        
+        const unsub = realtimeService.subscribe('settings', (s) => {
+            setWhatsappEnabled(!!s?.whatsappEnabled);
+            // Only update link if not currently editing? 
+            // Actually, let's just keep it simple.
+            if (!isSaving) setLink(s?.whatsappGroupLink || '');
+        });
+        return () => unsub();
+    }, [isSaving]);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        const settings = realtimeService.getSettings();
+        await realtimeService.updateSettings({ ...settings, whatsappGroupLink: link });
+        setIsSaving(false);
+        alert('Link do grupo salvo com sucesso!');
+    };
+
+    const toggleEnabled = () => {
+        const settings = realtimeService.getSettings();
+        realtimeService.updateSettings({ ...settings, whatsappEnabled: !whatsappEnabled });
+    };
+
+    return (
+        <div className="flex flex-col gap-4 p-5 bg-emerald-50 dark:bg-emerald-900/10 rounded-[2rem] border-2 border-emerald-100 dark:border-emerald-900/30 shadow-sm">
+            <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                    <h3 className="text-sm font-black text-emerald-900 dark:text-emerald-100 uppercase tracking-tight">Notificações WhatsApp</h3>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Abrir WhatsApp ao pagar conta</span>
+                </div>
+                <button 
+                    onClick={toggleEnabled} 
+                    className={`relative inline-flex items-center h-7 rounded-full w-12 transition-colors ${whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                >
+                    <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${whatsappEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+            </div>
+            
+            {whatsappEnabled && (
+                <div className="space-y-3 animate-fade-in pt-2 border-t border-emerald-100 dark:border-emerald-900/20">
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-widest ml-1">Link do Grupo (Opcional)</label>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="https://chat.whatsapp.com/..." 
+                                value={link}
+                                onChange={(e) => setLink(e.target.value)}
+                                className="flex-1 p-3 bg-white dark:bg-slate-800 border-2 border-emerald-100 dark:border-emerald-900/50 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-100 outline-none focus:ring-2 ring-emerald-500/20 transition-all"
+                            />
+                            <button 
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                className="px-4 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {isSaving ? '...' : 'Salvar'}
+                            </button>
+                        </div>
+                    </div>
+                    <p className="text-[9px] text-emerald-600/60 dark:text-emerald-400/40 italic px-1">
+                        Se preenchido, o app facilitará o envio direto para este grupo.
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const CloudStatusCard: React.FC = () => {
     const [status, setStatus] = useState<SyncStatus>('local');
     const [lastSync, setLastSync] = useState<Date | undefined>();
@@ -202,40 +279,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                         </>
                     )}
                     <CategoryManager />
+                    <WhatsappSettings />
                     <CloudStatusCard />
                     <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
                         <span className="text-sm font-bold">Modo Escuro</span>
                         <button onClick={toggleTheme} className={`relative inline-flex items-center h-7 rounded-full w-12 ${theme === 'dark' ? 'bg-indigo-600' : 'bg-slate-300'}`}>
                             <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
-                    </div>
-                    <div className="flex flex-col gap-4 p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
-                        <div className="flex items-center justify-between">
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Notificar WhatsApp</span>
-                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Abrir WhatsApp ao pagar conta</span>
-                            </div>
-                            <button 
-                                onClick={() => realtimeService.updateSettings({ ...realtimeService.getSettings(), whatsappEnabled: !whatsappEnabled })} 
-                                className={`relative inline-flex items-center h-7 rounded-full w-12 ${whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
-                            >
-                                <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${whatsappEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
-                        </div>
-                        
-                        {whatsappEnabled && (
-                            <div className="space-y-2 animate-fade-in">
-                                <label className="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-widest">Link do Grupo (Opcional)</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="https://chat.whatsapp.com/..." 
-                                    value={whatsappGroupLink}
-                                    onChange={(e) => realtimeService.updateSettings({ ...realtimeService.getSettings(), whatsappGroupLink: e.target.value })}
-                                    className="w-full p-3 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-100 outline-none focus:ring-2 ring-emerald-500/20"
-                                />
-                                <p className="text-[9px] text-emerald-600/60 dark:text-emerald-400/40 italic">Se preenchido, o app tentará abrir o grupo diretamente.</p>
-                            </div>
-                        )}
                     </div>
                     <div className="space-y-3">
                         <button onClick={onExportData} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">

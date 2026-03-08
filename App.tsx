@@ -205,6 +205,7 @@ const App: React.FC = () => {
       const sanitizedCurrent = data.currentInstallment ? Number(data.currentInstallment) : undefined;
 
       if (data.id && (existingAccount || isEditingProjection)) {
+          // ... (existing update logic)
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
               let baseId = data.id.toString().replace(/^projected-/, '');
               const parts = baseId.split('-');
@@ -219,7 +220,7 @@ const App: React.FC = () => {
                   ...data, 
                   id: `acc-snap-${Date.now()}`, 
                   value: sanitizedValue,
-                  paymentDate: targetDate, 
+                  paymentDate: data.paymentDate || targetDate, 
                   status: data.status || AccountStatus.PENDING,
                   currentInstallment: sanitizedCurrent,
                   totalInstallments: sanitizedTotal || original?.totalInstallments,
@@ -242,23 +243,47 @@ const App: React.FC = () => {
           };
           realtimeService.updateAccountAndSeries(updateData);
       } else {
-          const finalId = `acc-${Date.now()}`;
           const isVar = isVariableExpense(data);
           const isRec = isVar ? true : Boolean(data.isRecurrent);
           const isInst = Boolean(data.isInstallment);
+          const installmentId = isInst ? `inst-${Date.now()}` : undefined;
           
-          dataService.addAccount({
-              ...data,
-              id: finalId,
-              value: sanitizedValue,
-              isRecurrent: isRec,
-              isInstallment: isInst,
-              installmentId: isInst ? `inst-${Date.now()}` : undefined,
-              currentInstallment: isInst ? (sanitizedCurrent || 1) : undefined,
-              totalInstallments: sanitizedTotal,
-              status: AccountStatus.PENDING,
-              paymentDate: (isRec && !isInst) ? undefined : targetDate
-          });
+          if (isInst && sanitizedTotal && sanitizedTotal > 1) {
+              // Create all installments
+              const baseDate = data.paymentDate ? new Date(data.paymentDate) : new Date(targetDate);
+              
+              for (let i = 1; i <= sanitizedTotal; i++) {
+                  const currentDate = new Date(baseDate);
+                  currentDate.setMonth(baseDate.getMonth() + (i - 1));
+                  
+                  dataService.addAccount({
+                      ...data,
+                      id: `acc-${Date.now()}-${i}`,
+                      value: sanitizedValue,
+                      isRecurrent: false, // Installments are fixed series
+                      isInstallment: true,
+                      installmentId: installmentId,
+                      currentInstallment: i,
+                      totalInstallments: sanitizedTotal,
+                      status: AccountStatus.PENDING,
+                      paymentDate: currentDate.toISOString()
+                  });
+              }
+          } else {
+              // Single account or simple recurrent template
+              dataService.addAccount({
+                  ...data,
+                  id: `acc-${Date.now()}`,
+                  value: sanitizedValue,
+                  isRecurrent: isRec,
+                  isInstallment: isInst,
+                  installmentId: installmentId,
+                  currentInstallment: isInst ? (sanitizedCurrent || 1) : undefined,
+                  totalInstallments: sanitizedTotal,
+                  status: AccountStatus.PENDING,
+                  paymentDate: (isRec && !isInst) ? undefined : (data.paymentDate || targetDate)
+              });
+          }
       }
   };
 
@@ -384,20 +409,45 @@ const App: React.FC = () => {
               const isVar = isVariableExpense(item);
               const isRec = isVar ? true : Boolean(item.isRecurrent);
               const isInst = Boolean(item.isInstallment);
+              const sanitizedTotal = item.totalInstallments ? Number(item.totalInstallments) : undefined;
+              const installmentId = isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined;
+              const sanitizedValue = Number(item.value);
               
-              dataService.addAccount({
-                  ...item,
-                  id: `batch-${Date.now()}-${Math.random()}`,
-                  groupId: activeGroupId,
-                  value: Number(item.value),
-                  isRecurrent: isRec,
-                  isInstallment: isInst,
-                  installmentId: isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined,
-                  currentInstallment: isInst ? (Number(item.currentInstallment) || 1) : undefined,
-                  totalInstallments: item.totalInstallments ? Number(item.totalInstallments) : undefined,
-                  paymentDate: (isRec && !isInst) ? undefined : defaultDate,
-                  status: AccountStatus.PENDING
-              });
+              if (isInst && sanitizedTotal && sanitizedTotal > 1) {
+                  const baseDate = new Date(defaultDate);
+                  for (let i = 1; i <= sanitizedTotal; i++) {
+                      const currentDate = new Date(baseDate);
+                      currentDate.setMonth(baseDate.getMonth() + (i - 1));
+                      
+                      dataService.addAccount({
+                          ...item,
+                          id: `batch-${Date.now()}-${Math.random()}-${i}`,
+                          groupId: activeGroupId,
+                          value: sanitizedValue,
+                          isRecurrent: false,
+                          isInstallment: true,
+                          installmentId: installmentId,
+                          currentInstallment: i,
+                          totalInstallments: sanitizedTotal,
+                          paymentDate: currentDate.toISOString(),
+                          status: AccountStatus.PENDING
+                      });
+                  }
+              } else {
+                  dataService.addAccount({
+                      ...item,
+                      id: `batch-${Date.now()}-${Math.random()}`,
+                      groupId: activeGroupId,
+                      value: sanitizedValue,
+                      isRecurrent: isRec,
+                      isInstallment: isInst,
+                      installmentId: installmentId,
+                      currentInstallment: isInst ? (Number(item.currentInstallment) || 1) : undefined,
+                      totalInstallments: sanitizedTotal,
+                      paymentDate: (isRec && !isInst) ? undefined : defaultDate,
+                      status: AccountStatus.PENDING
+                  });
+              }
           });
       }} categories={categories} />
       <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => setIsAccountModalOpen(true)} onSelectBatch={() => setIsBatchModalOpen(true)} />

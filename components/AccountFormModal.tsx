@@ -20,6 +20,7 @@ type AccountFormData = {
   isRecurrent: boolean;
   isInstallment: boolean;
   totalInstallments: string;
+  paymentDate: string;
   groupId: string;
 };
 
@@ -30,6 +31,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
   const [isRecurrent, setIsRecurrent] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState('2');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
   const initialStateRef = useRef<AccountFormData | null>(null);
@@ -46,6 +48,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             isRecurrent: account.isRecurrent,
             isInstallment: account.isInstallment,
             totalInstallments: String(account.totalInstallments || 2),
+            paymentDate: account.paymentDate ? account.paymentDate.split('T')[0] : new Date().toISOString().split('T')[0],
             groupId: initialGroupId,
           }
         : {
@@ -55,6 +58,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             isRecurrent: false,
             isInstallment: false,
             totalInstallments: '2',
+            paymentDate: new Date().toISOString().split('T')[0],
             groupId: initialGroupId,
           };
       
@@ -66,6 +70,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       setIsRecurrent(initialState.isRecurrent);
       setIsInstallment(initialState.isInstallment);
       setTotalInstallments(initialState.totalInstallments);
+      setPaymentDate(initialState.paymentDate);
       setShowConfirmDialog(false); // Reset confirmation on open
     }
   }, [isOpen, account, categories, activeGroupId]);
@@ -81,6 +86,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
     if (initialStateRef.current.isRecurrent !== isRecurrent) return true;
     if (initialStateRef.current.isInstallment !== isInstallment) return true;
     if (isInstallment && initialStateRef.current.totalInstallments !== totalInstallments) return true;
+    if (initialStateRef.current.paymentDate !== paymentDate) return true;
     
     return false;
   };
@@ -114,6 +120,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       isRecurrent,
       isInstallment,
       totalInstallments: isInstallment ? parseInt(totalInstallments, 10) : undefined,
+      paymentDate: paymentDate ? `${paymentDate}T12:00:00Z` : undefined,
       currentInstallment: account?.currentInstallment,
       installmentId: account?.installmentId,
       groupId: account?.groupId || activeGroupId,
@@ -171,6 +178,10 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
               <label htmlFor="account-value" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Valor (R$)</label>
               <input id="account-value" type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary" />
             </div>
+          </div>
+          <div>
+            <label htmlFor="account-date" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Data de Vencimento/Pagamento</label>
+            <input id="account-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary" />
           </div>
           <div>
             <label htmlFor="account-category" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Categoria</label>
