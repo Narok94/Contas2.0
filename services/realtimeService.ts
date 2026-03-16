@@ -81,7 +81,7 @@ class RealtimeService {
 
     const hasAnyData = recoveredAccounts.length > 0 || recoveredIncomes.length > 0;
 
-    return {
+    const db = {
       users: recoveredUsers.length ? recoveredUsers : MOCK_USERS,
       groups: recoveredGroups.length ? recoveredGroups : MOCK_GROUPS,
       accounts: recoveredAccounts.length ? recoveredAccounts : (hasAnyData ? [] : MOCK_ACCOUNTS),
@@ -89,6 +89,20 @@ class RealtimeService {
       incomes: recoveredIncomes.length ? recoveredIncomes : (hasAnyData ? [] : MOCK_INCOMES),
       settings: recoveredSettings,
     };
+
+    // Garantir que o usuário 'teste' exista para login
+    const testUser = MOCK_USERS.find(u => u.username === 'teste');
+    if (testUser && !db.users.find(u => u.username === 'teste')) {
+        db.users.push(testUser);
+    }
+
+    // Garantir que o grupo 'group-teste' exista
+    const testGroup = MOCK_GROUPS.find(g => g.id === 'group-teste');
+    if (testGroup && !db.groups.find(g => g.id === 'group-teste')) {
+        db.groups.push(testGroup);
+    }
+
+    return db;
   }
 
   private async init() {
@@ -142,6 +156,20 @@ class RealtimeService {
                     ...remoteUserData, 
                     settings: remoteSettingsData?.settings || this.db.settings 
                 };
+            }
+
+            // Se for o usuário teste, garantir que ele tenha as 10 contas de teste se estiver vazio
+            if (this.currentUserIdentifier === 'teste') {
+                const hasTestAccounts = this.db.accounts.some(a => a.groupId === 'group-teste');
+                if (!hasTestAccounts) {
+                    const testAccounts = MOCK_ACCOUNTS.filter(a => a.groupId === 'group-teste');
+                    this.db.accounts = [...this.db.accounts, ...testAccounts];
+                    
+                    const testIncomes = MOCK_INCOMES.filter(i => i.groupId === 'group-teste');
+                    this.db.incomes = [...this.db.incomes, ...testIncomes];
+                    
+                    this.persistRemote(); // Salva no banco remoto
+                }
             }
         }
         this.saveLocal();
