@@ -339,8 +339,8 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background font-sans">
             <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
-                <p className="font-serif italic font-black text-gold animate-pulse tracking-tighter text-2xl">TATU.</p>
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="font-serif italic font-black text-primary animate-pulse tracking-tighter text-2xl">TATU.</p>
             </div>
         </div>
     );

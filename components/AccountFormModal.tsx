@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { type Account } from '../types';
 
@@ -136,83 +135,87 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
         onClick={handleAttemptClose}
     >
       <div 
-          className="relative bg-surface dark:bg-dark-surface rounded-2xl shadow-xl p-6 w-full max-w-lg animate-fade-in-up" 
+          className="relative bg-surface dark:bg-dark-surface rounded-[2.5rem] shadow-2xl p-8 w-full max-w-lg animate-fade-in-up border border-border-color dark:border-dark-border-color" 
           onClick={e => e.stopPropagation()}
       >
         {showConfirmDialog && (
-            <div className="absolute inset-0 bg-surface/80 dark:bg-dark-surface/80 backdrop-blur-sm flex flex-col justify-center items-center z-10 rounded-2xl p-4 animate-fade-in">
-                <div className="text-center">
-                    <h3 className="text-xl font-bold mb-2">Descartar Alterações?</h3>
-                    <p className="text-sm text-text-secondary dark:text-dark-text-secondary mb-6 max-w-xs">
-                        Você tem alterações não salvas. Tem certeza que quer sair e perdê-las?
-                    </p>
-                    <div className="flex justify-center space-x-4">
-                        <button 
-                            onClick={handleCancelDiscard} 
-                            className="px-6 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors font-semibold"
-                        >
-                            Cancelar
-                        </button>
-                        <button 
-                            onClick={handleConfirmDiscard} 
-                            className="px-6 py-2 rounded-md bg-danger text-white hover:opacity-90 transition-opacity font-semibold"
-                        >
-                            Descartar
-                        </button>
-                    </div>
+            <div className="absolute inset-0 bg-surface/90 dark:bg-dark-surface/90 backdrop-blur-md flex flex-col justify-center items-center z-10 rounded-[2.5rem] p-8 animate-fade-in text-center">
+                <h3 className="text-2xl font-serif italic text-slate-900 dark:text-white mb-4">Descartar Alterações?</h3>
+                <p className="text-slate-500 dark:text-slate-400 mb-8">
+                    Você tem alterações não salvas. Tem certeza que quer sair e perdê-las?
+                </p>
+                <div className="flex flex-col w-full gap-3">
+                    <button 
+                        onClick={handleCancelDiscard} 
+                        className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    >
+                        Continuar Editando
+                    </button>
+                    <button 
+                        onClick={handleConfirmDiscard} 
+                        className="w-full py-4 rounded-2xl bg-danger text-white font-black uppercase text-xs tracking-widest hover:bg-danger-dark transition-colors shadow-lg shadow-danger/20"
+                    >
+                        Descartar e Sair
+                    </button>
                 </div>
             </div>
         )}
         
-        <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">{account ? 'Editar Conta' : 'Nova Conta'}</h2>
-            <button onClick={handleAttemptClose} className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-3xl">&times;</button>
+        <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-serif italic text-slate-900 dark:text-white">{account ? 'Editar Conta' : 'Nova Conta'}<span className="text-primary">.</span></h2>
+            <button onClick={handleAttemptClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors text-2xl">&times;</button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="account-name" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Nome</label>
-              <input id="account-name" type="text" value={name} onChange={e => setName(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary" />
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <label htmlFor="account-name" className="text-[10px] font-black uppercase text-slate-400 ml-1">Nome</label>
+              <input id="account-name" type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
             </div>
-            <div>
-              <label htmlFor="account-value" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Valor (R$)</label>
-              <input id="account-value" type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary" />
+            <div className="space-y-1">
+              <label htmlFor="account-value" className="text-[10px] font-black uppercase text-slate-400 ml-1">Valor (R$)</label>
+              <input id="account-value" type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all font-mono" />
             </div>
           </div>
-          <div>
-            <label htmlFor="account-date" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Data de Vencimento/Pagamento</label>
-            <input id="account-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} required className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary" />
+
+          <div className="space-y-1">
+            <label htmlFor="account-date" className="text-[10px] font-black uppercase text-slate-400 ml-1">Vencimento</label>
+            <input id="account-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
           </div>
-          <div>
-            <label htmlFor="account-category" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Categoria</label>
-            <div className="flex items-center space-x-2 mt-1">
-                <select id="account-category" value={category} onChange={e => setCategory(e.target.value)} required className="w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary">
+
+          <div className="space-y-1">
+            <label htmlFor="account-category" className="text-[10px] font-black uppercase text-slate-400 ml-1">Categoria</label>
+            <div className="flex items-center space-x-3">
+                <select id="account-category" value={category} onChange={e => setCategory(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none cursor-pointer">
                 {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
-                <button type="button" onClick={onManageCategories} className="p-2 rounded-md bg-primary/20 text-primary hover:bg-primary/30 transition-colors" title="Gerenciar Categorias">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" /></svg>
+                <button type="button" onClick={onManageCategories} className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Gerenciar Categorias">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" /></svg>
                 </button>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-8 space-y-4 sm:space-y-0">
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-8 space-y-4 sm:space-y-0 p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl border border-border-color dark:border-dark-border-color">
             <div className="flex items-center">
-              <input id="account-recurrent" type="checkbox" checked={isRecurrent} onChange={e => setIsRecurrent(e.target.checked)} disabled={isInstallment} className="h-4 w-4 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded" />
-              <label htmlFor="account-recurrent" className="ml-2 block text-sm text-text-secondary dark:text-dark-text-secondary">Conta Recorrente</label>
+              <input id="account-recurrent" type="checkbox" checked={isRecurrent} onChange={e => setIsRecurrent(e.target.checked)} disabled={isInstallment} className="h-5 w-5 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded-lg cursor-pointer" />
+              <label htmlFor="account-recurrent" className="ml-3 block text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer">Recorrente</label>
             </div>
             <div className="flex items-center">
-              <input id="account-installment" type="checkbox" checked={isInstallment} onChange={e => { setIsInstallment(e.target.checked); if (e.target.checked) setIsRecurrent(false); }} className="h-4 w-4 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded" />
-              <label htmlFor="account-installment" className="ml-2 block text-sm text-text-secondary dark:text-dark-text-secondary">É Parcelada?</label>
+              <input id="account-installment" type="checkbox" checked={isInstallment} onChange={e => { setIsInstallment(e.target.checked); if (e.target.checked) setIsRecurrent(false); }} className="h-5 w-5 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded-lg cursor-pointer" />
+              <label htmlFor="account-installment" className="ml-3 block text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer">Parcelada</label>
             </div>
           </div>
+
           {isInstallment && (
-            <div className="animate-fade-in">
-              <label htmlFor="account-total-installments" className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">Total de Parcelas</label>
-              <input id="account-total-installments" type="number" min="2" value={totalInstallments} onChange={e => setTotalInstallments(e.target.value)} required={isInstallment} className="mt-1 w-full p-2 rounded bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary" />
+            <div className="animate-fade-in space-y-1">
+              <label htmlFor="account-total-installments" className="text-[10px] font-black uppercase text-slate-400 ml-1">Total de Parcelas</label>
+              <input id="account-total-installments" type="number" min="2" value={totalInstallments} onChange={e => setTotalInstallments(e.target.value)} required={isInstallment} className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" />
             </div>
           )}
-          <div className="flex justify-end space-x-2 pt-4 mt-4 border-t border-border-color dark:border-dark-border-color">
-            <button type="button" onClick={handleAttemptClose} className="px-4 py-2 rounded-md bg-surface-light dark:bg-dark-surface-light hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">Cancelar</button>
-            <button type="submit" className="px-4 py-2 rounded-md bg-primary text-white hover:bg-primary-dark transition-colors">{account ? 'Salvar Alterações' : 'Adicionar Conta'}</button>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-border-color dark:border-dark-border-color">
+            <button type="button" onClick={handleAttemptClose} className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+            <button type="submit" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-primary text-white font-black uppercase text-[10px] tracking-widest hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-95">{account ? 'Salvar Alterações' : 'Adicionar Conta'}</button>
           </div>
         </form>
       </div>

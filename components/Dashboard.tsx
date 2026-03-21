@@ -19,7 +19,7 @@ interface DashboardProps {
   setSelectedDate: (date: Date) => void;
 }
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+const COLORS = ['#3b82f6', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, setSelectedDate }) => {
   const [activeTab, setActiveTab] = useState<'summary' | 'trends' | 'history'>('summary');
@@ -98,15 +98,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col gap-1">
                 <h1 className="text-4xl font-serif italic text-slate-900 dark:text-white tracking-tight">
-                    Dashboard B.I<span className="text-gold">.</span>
+                    Dashboard<span className="text-primary">.</span>
                 </h1>
                 <p className="text-slate-500 font-medium text-sm">Visão analítica de {format(selectedDate, 'MMMM yyyy', { locale: ptBR })}</p>
             </div>
             <div className="flex items-center gap-3">
                 <div className="flex bg-surface-light dark:bg-dark-surface-light p-1 rounded-xl border border-border-color dark:border-dark-border-color">
-                    <button onClick={() => setActiveTab('summary')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'summary' ? 'bg-white dark:bg-dark-surface text-gold shadow-sm' : 'text-slate-400'}`}>Resumo</button>
-                    <button onClick={() => setActiveTab('trends')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'trends' ? 'bg-white dark:bg-dark-surface text-gold shadow-sm' : 'text-slate-400'}`}>Tendências</button>
-                    <button onClick={() => setActiveTab('history')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'history' ? 'bg-white dark:bg-dark-surface text-gold shadow-sm' : 'text-slate-400'}`}>Histórico</button>
+                    <button onClick={() => setActiveTab('summary')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'summary' ? 'bg-white dark:bg-dark-surface text-primary shadow-sm' : 'text-slate-400'}`}>Resumo</button>
+                    <button onClick={() => setActiveTab('trends')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'trends' ? 'bg-white dark:bg-dark-surface text-primary shadow-sm' : 'text-slate-400'}`}>Tendências</button>
+                    <button onClick={() => setActiveTab('history')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'history' ? 'bg-white dark:bg-dark-surface text-primary shadow-sm' : 'text-slate-400'}`}>Histórico</button>
                 </div>
                 <MonthPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
             </div>
@@ -128,9 +128,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                             { label: 'Saídas Pagas', value: stats.paid, icon: <TrendingDown className="w-5 h-5" />, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
                             { label: 'Pendentes (Mês)', value: stats.pending, icon: <Calendar className="w-5 h-5" />, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
                             { label: 'Total a Pagar', value: stats.totalPendingGlobal, icon: <AlertCircle className="w-5 h-5" />, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-                            { label: 'Saldo Final', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-gold', bg: 'bg-gold/10 dark:bg-gold/20' },
+                            { label: 'Saldo Final', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-primary', bg: 'bg-primary/10 dark:bg-primary/20' },
                         ].map((stat, i) => (
-                            <div key={i} className={`bg-surface dark:bg-dark-surface p-4 sm:p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm ${i === 4 ? 'col-span-2 md:col-span-1' : ''}`}>
+                            <div key={i} className={`bg-surface dark:bg-dark-surface p-4 sm:p-6 rounded-[2.5rem] border border-border-color dark:border-dark-border-color shadow-sm ${i === 4 ? 'col-span-2 md:col-span-1' : ''}`}>
                                 <div className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.bg} ${stat.color} rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4`}>
                                     {stat.icon}
                                 </div>
@@ -142,9 +142,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Category Chart */}
-                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm">
+                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-[2.5rem] border border-border-color dark:border-dark-border-color shadow-sm">
                             <h3 className="font-serif italic text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                <PieIcon className="w-4 h-4 text-gold" />
+                                <PieIcon className="w-4 h-4 text-primary" />
                                 Gastos por Categoria
                             </h3>
                             <div className="h-[250px] w-full flex items-center">
@@ -168,9 +168,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                         </div>
 
                         {/* Quick History */}
-                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm">
+                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-[2.5rem] border border-border-color dark:border-dark-border-color shadow-sm">
                             <h3 className="font-serif italic text-lg text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                <History className="w-4 h-4 text-gold" />
+                                <History className="w-4 h-4 text-primary" />
                                 Últimas Transações
                             </h3>
                             <div className="space-y-3">
@@ -210,7 +210,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                     className="bg-surface dark:bg-dark-surface p-8 rounded-[3rem] border border-border-color dark:border-dark-border-color shadow-sm"
                 >
                     <h3 className="font-serif italic text-2xl text-slate-900 dark:text-white flex items-center gap-2 mb-8">
-                        <BarChart3 className="w-5 h-5 text-gold" />
+                        <BarChart3 className="w-5 h-5 text-primary" />
                         Fluxo de Caixa (6 Meses)
                     </h3>
                     <div className="h-[400px] w-full">

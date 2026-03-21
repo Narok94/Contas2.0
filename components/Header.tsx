@@ -4,14 +4,14 @@ import realtimeService, { type SyncStatus } from '../services/realtimeService';
 
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#2D9F75" />
-    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#4ADE80" />
-    <path d="M40 36V65M50 35V65M60 36V65" stroke="#2D9F75" strokeWidth="1.5" />
-    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#A3E635" />
-    <circle cx="20" cy="58" r="1.5" fill="#2D9F75" />
-    <path d="M80 60L88 65H80V60Z" fill="#A3E635" />
-    <rect x="30" y="65" width="10" height="5" rx="1" fill="#A3E635" />
-    <rect x="60" y="65" width="10" height="5" rx="1" fill="#A3E635" />
+    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#3b82f6" />
+    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#60a5fa" />
+    <path d="M40 36V65M50 35V65M60 36V65" stroke="#2563eb" strokeWidth="1.5" />
+    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#22c55e" />
+    <circle cx="20" cy="58" r="1.5" fill="#1e3a8a" />
+    <path d="M80 60L88 65H80V60Z" fill="#22c55e" />
+    <rect x="30" y="65" width="10" height="5" rx="1" fill="#22c55e" />
+    <rect x="60" y="65" width="10" height="5" rx="1" fill="#22c55e" />
   </svg>
 );
 
@@ -106,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-gold/80 shadow-inner border border-white/20">
+                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-primary/20 shadow-inner border border-white/20">
                     {logoUrl ? (
                         <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                     ) : (
