@@ -43,22 +43,22 @@ const CategoryManager: React.FC = () => {
                 )}
             </div>
             {isAdding && (
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 flex flex-col gap-3 animate-fade-in">
+                <div className="bg-surface-light dark:bg-dark-surface-light p-4 rounded-2xl border border-primary/20 dark:border-primary/10 flex flex-col gap-3 animate-fade-in">
                     <div className="flex gap-2">
-                        <input type="text" value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} className="w-12 p-2 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center" />
-                        <input type="text" placeholder="Nome" value={newName} onChange={(e) => setNewName(e.target.value)} className="flex-1 p-2 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-sm font-bold" />
+                        <input type="text" value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} className="w-12 p-2 bg-surface dark:bg-dark-surface border-2 border-border-color dark:border-dark-border-color rounded-xl text-center text-text-primary dark:text-dark-text-primary" />
+                        <input type="text" placeholder="Nome" value={newName} onChange={(e) => setNewName(e.target.value)} className="flex-1 p-2 bg-surface dark:bg-dark-surface border-2 border-border-color dark:border-dark-border-color rounded-xl text-sm font-bold text-text-primary dark:text-dark-text-primary" />
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-[10px] font-black uppercase text-slate-400">Cancelar</button>
-                        <button onClick={handleAdd} className="flex-1 py-2 text-[10px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20">Salvar</button>
+                        <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted">Cancelar</button>
+                        <button onClick={handleAdd} className="flex-1 py-2 text-[10px] font-black uppercase bg-primary text-white rounded-xl shadow-lg shadow-primary/20">Salvar</button>
                     </div>
                 </div>
             )}
             <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
                 {categories.map((cat, idx) => (
-                    <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 transition-all hover:border-rose-300">
-                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{cat}</span>
-                        <button onClick={() => handleRemove(cat)} className="opacity-0 group-hover:opacity-100 text-rose-500 transition-opacity">
+                    <div key={idx} className="group flex items-center gap-2 px-3 py-1.5 bg-surface-light dark:bg-dark-surface-light rounded-xl border border-border-color dark:border-dark-border-color transition-all hover:border-danger/30">
+                        <span className="text-xs font-bold text-text-secondary dark:text-dark-text-secondary">{cat}</span>
+                        <button onClick={() => handleRemove(cat)} className="opacity-0 group-hover:opacity-100 text-danger transition-opacity">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </button>
                     </div>
@@ -96,20 +96,20 @@ const AiLogoGenerator: React.FC<{ onLogoGenerated: (url: string) => void }> = ({
     return (
         <div className="space-y-4">
             <h3 className="text-lg font-black tracking-tight text-text-primary dark:text-dark-text-primary">Identidade com IA</h3>
-            <div className="p-6 bg-indigo-50 dark:bg-indigo-950/20 rounded-[2rem] border-2 border-indigo-100 dark:border-indigo-900/30">
+            <div className="p-6 bg-primary/5 dark:bg-primary/10 rounded-[2rem] border-2 border-primary/10 dark:border-primary/20">
                 {!previewUrl ? (
                     <div className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto shadow-inner text-2xl">🎨</div>
-                        <button onClick={generateLogo} disabled={isGenerating} className="w-full py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/30 active:scale-95 transition-all disabled:opacity-50">
+                        <div className="w-16 h-16 bg-surface dark:bg-dark-surface rounded-full flex items-center justify-center mx-auto shadow-inner text-2xl">🎨</div>
+                        <button onClick={generateLogo} disabled={isGenerating} className="w-full py-3 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-50">
                             {isGenerating ? 'Criando...' : 'Gerar Logo com IA'}
                         </button>
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        <img src={previewUrl} className="w-32 h-32 mx-auto rounded-3xl border-4 border-white shadow-xl" />
+                        <img src={previewUrl} className="w-32 h-32 mx-auto rounded-3xl border-4 border-surface dark:border-dark-surface shadow-xl" />
                         <div className="flex gap-2">
-                            <button onClick={() => setPreviewUrl(null)} className="flex-1 py-3 text-[10px] font-black text-slate-400">Descartar</button>
-                            <button onClick={() => { onLogoGenerated(previewUrl); setPreviewUrl(null); }} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px]">Aplicar</button>
+                            <button onClick={() => setPreviewUrl(null)} className="flex-1 py-3 text-[10px] font-black text-text-muted dark:text-dark-text-muted">Descartar</button>
+                            <button onClick={() => { onLogoGenerated(previewUrl); setPreviewUrl(null); }} className="flex-1 py-3 bg-success text-white rounded-xl font-black text-[10px]">Aplicar</button>
                         </div>
                     </div>
                 )}
@@ -151,42 +151,42 @@ const WhatsappSettings: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-4 p-5 bg-emerald-50 dark:bg-emerald-900/10 rounded-[2rem] border-2 border-emerald-100 dark:border-emerald-900/30 shadow-sm">
+        <div className="flex flex-col gap-4 p-5 bg-success/5 dark:bg-success/10 rounded-[2rem] border-2 border-success/10 dark:border-success/20 shadow-sm">
             <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                    <h3 className="text-sm font-black text-emerald-900 dark:text-emerald-100 uppercase tracking-tight">Notificações WhatsApp</h3>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Abrir WhatsApp ao pagar conta</span>
+                    <h3 className="text-sm font-black text-success dark:text-success uppercase tracking-tight">Notificações WhatsApp</h3>
+                    <span className="text-[10px] text-success/70 dark:text-success/60 font-medium">Abrir WhatsApp ao pagar conta</span>
                 </div>
                 <button 
                     onClick={toggleEnabled} 
-                    className={`relative inline-flex items-center h-7 rounded-full w-12 transition-colors ${whatsappEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                    className={`relative inline-flex items-center h-7 rounded-full w-12 transition-colors ${whatsappEnabled ? 'bg-success' : 'bg-surface-light dark:bg-dark-surface-light'}`}
                 >
                     <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${whatsappEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
             </div>
             
             {whatsappEnabled && (
-                <div className="space-y-3 animate-fade-in pt-2 border-t border-emerald-100 dark:border-emerald-900/20">
+                <div className="space-y-3 animate-fade-in pt-2 border-t border-success/10 dark:border-success/20">
                     <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-widest ml-1">Link do Grupo (Opcional)</label>
+                        <label className="text-[9px] font-black uppercase text-success/80 dark:text-success/70 tracking-widest ml-1">Link do Grupo (Opcional)</label>
                         <div className="flex gap-2">
                             <input 
                                 type="text" 
                                 placeholder="https://chat.whatsapp.com/..." 
                                 value={link}
                                 onChange={(e) => setLink(e.target.value)}
-                                className="flex-1 p-3 bg-white dark:bg-slate-800 border-2 border-emerald-100 dark:border-emerald-900/50 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-100 outline-none focus:ring-2 ring-emerald-500/20 transition-all"
+                                className="flex-1 p-3 bg-surface dark:bg-dark-surface border-2 border-success/10 dark:border-success/20 rounded-xl text-xs font-bold text-text-primary dark:text-dark-text-primary outline-none focus:ring-2 ring-success/20 transition-all"
                             />
                             <button 
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="px-4 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                className="px-4 bg-success text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-success/20 active:scale-95 transition-all disabled:opacity-50"
                             >
                                 {isSaving ? '...' : 'Salvar'}
                             </button>
                         </div>
                     </div>
-                    <p className="text-[9px] text-emerald-600/60 dark:text-emerald-400/40 italic px-1">
+                    <p className="text-[9px] text-success/60 dark:text-success/40 italic px-1">
                         Se preenchido, o app facilitará o envio direto para este grupo.
                     </p>
                 </div>
@@ -206,12 +206,12 @@ const CloudStatusCard: React.FC = () => {
     }, []);
 
     return (
-        <div className="p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+        <div className="p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl border border-border-color dark:border-dark-border-color space-y-3">
             <div className="flex items-center space-x-3">
-                <span className="font-black text-xs uppercase tracking-widest">Sincronização: {status}</span>
+                <span className="font-black text-xs uppercase tracking-widest text-text-primary dark:text-dark-text-primary">Sincronização: {status}</span>
             </div>
-            <p className="text-[10px] font-bold uppercase opacity-50">ID: {userIdentifier || 'Local'}</p>
-            <button onClick={() => realtimeService.forceSync()} className="w-full text-[10px] font-black uppercase py-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20">Sincronizar Agora</button>
+            <p className="text-[10px] font-bold uppercase text-text-muted dark:text-dark-text-muted">ID: {userIdentifier || 'Local'}</p>
+            <button onClick={() => realtimeService.forceSync()} className="w-full text-[10px] font-black uppercase py-2.5 bg-primary text-white rounded-xl shadow-lg shadow-primary/20">Sincronizar Agora</button>
         </div>
     );
 }
@@ -255,22 +255,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
-            <div className="bg-surface dark:bg-dark-surface rounded-[2.5rem] shadow-2xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between items-center mb-8 border-b pb-4">
-                    <h2 className="text-3xl font-black tracking-tighter">Configurações</h2>
-                    <button onClick={onClose} className="text-3xl">&times;</button>
+            <div className="bg-surface dark:bg-dark-surface rounded-[2.5rem] shadow-2xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-border-color dark:border-dark-border-color">
+                <div className="flex justify-between items-center mb-8 border-b border-border-color dark:border-dark-border-color pb-4">
+                    <h2 className="text-3xl font-black tracking-tighter text-text-primary dark:text-dark-text-primary">Configurações</h2>
+                    <button onClick={onClose} className="text-3xl text-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors">&times;</button>
                 </div>
                 <div className="space-y-8 pb-4">
                     {isAdmin && (
                         <>
                             <div className="space-y-4">
-                                <h3 className="text-lg font-black tracking-tight">Identidade Visual</h3>
-                                <div className="flex items-center gap-6 p-6 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border-2 border-dashed border-indigo-200">
-                                    <div className="w-20 h-20 rounded-2xl bg-white overflow-hidden flex items-center justify-center shadow-lg">
+                                <h3 className="text-lg font-black tracking-tight text-text-primary dark:text-dark-text-primary">Identidade Visual</h3>
+                                <div className="flex items-center gap-6 p-6 bg-surface-light dark:bg-dark-surface-light rounded-3xl border-2 border-dashed border-primary/20">
+                                    <div className="w-20 h-20 rounded-2xl bg-surface dark:bg-dark-surface overflow-hidden flex items-center justify-center shadow-lg">
                                         {logoUrl ? <img src={logoUrl} className="w-full h-full object-contain" /> : <span className="text-3xl">🦔</span>}
                                     </div>
                                     <div className="flex-1 space-y-3">
-                                        <button onClick={() => logoInputRef.current?.click()} className="text-[10px] font-black uppercase py-2.5 px-4 bg-indigo-600 text-white rounded-xl w-full shadow-md">Mudar Logo</button>
+                                        <button onClick={() => logoInputRef.current?.click()} className="text-[10px] font-black uppercase py-2.5 px-4 bg-primary text-white rounded-xl w-full shadow-md">Mudar Logo</button>
                                         <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
                                     </div>
                                 </div>
@@ -281,16 +281,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                     <CategoryManager />
                     <WhatsappSettings />
                     <CloudStatusCard />
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                        <span className="text-sm font-bold">Modo Escuro</span>
-                        <button onClick={toggleTheme} className={`relative inline-flex items-center h-7 rounded-full w-12 ${theme === 'dark' ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                    <div className="flex items-center justify-between p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl">
+                        <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">Modo Escuro</span>
+                        <button onClick={toggleTheme} className={`relative inline-flex items-center h-7 rounded-full w-12 ${theme === 'dark' ? 'bg-primary' : 'bg-border-color dark:bg-dark-border-color'}`}>
                             <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
                     </div>
                     <div className="space-y-3">
-                        <button onClick={onExportData} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-                            <span className="text-sm font-bold">Exportar Backup (JSON)</span>
-                            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <button onClick={onExportData} className="w-full flex items-center justify-between p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors">
+                            <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">Exportar Backup (JSON)</span>
+                            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </button>
                         <button onClick={() => {
                             const input = document.createElement('input');
@@ -301,18 +301,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                                 if (file) onImportData(file);
                             };
                             input.click();
-                        }} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
-                            <span className="text-sm font-bold">Importar Backup (JSON)</span>
-                            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        }} className="w-full flex items-center justify-between p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl hover:bg-success/5 dark:hover:bg-success/10 transition-colors">
+                            <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">Importar Backup (JSON)</span>
+                            <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </button>
-                        <button onClick={onExportToCsv} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                            <span className="text-sm font-bold">Exportar Relatório (CSV)</span>
-                            <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <button onClick={onExportToCsv} className="w-full flex items-center justify-between p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl hover:bg-accent/5 dark:hover:bg-accent/10 transition-colors">
+                            <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">Exportar Relatório (CSV)</span>
+                            <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </button>
                     </div>
                 </div>
                 <div className="flex justify-center pt-4">
-                    <button onClick={onClose} className="px-10 py-3 text-xs font-black uppercase rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500">Fechar</button>
+                    <button onClick={onClose} className="px-10 py-3 text-xs font-black uppercase rounded-2xl bg-surface-light dark:bg-dark-surface-light text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary transition-colors">Fechar</button>
                 </div>
             </div>
         </div>

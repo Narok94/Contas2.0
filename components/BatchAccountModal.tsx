@@ -131,7 +131,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                     placeholder="Ex: Luz, Mercado"
                                     value={row.name}
                                     onChange={(e) => updateRow(row.id, 'name', e.target.value)}
-                                    className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary font-medium"
+                                    className="w-full p-2 text-sm rounded bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary font-medium text-text-primary dark:text-dark-text-primary"
                                     autoFocus={index === 0}
                                 />
                             </div>
@@ -142,7 +142,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                     placeholder="0,00"
                                     value={row.value}
                                     onChange={(e) => updateRow(row.id, 'value', e.target.value)}
-                                    className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary font-bold text-primary"
+                                    className="w-full p-2 text-sm rounded bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary font-bold text-primary"
                                 />
                             </div>
                             <div className="md:col-span-3">
@@ -150,7 +150,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                 <select 
                                     value={row.category}
                                     onChange={(e) => updateRow(row.id, 'category', e.target.value)}
-                                    className="w-full p-2 text-sm rounded bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary"
+                                    className="w-full p-2 text-sm rounded bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary text-text-primary dark:text-dark-text-primary"
                                 >
                                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
@@ -188,7 +188,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                             min="2"
                                             value={row.totalInstallments}
                                             onChange={(e) => updateRow(row.id, 'totalInstallments', e.target.value)}
-                                            className="w-full p-2 text-sm rounded bg-indigo-50 dark:bg-slate-700 border border-indigo-200 dark:border-slate-600 focus:ring-1 focus:ring-primary focus:border-primary text-center font-black"
+                                            className="w-full p-2 text-sm rounded bg-primary/10 dark:bg-dark-surface-light border border-primary/20 dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary text-center font-black text-text-primary dark:text-dark-text-primary"
                                             placeholder="Qtd"
                                             title="Quantidade de Parcelas"
                                         />
@@ -233,7 +233,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-surface-light hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold text-xs uppercase tracking-wider"
+                    className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-surface-light dark:bg-dark-surface-light hover:bg-surface dark:hover:bg-dark-surface border border-border-color dark:border-dark-border-color transition-colors font-bold text-xs uppercase tracking-wider text-text-secondary dark:text-dark-text-secondary"
                 >
                     Cancelar
                 </button>

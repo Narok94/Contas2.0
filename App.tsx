@@ -407,7 +407,16 @@ const App: React.FC = () => {
           onExportToCsv={handleExportCsv} 
           currentUser={currentUser} 
         />
-        <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
+        <AccountFormModal 
+          isOpen={isAccountModalOpen} 
+          onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} 
+          onSubmit={handleAccountSubmit} 
+          account={accountToEdit} 
+          categories={categories} 
+          onManageCategories={() => {}} 
+          activeGroupId={activeGroupId}
+          selectedDate={selectedDate}
+        />
         <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
             const year = selectedDate.getFullYear();
             const month = String(selectedDate.getMonth() + 1).padStart(2, '0');

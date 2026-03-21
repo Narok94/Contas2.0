@@ -236,10 +236,10 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex justify-center items-center z-50 p-4 animate-fade-in">
-            <div className="bg-gradient-to-b from-slate-900 via-black to-slate-900 border border-primary/30 rounded-2xl shadow-2xl shadow-primary/20 w-full max-w-2xl h-[80vh] flex flex-col animate-fade-in-up">
+            <div className="bg-surface dark:bg-dark-surface border border-primary/30 rounded-2xl shadow-2xl shadow-primary/20 w-full max-w-2xl h-[80vh] flex flex-col animate-fade-in-up">
                 <div className="flex justify-between items-center p-4 border-b border-primary/20">
-                    <h2 className="text-xl font-bold text-primary-light">Tatu 📝</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl transition-colors">&times;</button>
+                    <h2 className="text-xl font-bold text-primary">Tatu 📝</h2>
+                    <button onClick={onClose} className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-3xl transition-colors">&times;</button>
                 </div>
 
                 <div className="flex-1 p-4 overflow-y-auto space-y-4 [scrollbar-width:thin] [scrollbar-color:#14b8a6_#0f172a]">
@@ -301,7 +301,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isLoading || isListening}
-                            className="p-2 rounded-full text-white bg-slate-800/50 border border-primary/30 hover:bg-primary/50 disabled:opacity-50 transition-all"
+                            className="p-2 rounded-full text-text-primary dark:text-dark-text-primary bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color hover:bg-primary/10 disabled:opacity-50 transition-all"
                             title="Anexar Imagem"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -315,7 +315,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                             onChange={(e) => setInput(e.target.value)}
                             placeholder={isListening ? "Ouvindo..." : "Escreva ou envie uma imagem..."}
                             disabled={isLoading || isListening}
-                            className="flex-1 p-2 rounded-md bg-slate-800/50 text-white border border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                            className="flex-1 p-2 rounded-md bg-surface-light dark:bg-dark-surface-light text-text-primary dark:text-dark-text-primary border border-border-color dark:border-dark-border-color focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         />
                         {isSupported && (
                            <button 

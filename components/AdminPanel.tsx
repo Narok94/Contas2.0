@@ -57,9 +57,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit
                                         type="checkbox"
                                         checked={formData.groupIds.includes(g.id)}
                                         onChange={() => handleGroupChange(g.id)}
-                                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                        className="h-4 w-4 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded"
                                     />
-                                    <label htmlFor={`group-${g.id}`} className="ml-2 block text-sm">
+                                    <label htmlFor={`group-${g.id}`} className="ml-2 block text-sm text-text-primary dark:text-dark-text-primary">
                                         {g.name}
                                     </label>
                                 </div>
@@ -76,7 +76,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit
                             type="checkbox"
                             checked={formData.mustChangePassword}
                             onChange={(e) => setFormData({ ...formData, mustChangePassword: e.target.checked })}
-                            className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                            className="h-4 w-4 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded"
                         />
                         <label htmlFor="mustChangePassword" className="ml-2 block text-sm text-text-secondary dark:text-dark-text-secondary">
                             Exigir troca de senha no primeiro login
@@ -176,8 +176,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
             <h1 className="text-3xl font-bold mb-6">Painel Administrativo</h1>
             <div className="border-b border-border-color dark:border-dark-border-color mb-6">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button onClick={() => setActiveTab('users')} className={`${activeTab === 'users' ? 'border-primary text-primary' : 'border-transparent text-text-muted dark:text-dark-text-muted hover:text-text-secondary dark:hover:text-dark-text-secondary hover:border-gray-400 dark:hover:border-gray-500'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Gerenciar Usuários</button>
-                    <button onClick={() => setActiveTab('groups')} className={`${activeTab === 'groups' ? 'border-primary text-primary' : 'border-transparent text-text-muted dark:text-dark-text-muted hover:text-text-secondary dark:hover:text-dark-text-secondary hover:border-gray-400 dark:hover:border-gray-500'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Gerenciar Grupos</button>
+                    <button onClick={() => setActiveTab('users')} className={`${activeTab === 'users' ? 'border-primary text-primary' : 'border-transparent text-text-muted dark:text-dark-text-muted hover:text-text-secondary dark:hover:text-dark-text-secondary hover:border-border-color dark:hover:border-dark-border-color'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Gerenciar Usuários</button>
+                    <button onClick={() => setActiveTab('groups')} className={`${activeTab === 'groups' ? 'border-primary text-primary' : 'border-transparent text-text-muted dark:text-dark-text-muted hover:text-text-secondary dark:hover:text-dark-text-secondary hover:border-border-color dark:hover:border-dark-border-color'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Gerenciar Grupos</button>
                 </nav>
             </div>
 
@@ -201,12 +201,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                             <tbody className="bg-surface dark:bg-dark-surface divide-y divide-border-color dark:divide-dark-border-color">
                                 {users.map(user => (
                                     <tr key={user.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{user.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{user.username}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{user.groupIds.map(gid => groups.find(g => g.id === gid)?.name).filter(Boolean).join(', ')}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary dark:text-dark-text-primary">{user.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-dark-text-secondary">{user.username}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-dark-text-secondary">{user.groupIds.map(gid => groups.find(g => g.id === gid)?.name).filter(Boolean).join(', ')}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <button onClick={() => openUserModal(user)} className="text-primary-light hover:text-primary transition-colors">Editar</button>
-                                            <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir o usuário "${user.name}"?`)) onDeleteUser(user.id) }} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
+                                            <button onClick={() => openUserModal(user)} className="text-primary hover:text-primary-dark transition-colors">Editar</button>
+                                            <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir o usuário "${user.name}"?`)) onDeleteUser(user.id) }} className="text-danger hover:text-danger-dark transition-colors">Excluir</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -234,11 +234,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ users, groups, onAddUser, onUpd
                             <tbody className="bg-surface dark:bg-dark-surface divide-y divide-border-color dark:divide-dark-border-color">
                                 {groups.map(group => (
                                     <tr key={group.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{group.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{users.filter(u => u.groupIds.includes(group.id)).length}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary dark:text-dark-text-primary">{group.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-dark-text-secondary">{users.filter(u => u.groupIds.includes(group.id)).length}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <button onClick={() => openGroupModal(group)} className="text-primary-light hover:text-primary transition-colors">Editar</button>
-                                            <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir o grupo "${group.name}"?`)) onDeleteGroup(group.id) }} className="text-danger hover:text-pink-700 transition-colors">Excluir</button>
+                                            <button onClick={() => openGroupModal(group)} className="text-primary hover:text-primary-dark transition-colors">Editar</button>
+                                            <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir o grupo "${group.name}"?`)) onDeleteGroup(group.id) }} className="text-danger hover:text-danger-dark transition-colors">Excluir</button>
                                         </td>
                                     </tr>
                                 ))}

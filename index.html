@@ -3,16 +3,21 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tatu - Gestão Financeira Inteligente</title>
+    <title>Tatu - Gestão Financeira Profissional</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // Aplicação imediata do tema para evitar flash branco
-      if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      console.log('Tatu Theme Initializing...');
+      // Aplicação imediata do tema para evitar flash branco - Padrão: Escuro
+      const storedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      // Se não houver tema salvo, o padrão agora é ESCURO
+      if (storedTheme === 'dark' || (!storedTheme && prefersDark) || !storedTheme) {
         document.documentElement.classList.add('dark');
-      } else {
+      } else if (storedTheme === 'light') {
         document.documentElement.classList.remove('dark');
       }
     </script>
@@ -27,22 +32,32 @@
               mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {
-              primary: { light: '#818cf8', DEFAULT: '#6366f1', dark: '#4f46e5' },
-              secondary: { light: '#f472b6', DEFAULT: '#ec4899', dark: '#db2777' },
-              accent: { light: '#fbbf24', DEFAULT: '#f59e0b', dark: '#d97706' },
+              primary: { light: '#a5b4fc', DEFAULT: '#6366f1', dark: '#4f46e5' },
+              secondary: { light: '#f9a8d4', DEFAULT: '#f472b6', dark: '#db2777' },
+              accent: { light: '#fcd34d', DEFAULT: '#fbbf24', dark: '#d97706' },
               background: '#f8fafc',
               surface: '#FFFFFF',
               'surface-light': '#f1f5f9',
               'border-color': '#e2e8f0',
+              'text-primary': '#1e293b', // Slate 800 para modo claro
+              'text-secondary': '#64748b', // Slate 500 para modo claro
+              'text-muted': '#94a3b8', // Slate 400 para modo claro
               dark: {
-                background: '#0f172a',
-                surface: '#1e293b',
-                'surface-light': '#334155',
-                'border-color': '#475569',
+                background: '#020617', // Slate 950 - Ultra moderno
+                surface: '#0f172a',    // Slate 900
+                'surface-light': '#1e293b', // Slate 800
+                'border-color': '#334155',  // Slate 700
+                'text-primary': '#f8fafc',
+                'text-secondary': '#94a3b8',
+                'text-muted': '#64748b',
               },
               success: '#10b981',
               danger: '#f43f5e',
-              gold: '#6366f1',
+            },
+            boxShadow: {
+              'glow-primary': '0 0 20px -5px rgba(99, 102, 241, 0.5)',
+              'glow-success': '0 0 20px -5px rgba(16, 185, 129, 0.5)',
+              'glow-danger': '0 0 20px -5px rgba(244, 63, 94, 0.5)',
             },
             borderRadius: { 
               '3xl': '1.5rem', 
@@ -78,8 +93,31 @@
   }
 }
 </script>
+    <style>
+      /* Modern Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #1e293b;
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
+      }
+    </style>
 </head>
-<body class="bg-background text-slate-900 dark:bg-dark-background dark:text-slate-100 antialiased overflow-x-hidden">
+<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="bundle.js"></script>
 </body>

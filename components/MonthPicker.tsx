@@ -52,7 +52,7 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ selectedDate, onSelectDate })
       {/* Gatilho Compacto */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color rounded-xl hover:bg-white dark:hover:bg-dark-surface transition-all active:scale-95 group shadow-sm"
+        className="flex items-center gap-2 px-3 py-1.5 bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color rounded-xl hover:bg-surface dark:hover:bg-dark-surface transition-all active:scale-95 group shadow-sm"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z" />

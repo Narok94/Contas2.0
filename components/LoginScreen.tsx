@@ -10,121 +10,21 @@ interface LoginScreenProps {
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     {/* Corpo/Casco do Tatu */}
-    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#6366f1" />
-    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#818cf8" />
+    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#1e293b" />
+    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#334155" />
     {/* Segmentos do Casco */}
-    <path d="M40 36V65M50 35V65M60 36V65" stroke="#4f46e5" strokeWidth="1.5" />
+    <path d="M40 36V65M50 35V65M60 36V65" stroke="#475569" strokeWidth="1.5" />
     {/* Cabeça */}
-    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#10b981" />
+    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#6366f1" />
     {/* Olho */}
-    <circle cx="20" cy="58" r="1.5" fill="#1e1b4b" />
+    <circle cx="20" cy="58" r="1.5" fill="#ffffff" />
     {/* Rabo */}
-    <path d="M80 60L88 65H80V60Z" fill="#10b981" />
+    <path d="M80 60L88 65H80V60Z" fill="#6366f1" />
     {/* Patas */}
-    <rect x="30" y="65" width="10" height="5" rx="1" fill="#10b981" />
-    <rect x="60" y="65" width="10" height="5" rx="1" fill="#10b981" />
+    <rect x="30" y="65" width="10" height="5" rx="1" fill="#6366f1" />
+    <rect x="60" y="65" width="10" height="5" rx="1" fill="#6366f1" />
   </svg>
 );
-
-const ParticleNetwork: React.FC = () => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        let animationFrameId: number;
-        
-        const resizeCanvas = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
-        
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Particle {
-            x: number;
-            y: number;
-            size: number;
-            speedX: number;
-            speedY: number;
-
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 1.5 + 0.5;
-                this.speedX = (Math.random() * 2 - 1) * 0.3;
-                this.speedY = (Math.random() * 2 - 1) * 0.3;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
-                if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
-            }
-            draw() {
-                ctx.fillStyle = 'rgba(99, 102, 241, 0.3)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        let particles: Particle[];
-        const init = () => {
-            particles = [];
-            const particleDensity = window.innerWidth < 768 ? 20000 : 12000;
-            let numberOfParticles = (canvas.height * canvas.width) / particleDensity;
-            for (let i = 0; i < numberOfParticles; i++) {
-                particles.push(new Particle());
-            }
-        };
-
-        const connect = () => {
-            let opacityValue = 1;
-            for (let a = 0; a < particles.length; a++) {
-                for (let b = a; b < particles.length; b++) {
-                    let distance = ((particles[a].x - particles[b].x) * (particles[a].x - particles[b].x))
-                                 + ((particles[a].y - particles[b].y) * (particles[a].y - particles[b].y));
-                    if (distance < (canvas.width / 8) * (canvas.height / 8)) {
-                        opacityValue = 1 - (distance / 25000);
-                        ctx.strokeStyle = `rgba(99, 102, 241, ${opacityValue * 0.1})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        ctx.moveTo(particles[a].x, particles[a].y);
-                        ctx.lineTo(particles[b].x, particles[b].y);
-                        ctx.stroke();
-                    }
-                }
-            }
-        };
-
-        const animate = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            connect();
-            animationFrameId = requestAnimationFrame(animate);
-        };
-        
-        init();
-        animate();
-
-        return () => {
-            window.removeEventListener('resize', resizeCanvas);
-            cancelAnimationFrame(animationFrameId);
-        };
-    }, []);
-
-    return <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"></canvas>;
-};
-
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister }) => {
   const [email, setEmail] = useState('');
@@ -157,63 +57,59 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-[100dvh] bg-background text-slate-900 overflow-hidden p-4 font-sans">
-      {/* Background Dinâmico Aprimorado - Mais Alegre e Calmo */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-[#f8fafc] via-[#eef2ff] to-[#e0e7ff] z-0">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/2 right-0 w-[300px] h-[300px] bg-accent/10 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '4s' }}></div>
+    <div className="relative flex items-center justify-center min-h-[100dvh] bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary overflow-hidden p-4 font-sans">
+      {/* Background Minimalista e Profissional */}
+      <div className="absolute inset-0 z-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-800/[0.2] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"></div>
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px]"></div>
       </div>
       
-      <ParticleNetwork />
-
       <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="relative z-10 w-full max-w-md"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="relative z-10 w-full max-w-[440px]"
       >
-          {/* Logo Container Centralizado */}
-          <div className="flex flex-col items-center mb-10">
-              <div className="text-center">
-                  <h1 className="text-5xl font-serif italic font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-primary to-primary-dark">
-                    TATU<span className="text-primary">.</span>
-                  </h1>
-                  <p className="text-slate-500 text-sm font-medium uppercase tracking-[0.2em] mt-1">
-                    Finanças a Dois
-                  </p>
+          {/* Logo Container */}
+          <div className="flex flex-col items-center mb-8">
+              <div className="w-16 h-16 bg-surface dark:bg-dark-surface rounded-2xl shadow-xl flex items-center justify-center mb-4 border border-border-color dark:border-dark-border-color">
+                  {logoUrl ? (
+                      <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+                  ) : (
+                      <TatuIcon className="w-10 h-10" />
+                  )}
               </div>
+              <h1 className="text-3xl font-serif italic font-black tracking-tight text-text-primary dark:text-dark-text-primary">
+                TATU<span className="text-primary">.</span>
+              </h1>
+              <p className="text-text-secondary dark:text-dark-text-secondary text-xs font-bold uppercase tracking-[0.2em] mt-1">
+                Gestão Financeira Profissional
+              </p>
           </div>
 
-          {/* Cartão de Login Glassmorphism - Mais Arredondado */}
-          <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-white/40 shadow-2xl p-8 sm:p-10 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-              
+          <div className="bg-surface/80 dark:bg-dark-surface/80 backdrop-blur-xl rounded-[2.5rem] border border-border-color dark:border-dark-border-color shadow-2xl p-8 sm:p-10">
               <form className="space-y-6" onSubmit={handleSubmit}>
                   <div className="space-y-4">
-                      <div className="relative group">
-                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
-                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                           </div>
+                      <div className="space-y-1">
+                           <label className="text-[10px] font-black uppercase text-text-muted ml-1">Usuário</label>
                            <input
                                type="text"
                                autoCapitalize="none"
                                required
-                               className="w-full pl-12 pr-4 py-4 bg-white/50 border border-slate-200 focus:border-primary/50 focus:bg-white rounded-3xl outline-none transition-all placeholder:text-slate-400 text-slate-900 font-medium"
-                               placeholder="Usuário"
+                               className="w-full px-4 py-3.5 bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary font-medium"
+                               placeholder="Seu nome de usuário"
                                value={email}
                                onChange={(e) => setEmail(e.target.value)}
                            />
                       </div>
-                      <div className="relative group">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
-                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                          </div>
-                          <input
+                      <div className="space-y-1">
+                           <label className="text-[10px] font-black uppercase text-text-muted ml-1">Senha</label>
+                           <input
                                type="password"
                                required
-                               className="w-full pl-12 pr-4 py-4 bg-white/50 border border-slate-200 focus:border-primary/50 focus:bg-white rounded-3xl outline-none transition-all placeholder:text-slate-400 text-slate-900 font-medium"
-                               placeholder="Senha"
+                               className="w-full px-4 py-3.5 bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:border-primary focus:ring-1 focus:ring-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary font-medium"
+                               placeholder="••••••••"
                                value={password}
                                onChange={(e) => setPassword(e.target.value)}
                            />
@@ -221,55 +117,35 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
                   </div>
                   
                   {error && (
-                      <motion.p 
-                        initial={{ opacity: 0, y: -10 }} 
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-xs text-center text-danger font-bold uppercase tracking-wider bg-danger/10 py-2 rounded-xl"
-                      >
+                      <p className="text-[10px] text-center text-danger font-black uppercase tracking-wider bg-danger/5 py-2.5 rounded-xl border border-danger/20">
                         {error}
-                      </motion.p>
+                      </p>
                   )}
-
-                  <div className="flex items-center justify-between px-1">
-                      <label className="flex items-center cursor-pointer group">
-                          <input 
-                              type="checkbox" 
-                              checked={rememberMe}
-                              onChange={(e) => setRememberMe(e.target.checked)}
-                              className="sr-only peer"
-                          />
-                          <div className="w-5 h-5 border-2 border-slate-200 rounded-lg peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
-                               <svg className={`w-3 h-3 text-white transition-opacity ${rememberMe ? 'opacity-100' : 'opacity-0'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
-                          </div>
-                          <span className="ml-3 text-sm text-slate-500 group-hover:text-slate-700 transition-colors font-medium">Lembrar acesso</span>
-                      </label>
-                  </div>
 
                   <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full py-4 bg-primary hover:bg-primary-dark text-white font-black rounded-3xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 relative group overflow-hidden"
+                      className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 text-xs uppercase tracking-widest shadow-primary/20 hover:shadow-glow-primary"
                   >
-                       <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                        {isLoading ? (
-                          <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
-                      ) : "ENTRAR NO DASHBOARD"}
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+                      ) : "Acessar Dashboard"}
                   </button>
                   
                   <div className="text-center pt-2">
                       <button 
                           type="button"
                           onClick={onNavigateToRegister}
-                          className="text-sm font-bold text-slate-400 hover:text-primary transition-colors"
+                          className="text-xs font-bold text-text-muted hover:text-primary transition-colors"
                       >
-                          Novo por aqui? <span className="text-primary hover:underline">Crie uma conta</span>
+                          Não tem uma conta? <span className="text-primary">Cadastre-se</span>
                       </button>
                   </div>
               </form>
           </div>
           
-          <p className="text-center mt-10 text-white/20 text-[10px] font-bold uppercase tracking-[0.3em]">
-              Sincronizado com Vercel Postgres
+          <p className="text-center mt-8 text-text-muted text-[9px] font-black uppercase tracking-[0.2em]">
+              &copy; 2026 Tatu Financeiro &bull; Profissional
           </p>
       </motion.div>
     </div>

@@ -58,7 +58,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                             onClick={() => setFilterStatus(filter.value)}
                             className={`flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
                                 filterStatus === filter.value
-                                    ? 'bg-white dark:bg-dark-surface text-primary shadow-sm'
+                                    ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm'
                                     : 'text-text-muted hover:text-text-primary dark:hover:text-dark-text-primary'
                             }`}
                         >
@@ -114,7 +114,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
                 <button
                     onClick={onOpenCalculator}
-                    className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all border bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+                    className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all border bg-primary/10 dark:bg-primary/20 border-primary/20 dark:border-primary/30 text-primary hover:bg-primary/20 dark:hover:bg-primary/30"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2-2v14a2 2 0 002 2z" /></svg>
                     Calculadora

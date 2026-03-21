@@ -36,10 +36,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] bg-[#fdfdfd] dark:bg-[#020617] relative overflow-hidden transition-colors duration-500 p-4">
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-40 dark:opacity-20">
-            <div className="absolute top-[-10%] right-[-10%] w-[50rem] h-[50rem] bg-violet-200 dark:bg-violet-900 rounded-full blur-[120px] animate-mesh"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[45rem] h-[45rem] bg-sky-100 dark:bg-sky-900 rounded-full blur-[100px] animate-mesh" style={{animationDelay: '-3s'}}></div>
+    <div className="flex items-center justify-center min-h-[100dvh] bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary relative overflow-hidden transition-colors duration-500 p-4 font-sans">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="absolute top-[-10%] right-[-10%] w-[50rem] h-[50rem] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px]"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[45rem] h-[45rem] bg-primary/10 dark:bg-primary/20 rounded-full blur-[100px]"></div>
         </div>
 
         <motion.div 
@@ -47,53 +47,65 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
             animate={{ opacity: 1, scale: 1 }}
             className="relative z-10 w-full max-w-md"
         >
-            <div className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/50 dark:border-slate-800/50 p-8 sm:p-12">
+            <div className="bg-surface/80 dark:bg-dark-surface/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-border-color/50 dark:border-dark-border-color/50 p-8 sm:p-12">
                 
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Começar agora<span className="text-indigo-600">.</span></h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 text-sm">Junte-se a Ricka e domine sua grana.</p>
+                    <h1 className="text-3xl font-serif italic font-black text-text-primary dark:text-dark-text-primary tracking-tight">Começar agora<span className="text-primary">.</span></h1>
+                    <p className="text-text-secondary dark:text-dark-text-secondary font-medium mt-2 text-sm">Junte-se a TATU e domine sua grana.</p>
                 </div>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="space-y-4">
-                        <input
-                            type="text"
-                            required
-                            className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
-                            placeholder="Seu nome completo"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            required
-                            className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
-                            placeholder="Nome de usuário (@exemplo)"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                        />
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-text-muted ml-1">Nome Completo</label>
+                            <input
+                                type="text"
+                                required
+                                className="w-full px-5 py-4 bg-surface-light dark:bg-dark-surface-light border border-transparent focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary font-medium"
+                                placeholder="Seu nome completo"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-text-muted ml-1">Usuário</label>
+                            <input
+                                type="text"
+                                required
+                                className="w-full px-5 py-4 bg-surface-light dark:bg-dark-surface-light border border-transparent focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary font-medium"
+                                placeholder="Nome de usuário (@exemplo)"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                            />
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
-                            <input
-                                type="password"
-                                required
-                                className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
-                                placeholder="Senha"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                            <input
-                                type="password"
-                                required
-                                className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all text-slate-800 dark:text-white"
-                                placeholder="Confirma"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                            />
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-text-muted ml-1">Senha</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full px-5 py-4 bg-surface-light dark:bg-dark-surface-light border border-transparent focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary font-medium"
+                                    placeholder="Senha"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-text-muted ml-1">Confirma</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full px-5 py-4 bg-surface-light dark:bg-dark-surface-light border border-transparent focus:border-primary rounded-2xl outline-none transition-all text-text-primary dark:text-dark-text-primary font-medium"
+                                    placeholder="Confirma"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
 
                     {error && (
-                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-center">
+                        <div className="p-3 rounded-xl bg-danger/5 border border-danger/20 text-danger text-[10px] font-black uppercase tracking-wider text-center">
                             {error}
                         </div>
                     )}
@@ -101,7 +113,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-[0.98] disabled:opacity-50"
+                        className="w-full py-4.5 bg-primary text-white font-black rounded-2xl shadow-lg shadow-primary/20 hover:shadow-glow-primary transition-all active:scale-[0.98] disabled:opacity-50 text-xs uppercase tracking-[0.2em]"
                     >
                          {isLoading ? "Criando conta..." : "Criar minha conta"}
                     </button>
@@ -110,9 +122,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
                         <button 
                             type="button"
                             onClick={onNavigateToLogin}
-                            className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 transition-colors"
+                            className="text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-primary transition-colors"
                         >
-                            Já tenho conta, quero entrar
+                            Já tenho conta, <span className="text-primary">quero entrar</span>
                         </button>
                     </div>
                 </form>

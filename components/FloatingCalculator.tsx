@@ -48,25 +48,25 @@ const FloatingCalculator: React.FC<FloatingCalculatorProps> = ({ isOpen, onClose
     };
 
     const buttons = [
-        { label: 'C', action: clear, color: 'bg-rose-500 text-white' },
-        { label: '÷', action: () => handleOperator('/'), color: 'bg-indigo-100 dark:bg-slate-700 text-indigo-600 dark:text-indigo-400' },
-        { label: '×', action: () => handleOperator('*'), color: 'bg-indigo-100 dark:bg-slate-700 text-indigo-600 dark:text-indigo-400' },
-        { label: '⌫', action: () => setDisplay(display.length > 1 ? display.slice(0, -1) : '0'), color: 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400' },
+        { label: 'C', action: clear, color: 'bg-danger text-white' },
+        { label: '÷', action: () => handleOperator('/'), color: 'bg-primary/10 dark:bg-primary/20 text-primary' },
+        { label: '×', action: () => handleOperator('*'), color: 'bg-primary/10 dark:bg-primary/20 text-primary' },
+        { label: '⌫', action: () => setDisplay(display.length > 1 ? display.slice(0, -1) : '0'), color: 'bg-surface-light dark:bg-dark-surface-light text-text-muted dark:text-dark-text-muted' },
         
         { label: '7', action: () => handleNumber('7') },
         { label: '8', action: () => handleNumber('8') },
         { label: '9', action: () => handleNumber('9') },
-        { label: '-', action: () => handleOperator('-'), color: 'bg-indigo-100 dark:bg-slate-700 text-indigo-600 dark:text-indigo-400' },
+        { label: '-', action: () => handleOperator('-'), color: 'bg-primary/10 dark:bg-primary/20 text-primary' },
         
         { label: '4', action: () => handleNumber('4') },
         { label: '5', action: () => handleNumber('5') },
         { label: '6', action: () => handleNumber('6') },
-        { label: '+', action: () => handleOperator('+'), color: 'bg-indigo-100 dark:bg-slate-700 text-indigo-600 dark:text-indigo-400' },
+        { label: '+', action: () => handleOperator('+'), color: 'bg-primary/10 dark:bg-primary/20 text-primary' },
         
         { label: '1', action: () => handleNumber('1') },
         { label: '2', action: () => handleNumber('2') },
         { label: '3', action: () => handleNumber('3') },
-        { label: '=', action: calculate, color: 'bg-indigo-600 text-white row-span-2' },
+        { label: '=', action: calculate, color: 'bg-primary text-white row-span-2' },
         
         { label: '0', action: () => handleNumber('0'), color: 'col-span-2' },
         { label: '.', action: () => handleNumber('.') },
@@ -79,23 +79,23 @@ const FloatingCalculator: React.FC<FloatingCalculatorProps> = ({ isOpen, onClose
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-24 right-6 z-[100] w-64 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden select-none"
+            className="fixed bottom-24 right-6 z-[100] w-64 bg-surface dark:bg-dark-surface rounded-3xl shadow-2xl border border-border-color dark:border-dark-border-color overflow-hidden select-none"
         >
             {/* Header */}
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 flex justify-between items-center cursor-move border-b border-slate-100 dark:border-slate-700">
+            <div className="bg-surface-light dark:bg-dark-surface-light p-3 flex justify-between items-center cursor-move border-b border-border-color dark:border-dark-border-color">
                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-rose-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Calculadora</span>
+                    <div className="w-2 h-2 rounded-full bg-danger" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-muted dark:text-dark-text-muted">Calculadora</span>
                 </div>
-                <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                <button onClick={onClose} className="p-1 hover:bg-surface dark:hover:bg-dark-surface rounded-lg transition-colors">
+                    <svg className="w-4 h-4 text-text-muted dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
 
             {/* Display */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-900/30 text-right">
-                <div className="text-[10px] text-slate-400 font-mono h-4 truncate">{equation}</div>
-                <div className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white truncate">
+            <div className="p-4 bg-surface-light dark:bg-dark-surface-light/30 text-right">
+                <div className="text-[10px] text-text-muted dark:text-dark-text-muted font-mono h-4 truncate">{equation}</div>
+                <div className="text-3xl font-black tracking-tighter text-text-primary dark:text-dark-text-primary truncate">
                     {display}
                 </div>
             </div>
@@ -107,7 +107,7 @@ const FloatingCalculator: React.FC<FloatingCalculatorProps> = ({ isOpen, onClose
                         key={idx}
                         onClick={btn.action}
                         className={`h-11 rounded-xl font-bold text-sm transition-all active:scale-90 shadow-sm flex items-center justify-center ${
-                            btn.color || 'bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600'
+                            btn.color || 'bg-surface-light dark:bg-dark-surface-light/50 text-text-secondary dark:text-dark-text-secondary hover:bg-surface dark:hover:bg-dark-surface'
                         }`}
                     >
                         {btn.label}
