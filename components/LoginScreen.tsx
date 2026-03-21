@@ -10,19 +10,19 @@ interface LoginScreenProps {
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     {/* Corpo/Casco do Tatu */}
-    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#3b82f6" />
-    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#60a5fa" />
+    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#6366f1" />
+    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#818cf8" />
     {/* Segmentos do Casco */}
-    <path d="M40 36V65M50 35V65M60 36V65" stroke="#2563eb" strokeWidth="1.5" />
+    <path d="M40 36V65M50 35V65M60 36V65" stroke="#4f46e5" strokeWidth="1.5" />
     {/* Cabeça */}
-    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#22c55e" />
+    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#10b981" />
     {/* Olho */}
-    <circle cx="20" cy="58" r="1.5" fill="#1e3a8a" />
+    <circle cx="20" cy="58" r="1.5" fill="#1e1b4b" />
     {/* Rabo */}
-    <path d="M80 60L88 65H80V60Z" fill="#22c55e" />
+    <path d="M80 60L88 65H80V60Z" fill="#10b981" />
     {/* Patas */}
-    <rect x="30" y="65" width="10" height="5" rx="1" fill="#22c55e" />
-    <rect x="60" y="65" width="10" height="5" rx="1" fill="#22c55e" />
+    <rect x="30" y="65" width="10" height="5" rx="1" fill="#10b981" />
+    <rect x="60" y="65" width="10" height="5" rx="1" fill="#10b981" />
   </svg>
 );
 
@@ -67,7 +67,7 @@ const ParticleNetwork: React.FC = () => {
                 if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
             }
             draw() {
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+                ctx.fillStyle = 'rgba(99, 102, 241, 0.3)';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -92,7 +92,7 @@ const ParticleNetwork: React.FC = () => {
                                  + ((particles[a].y - particles[b].y) * (particles[a].y - particles[b].y));
                     if (distance < (canvas.width / 8) * (canvas.height / 8)) {
                         opacityValue = 1 - (distance / 25000);
-                        ctx.strokeStyle = `rgba(59, 130, 246, ${opacityValue * 0.1})`;
+                        ctx.strokeStyle = `rgba(99, 102, 241, ${opacityValue * 0.1})`;
                         ctx.lineWidth = 0.5;
                         ctx.beginPath();
                         ctx.moveTo(particles[a].x, particles[a].y);
@@ -159,9 +159,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   return (
     <div className="relative flex items-center justify-center min-h-[100dvh] bg-background text-slate-900 overflow-hidden p-4 font-sans">
       {/* Background Dinâmico Aprimorado - Mais Alegre e Calmo */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-[#f0f9ff] via-[#e0f2fe] to-[#bae6fd] z-0">
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#f8fafc] via-[#eef2ff] to-[#e0e7ff] z-0">
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-success/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-1/2 right-0 w-[300px] h-[300px] bg-accent/10 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '4s' }}></div>
       </div>
       
       <ParticleNetwork />

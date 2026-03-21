@@ -353,108 +353,117 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-hidden">
-      <Header currentUser={currentUser} onSettingsClick={() => setIsSettingsModalOpen(true)} onLogout={handleLogout} />
-      <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-32">
-        {view === 'dashboard' && (
-            <Dashboard 
-                accounts={userAccounts} 
-                incomes={userIncomes} 
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-            />
-        )}
-        {view === 'accounts' && (
-            <AccountsView 
-                accounts={userAccounts} 
-                onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
-                onDeleteAccount={(id) => dataService.deleteAccount(id)} 
-                onToggleStatus={handleToggleAccountStatus} 
-                onNotifyWhatsApp={(acc) => {
-                    const settings = realtimeService.getSettings();
-                    notifyPaymentViaWhatsApp(acc.name, acc.value, settings?.whatsappGroupLink);
-                }}
-                whatsappEnabled={whatsappEnabled}
-                selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
-                onOpenMoveModal={() => setIsMoveModalOpen(true)} 
-                categories={categories}
-            />
-        )}
-        {view === 'income' && <IncomeManagement incomes={userIncomes} onAddOrUpdate={(data) => {
-            if (data.id) dataService.updateIncome({...data, date: new Date().toISOString()} as any);
-            else dataService.addIncome({...data, date: new Date().toISOString(), id: `inc-${Date.now()}`} as any);
-        }} onDelete={(id) => dataService.deleteIncome(id)} activeGroupId={activeGroupId} />}
-        {view === 'admin' && <AdminPanel users={users} groups={groups} onAddUser={dataService.addUser} onUpdateUser={dataService.updateUser} onDeleteUser={dataService.deleteUser} onAddGroup={dataService.addGroup} onUpdateGroup={dataService.updateGroup} onDeleteGroup={dataService.deleteGroup} />}
-      </main>
-      <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
-      <FloatingAiButton onClick={() => setIsChatOpen(true)} onLongPress={() => {}} constraintsRef={constraintsRef} isListening={isAiListening} />
-      <BottomNavBar activeView={view} onViewChange={setView} onAddClick={() => setIsSelectionModalOpen(true)} isAdmin={currentUser.role === Role.ADMIN} />
-      <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
-      <SettingsModal 
-        isOpen={isSettingsModalOpen} 
-        onClose={() => setIsSettingsModalOpen(false)} 
-        theme={theme} 
-        toggleTheme={toggleTheme} 
-        onExportData={handleExportJson} 
-        onImportData={handleImportJson} 
-        onExportToCsv={handleExportCsv} 
-        currentUser={currentUser} 
-      />
-      <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
-      <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
-          const year = selectedDate.getFullYear();
-          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-          const defaultDate = `${year}-${month}-10T12:00:00Z`;
+      {/* Decorative Background Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-secondary/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] bg-accent/5 rounded-full blur-[110px] animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
 
-          batch.forEach(item => {
-              const isVar = isVariableExpense(item);
-              const isRec = isVar ? true : Boolean(item.isRecurrent);
-              const isInst = Boolean(item.isInstallment);
-              const sanitizedTotal = item.totalInstallments ? Number(item.totalInstallments) : undefined;
-              const installmentId = isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined;
-              const sanitizedValue = Number(item.value);
-              
-              if (isInst && sanitizedTotal && sanitizedTotal > 1) {
-                  const baseDate = new Date(defaultDate);
-                  for (let i = 1; i <= sanitizedTotal; i++) {
-                      const currentDate = new Date(baseDate);
-                      currentDate.setMonth(baseDate.getMonth() + (i - 1));
-                      
-                      dataService.addAccount({
-                          ...item,
-                          id: `batch-${Date.now()}-${Math.random()}-${i}`,
-                          groupId: activeGroupId,
-                          value: sanitizedValue,
-                          isRecurrent: false,
-                          isInstallment: true,
-                          installmentId: installmentId,
-                          currentInstallment: i,
-                          totalInstallments: sanitizedTotal,
-                          paymentDate: currentDate.toISOString(),
-                          status: AccountStatus.PENDING
-                      });
-                  }
-              } else {
-                  dataService.addAccount({
-                      ...item,
-                      id: `batch-${Date.now()}-${Math.random()}`,
-                      groupId: activeGroupId,
-                      value: sanitizedValue,
-                      isRecurrent: isRec,
-                      isInstallment: isInst,
-                      installmentId: installmentId,
-                      currentInstallment: isInst ? (Number(item.currentInstallment) || 1) : undefined,
-                      totalInstallments: sanitizedTotal,
-                      paymentDate: (isRec && !isInst) ? undefined : defaultDate,
-                      status: AccountStatus.PENDING
-                  });
-              }
-          });
-      }} categories={categories} />
-      <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => setIsAccountModalOpen(true)} onSelectBatch={() => setIsBatchModalOpen(true)} />
-      <MoveAccountsModal isOpen={isMoveModalOpen} onClose={() => setIsMoveModalOpen(false)} onSubmit={(ids, to) => {
-          const accsToUpdate = accounts.filter(a => ids.includes(a.id)).map(a => ({...a, paymentDate: `${to}-10T12:00:00Z`}));
-          dataService.updateMultipleAccounts(accsToUpdate);
-      }} allAccounts={userAccounts} currentDashboardMonth={selectedDate.toISOString().slice(0, 7)} />
+      <div className="relative z-10">
+        <Header currentUser={currentUser} onSettingsClick={() => setIsSettingsModalOpen(true)} onLogout={handleLogout} />
+        <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-32">
+          {view === 'dashboard' && (
+              <Dashboard 
+                  accounts={userAccounts} 
+                  incomes={userIncomes} 
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+              />
+          )}
+          {view === 'accounts' && (
+              <AccountsView 
+                  accounts={userAccounts} 
+                  onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
+                  onDeleteAccount={(id) => dataService.deleteAccount(id)} 
+                  onToggleStatus={handleToggleAccountStatus} 
+                  onNotifyWhatsApp={(acc) => {
+                      const settings = realtimeService.getSettings();
+                      notifyPaymentViaWhatsApp(acc.name, acc.value, settings?.whatsappGroupLink);
+                  }}
+                  whatsappEnabled={whatsappEnabled}
+                  selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
+                  onOpenMoveModal={() => setIsMoveModalOpen(true)} 
+                  categories={categories}
+              />
+          )}
+          {view === 'income' && <IncomeManagement incomes={userIncomes} onAddOrUpdate={(data) => {
+              if (data.id) dataService.updateIncome({...data, date: new Date().toISOString()} as any);
+              else dataService.addIncome({...data, date: new Date().toISOString(), id: `inc-${Date.now()}`} as any);
+          }} onDelete={(id) => dataService.deleteIncome(id)} activeGroupId={activeGroupId} />}
+          {view === 'admin' && <AdminPanel users={users} groups={groups} onAddUser={dataService.addUser} onUpdateUser={dataService.updateUser} onDeleteUser={dataService.deleteUser} onAddGroup={dataService.addGroup} onUpdateGroup={dataService.updateGroup} onDeleteGroup={dataService.deleteGroup} />}
+        </main>
+        <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
+        <FloatingAiButton onClick={() => setIsChatOpen(true)} onLongPress={() => {}} constraintsRef={constraintsRef} isListening={isAiListening} />
+        <BottomNavBar activeView={view} onViewChange={setView} onAddClick={() => setIsSelectionModalOpen(true)} isAdmin={currentUser.role === Role.ADMIN} />
+        <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
+        <SettingsModal 
+          isOpen={isSettingsModalOpen} 
+          onClose={() => setIsSettingsModalOpen(false)} 
+          theme={theme} 
+          toggleTheme={toggleTheme} 
+          onExportData={handleExportJson} 
+          onImportData={handleImportJson} 
+          onExportToCsv={handleExportCsv} 
+          currentUser={currentUser} 
+        />
+        <AccountFormModal isOpen={isAccountModalOpen} onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} onSubmit={handleAccountSubmit} account={accountToEdit} categories={categories} onManageCategories={() => {}} activeGroupId={activeGroupId} />
+        <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const defaultDate = `${year}-${month}-10T12:00:00Z`;
+  
+            batch.forEach(item => {
+                const isVar = isVariableExpense(item);
+                const isRec = isVar ? true : Boolean(item.isRecurrent);
+                const isInst = Boolean(item.isInstallment);
+                const sanitizedTotal = item.totalInstallments ? Number(item.totalInstallments) : undefined;
+                const installmentId = isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined;
+                const sanitizedValue = Number(item.value);
+                
+                if (isInst && sanitizedTotal && sanitizedTotal > 1) {
+                    const baseDate = new Date(defaultDate);
+                    for (let i = 1; i <= sanitizedTotal; i++) {
+                        const currentDate = new Date(baseDate);
+                        currentDate.setMonth(baseDate.getMonth() + (i - 1));
+                        
+                        dataService.addAccount({
+                            ...item,
+                            id: `batch-${Date.now()}-${Math.random()}-${i}`,
+                            groupId: activeGroupId,
+                            value: sanitizedValue,
+                            isRecurrent: false,
+                            isInstallment: true,
+                            installmentId: installmentId,
+                            currentInstallment: i,
+                            totalInstallments: sanitizedTotal,
+                            paymentDate: currentDate.toISOString(),
+                            status: AccountStatus.PENDING
+                        });
+                    }
+                } else {
+                    dataService.addAccount({
+                        ...item,
+                        id: `batch-${Date.now()}-${Math.random()}`,
+                        groupId: activeGroupId,
+                        value: sanitizedValue,
+                        isRecurrent: isRec,
+                        isInstallment: isInst,
+                        installmentId: installmentId,
+                        currentInstallment: isInst ? (Number(item.currentInstallment) || 1) : undefined,
+                        totalInstallments: sanitizedTotal,
+                        paymentDate: (isRec && !isInst) ? undefined : defaultDate,
+                        status: AccountStatus.PENDING
+                    });
+                }
+            });
+        }} categories={categories} />
+        <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => setIsAccountModalOpen(true)} onSelectBatch={() => setIsBatchModalOpen(true)} />
+        <MoveAccountsModal isOpen={isMoveModalOpen} onClose={() => setIsMoveModalOpen(false)} onSubmit={(ids, to) => {
+            const accsToUpdate = accounts.filter(a => ids.includes(a.id)).map(a => ({...a, paymentDate: `${to}-10T12:00:00Z`}));
+            dataService.updateMultipleAccounts(accsToUpdate);
+        }} allAccounts={userAccounts} currentDashboardMonth={selectedDate.toISOString().slice(0, 7)} />
+      </div>
     </div>
   );
 };

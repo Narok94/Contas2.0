@@ -26,9 +26,10 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
   return (
     <motion.div
         layout
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
+        initial={{ opacity: 0, y: 20, scale: 0.8 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+        whileHover={{ y: -4, transition: { duration: 0.2 } }}
         transition={springConfig}
         onClick={() => onToggleStatus(account)}
         className={`group relative p-1.5 sm:p-3 rounded-[2rem] border-2 transition-all duration-300 cursor-pointer select-none overflow-hidden h-full flex flex-col justify-between active:scale-[0.98] ${

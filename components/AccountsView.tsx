@@ -52,7 +52,11 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
   }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
   return (
-    <div className="space-y-4 sm:space-y-5 animate-fade-in-up max-w-7xl mx-auto py-1 font-sans">
+    <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-4 sm:space-y-5 max-w-7xl mx-auto py-1 font-sans"
+    >
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 px-2 sm:px-0">
             <div>
               <p className="text-slate-400 font-black text-[9px] uppercase tracking-[0.25em] mb-0.5">Gestão de Pagamentos</p>
@@ -91,7 +95,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                     layout
                     className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4"
                 >
-                    <AnimatePresence mode="popLayout" initial={false}>
+                    <AnimatePresence mode="popLayout">
                         {currentMonthAccounts.map(acc => (
                             <AccountCard 
                                 key={acc.id} 
@@ -113,7 +117,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                 )}
             </div>
         </div>
-    </div>
+    </motion.div>
   );
 };
 
