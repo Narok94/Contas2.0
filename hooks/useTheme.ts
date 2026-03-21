@@ -3,16 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 type Theme = 'light' | 'dark';
 
 export const useTheme = () => {
-    const [theme, setTheme] = useState<Theme>('dark');
-
-    useEffect(() => {
-        const storedTheme = localStorage.getItem('theme') as Theme | null;
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        // Se não houver tema salvo, o padrão agora é ESCURO
-        const initialTheme = storedTheme || (prefersDark ? 'dark' : 'dark');
-        setTheme(initialTheme);
-    }, []);
+    const [theme, setTheme] = useState<Theme>(() => {
+        const stored = localStorage.getItem('theme') as Theme | null;
+        if (stored) return stored;
+        return 'dark';
+    });
 
     useEffect(() => {
         const root = window.document.documentElement;

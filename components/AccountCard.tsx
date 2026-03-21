@@ -35,41 +35,41 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
         className={`group relative p-1.5 sm:p-3 rounded-[2rem] border-2 transition-all duration-300 cursor-pointer select-none overflow-hidden h-full flex flex-col justify-between active:scale-[0.98] ${
             isPaid 
                 ? 'bg-success/10 dark:bg-success/20 border-success/40 dark:border-success/60 shadow-inner ring-1 ring-success/20' 
-                : 'bg-surface dark:bg-dark-surface border-border-color dark:border-dark-border-color shadow-sm hover:shadow-md hover:border-primary/50 dark:hover:border-primary/50 hover:bg-primary/5'
+                : 'bg-surface dark:bg-dark-surface border-border-color dark:border-primary/30 shadow-sm hover:shadow-glow-primary hover:border-primary/50 dark:hover:border-primary/60 hover:bg-primary/5'
         }`}
     >
         <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-20">
             <button 
                 onClick={(e) => { e.stopPropagation(); onEdit(account); }} 
-                className={`p-1 rounded-lg transition-all sm:opacity-0 sm:group-hover:opacity-100 ${isPaid ? 'text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20' : 'text-primary hover:text-primary-dark dark:hover:text-primary-light hover:bg-primary/10'}`}
+                className={`p-1 rounded-lg transition-all sm:opacity-0 sm:group-hover:opacity-100 ${isPaid ? 'text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20' : 'text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-white hover:bg-primary/10'}`}
                 title="Editar"
             >
                 <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button 
                 onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar?')) onDelete(account.id); }} 
-                className={`p-1 rounded-lg transition-all sm:opacity-0 sm:group-hover:opacity-100 ${isPaid ? 'text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20' : 'text-danger hover:text-danger-dark dark:hover:text-danger-light hover:bg-danger/10'}`}
+                className={`p-1 rounded-lg transition-all sm:opacity-0 sm:group-hover:opacity-100 ${isPaid ? 'text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20' : 'text-danger hover:text-danger-dark dark:text-danger-light dark:hover:text-white hover:bg-danger/10'}`}
                 title="Excluir"
             >
                 <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             {!isPaid && (
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse sm:group-hover:hidden" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse sm:group-hover:hidden shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
             )}
         </div>
 
         <div className="space-y-0.5 min-w-0">
             <div className="flex items-center gap-1">
-                <span className={`text-[6px] sm:text-[8px] font-black px-1 py-0.5 rounded uppercase truncate max-w-full border ${isPaid ? 'bg-success/20 text-success border-success/30' : 'bg-primary/10 text-primary border-primary/20'}`}>
+                <span className={`text-[6px] sm:text-[8px] font-black px-1 py-0.5 rounded uppercase truncate max-w-full border ${isPaid ? 'bg-success/20 text-success border-success/30' : 'bg-primary/10 text-primary dark:text-primary-light border-primary/20 dark:border-primary/40'}`}>
                     {account.category.split(' ')[1] || account.category}
                 </span>
             </div>
             
             <div className="min-w-0 overflow-hidden">
-                <h3 className={`font-bold text-[9px] sm:text-xs truncate leading-tight ${isPaid ? 'text-success/80 line-through decoration-success/50' : 'text-text-primary dark:text-dark-text-primary'}`}>
+                <h3 className={`font-bold text-[9px] sm:text-xs truncate leading-tight ${isPaid ? 'text-success/80 line-through decoration-success/50' : 'text-text-primary dark:text-white'}`}>
                     {account.name}
                 </h3>
-                <p className={`text-[10px] sm:text-base font-mono font-black tracking-tighter ${isPaid ? 'text-success' : 'text-primary'}`}>
+                <p className={`text-[10px] sm:text-base font-mono font-black tracking-tighter ${isPaid ? 'text-success' : 'text-primary dark:text-primary-light'}`}>
                     {formatCurrency(account.value)}
                 </p>
             </div>
@@ -79,13 +79,13 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                     {account.isInstallment && (
-                        <span className={`text-[6px] sm:text-[8px] font-black uppercase flex items-center gap-0.5 ${isPaid ? 'text-success' : 'text-text-muted dark:text-dark-text-muted'}`}>
+                        <span className={`text-[6px] sm:text-[8px] font-black uppercase flex items-center gap-0.5 ${isPaid ? 'text-success' : 'text-text-muted dark:text-dark-text-secondary'}`}>
                             <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             {account.currentInstallment}/{account.totalInstallments}
                         </span>
                     )}
                     {account.isRecurrent && !account.isInstallment && (
-                        <div className={`w-1 h-1 rounded-full ${isPaid ? 'bg-success' : 'bg-primary/40'}`} title="Recorrente" />
+                        <div className={`w-1 h-1 rounded-full ${isPaid ? 'bg-success' : 'bg-primary/60'}`} title="Recorrente" />
                     )}
                 </div>
             </div>
@@ -94,8 +94,8 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onDelete, on
                 onClick={(e) => { e.stopPropagation(); onToggleStatus(account); }}
                 className={`w-full py-1.5 sm:py-2 rounded-xl flex items-center justify-center gap-2 transition-all flex-shrink-0 border font-black text-[8px] sm:text-[10px] uppercase tracking-widest active:scale-95 ${
                     isPaid 
-                        ? 'bg-success text-white border-success shadow-sm' 
-                        : 'bg-surface dark:bg-dark-surface text-primary border-primary/30 hover:bg-primary/10'
+                        ? 'bg-success text-white border-success shadow-lg shadow-success/20' 
+                        : 'bg-surface dark:bg-dark-surface-light text-primary dark:text-primary-light border-primary/30 dark:border-primary/50 hover:bg-primary/10 dark:hover:bg-primary/20'
                 }`}
             >
                 {isPaid ? (

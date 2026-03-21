@@ -242,13 +242,13 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                     <button onClick={onClose} className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-3xl transition-colors">&times;</button>
                 </div>
 
-                <div className="flex-1 p-4 overflow-y-auto space-y-4 [scrollbar-width:thin] [scrollbar-color:#14b8a6_#0f172a]">
+                <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent">
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`w-fit max-w-xl px-4 py-3 ${
                                 msg.role === 'user' 
                                 ? 'bg-primary text-white rounded-2xl rounded-br-lg' 
-                                : 'bg-dark-surface-light text-dark-text-primary rounded-2xl rounded-bl-lg'
+                                : 'bg-surface-light dark:bg-dark-surface-light text-text-primary dark:text-dark-text-primary rounded-2xl rounded-bl-lg border border-border-color dark:border-dark-border-color'
                             }`}>
                                 <p className="text-sm" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br />') }} />
                             </div>
@@ -256,7 +256,7 @@ const AiChatModal = forwardRef<AiChatModalRef, AiChatModalProps>(({ isOpen, onCl
                     ))}
                     {isLoading && messages[messages.length-1]?.role === 'model' && messages[messages.length-1]?.content === '' && (
                          <div className="flex justify-start">
-                             <div className="px-4 py-3 rounded-2xl rounded-bl-lg bg-dark-surface-light w-24">
+                             <div className="px-4 py-3 rounded-2xl rounded-bl-lg bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color w-24">
                                 <div className="flex items-center space-x-2 h-5">
                                     <div className="w-full h-2 bg-primary/50 rounded-full overflow-hidden">
                                         <div className="h-full bg-gradient-to-r from-transparent via-secondary-light to-transparent w-1/2 rounded-full animate-scanner-beam"></div>

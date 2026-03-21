@@ -38,8 +38,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
   return (
     <div className="flex items-center justify-center min-h-[100dvh] bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary relative overflow-hidden transition-colors duration-500 p-4 font-sans">
         <div className="absolute inset-0 z-0 pointer-events-none">
-            <div className="absolute top-[-10%] right-[-10%] w-[50rem] h-[50rem] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px]"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[45rem] h-[45rem] bg-primary/10 dark:bg-primary/20 rounded-full blur-[100px]"></div>
+            <div className="absolute top-[-10%] right-[-10%] w-[50rem] h-[50rem] bg-primary/20 dark:bg-primary/30 rounded-full blur-[120px] animate-pulse"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[45rem] h-[45rem] bg-secondary/20 dark:bg-secondary/30 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
 
         <motion.div 

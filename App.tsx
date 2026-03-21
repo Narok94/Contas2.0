@@ -355,9 +355,9 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-secondary/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] bg-accent/5 rounded-full blur-[110px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-secondary/10 dark:bg-secondary/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] bg-accent/10 dark:bg-accent/20 rounded-full blur-[110px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <div className="relative z-10">

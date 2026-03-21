@@ -10,19 +10,19 @@ interface LoginScreenProps {
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
     {/* Corpo/Casco do Tatu */}
-    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" fill="#1e293b" />
-    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" fill="#334155" />
+    <path d="M20 65C20 45 35 35 50 35C65 35 80 45 80 65H20Z" className="fill-slate-800 dark:fill-slate-200" />
+    <path d="M32 38C38 36 44 35 50 35C56 35 62 36 68 38L65 65H35L32 38Z" className="fill-slate-700 dark:fill-slate-300" />
     {/* Segmentos do Casco */}
-    <path d="M40 36V65M50 35V65M60 36V65" stroke="#475569" strokeWidth="1.5" />
+    <path d="M40 36V65M50 35V65M60 36V65" className="stroke-slate-600 dark:stroke-slate-400" strokeWidth="1.5" />
     {/* Cabeça */}
-    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" fill="#6366f1" />
+    <path d="M15 55C15 50 22 50 25 55V65H15V55Z" className="fill-primary" />
     {/* Olho */}
     <circle cx="20" cy="58" r="1.5" fill="#ffffff" />
     {/* Rabo */}
-    <path d="M80 60L88 65H80V60Z" fill="#6366f1" />
+    <path d="M80 60L88 65H80V60Z" className="fill-primary" />
     {/* Patas */}
-    <rect x="30" y="65" width="10" height="5" rx="1" fill="#6366f1" />
-    <rect x="60" y="65" width="10" height="5" rx="1" fill="#6366f1" />
+    <rect x="30" y="65" width="10" height="5" rx="1" className="fill-primary" />
+    <rect x="60" y="65" width="10" height="5" rx="1" className="fill-primary" />
   </svg>
 );
 
@@ -61,8 +61,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
       {/* Background Minimalista e Profissional */}
       <div className="absolute inset-0 z-0">
           <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-800/[0.2] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"></div>
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px]"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px]"></div>
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 dark:bg-primary/30 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 dark:bg-secondary/30 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
       
       <motion.div 

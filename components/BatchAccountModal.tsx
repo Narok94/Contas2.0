@@ -163,7 +163,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                             type="checkbox" 
                                             checked={row.isRecurrent}
                                             onChange={(e) => updateRow(row.id, 'isRecurrent', e.target.checked)}
-                                            className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded"
+                                            className="h-5 w-5 text-primary focus:ring-primary border-border-color dark:border-dark-border-color rounded bg-surface dark:bg-dark-surface"
                                         />
                                         <span className="md:hidden text-xs font-bold text-text-secondary uppercase">Recor.</span>
                                     </label>
@@ -175,7 +175,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                             type="checkbox" 
                                             checked={row.isInstallment}
                                             onChange={(e) => updateRow(row.id, 'isInstallment', e.target.checked)}
-                                            className="h-5 w-5 text-rose-500 focus:ring-rose-500 border-gray-300 rounded"
+                                            className="h-5 w-5 text-danger focus:ring-danger border-border-color dark:border-dark-border-color rounded bg-surface dark:bg-dark-surface"
                                         />
                                         <span className="md:hidden text-xs font-bold text-text-secondary uppercase">Parc.</span>
                                     </label>

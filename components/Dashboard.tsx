@@ -120,20 +120,20 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                     {/* Top Stats Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {[
-                            { label: 'Entradas', value: stats.totalIncome, icon: <TrendingUp className="w-5 h-5" />, color: 'text-success', bg: 'bg-success/10 dark:bg-success/20', gradient: 'from-success/10 to-transparent' },
-                            { label: 'Saídas Pagas', value: stats.paid, icon: <TrendingDown className="w-5 h-5" />, color: 'text-danger', bg: 'bg-danger/10 dark:bg-danger/20', gradient: 'from-danger/10 to-transparent' },
-                            { label: 'Pendentes (Mês)', value: stats.pending, icon: <Calendar className="w-5 h-5" />, color: 'text-warning', bg: 'bg-warning/10 dark:bg-warning/20', gradient: 'from-warning/10 to-transparent' },
-                            { label: 'Total a Pagar', value: stats.totalPendingGlobal, icon: <AlertCircle className="w-5 h-5" />, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20', gradient: 'from-orange-500/10 to-transparent' },
-                            { label: 'Saldo Final', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-primary', bg: 'bg-primary/10 dark:bg-primary/20', gradient: 'from-primary/10 to-transparent' },
+                            { label: 'Entradas', value: stats.totalIncome, icon: <TrendingUp className="w-5 h-5" />, color: 'text-success', bg: 'bg-success/20 dark:bg-success/30', gradient: 'from-success/20 to-transparent' },
+                            { label: 'Saídas Pagas', value: stats.paid, icon: <TrendingDown className="w-5 h-5" />, color: 'text-danger', bg: 'bg-danger/20 dark:bg-danger/30', gradient: 'from-danger/20 to-transparent' },
+                            { label: 'Pendentes (Mês)', value: stats.pending, icon: <Calendar className="w-5 h-5" />, color: 'text-warning', bg: 'bg-warning/20 dark:bg-warning/30', gradient: 'from-warning/20 to-transparent' },
+                            { label: 'Total a Pagar', value: stats.totalPendingGlobal, icon: <AlertCircle className="w-5 h-5" />, color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-500/30', gradient: 'from-orange-500/20 to-transparent' },
+                            { label: 'Saldo Final', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-primary', bg: 'bg-primary/20 dark:bg-primary/30', gradient: 'from-primary/20 to-transparent' },
                         ].map((stat, i) => (
-                            <div key={i} className={`relative bg-surface dark:bg-dark-surface p-4 sm:p-6 rounded-[2.5rem] border border-border-color dark:border-dark-border-color shadow-sm overflow-hidden ${i === 4 ? 'col-span-2 md:col-span-1' : ''}`}>
-                                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-50`} />
+                            <div key={i} className={`relative bg-surface dark:bg-dark-surface p-4 sm:p-6 rounded-[2.5rem] border border-border-color dark:border-primary/20 shadow-sm overflow-hidden ${i === 4 ? 'col-span-2 md:col-span-1' : ''}`}>
+                                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-60 dark:opacity-40`} />
                                 <div className="relative z-10">
-                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.bg} ${stat.color} rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4`}>
+                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.bg} ${stat.color} rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-current/10`}>
                                         {stat.icon}
                                     </div>
                                     <p className="text-text-secondary dark:text-dark-text-secondary text-[8px] sm:text-xs font-bold uppercase tracking-widest mb-1">{stat.label}</p>
-                                    <h2 className="text-sm sm:text-2xl font-black text-text-primary dark:text-dark-text-primary tracking-tighter">{formatCurrency(stat.value)}</h2>
+                                    <h2 className="text-sm sm:text-2xl font-black text-text-primary dark:text-white tracking-tighter">{formatCurrency(stat.value)}</h2>
                                 </div>
                             </div>
                         ))}
@@ -227,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border-color dark:text-dark-border-color" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontFamily: 'JetBrains Mono' }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontFamily: 'JetBrains Mono' }} />
                                         <Tooltip 
@@ -238,7 +238,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                                 backgroundColor: 'var(--tw-bg-opacity, #fff)',
                                             }}
                                             itemStyle={{ fontWeight: 'bold' }}
-                                            className="dark:!bg-slate-900 dark:!text-white"
+                                            className="dark:!bg-dark-surface dark:!text-dark-text-primary"
                                         />
                                         <Area type="monotone" dataKey="entradas" stroke="#10b981" fillOpacity={1} fill="url(#colorEntradas)" strokeWidth={3} />
                                         <Area type="monotone" dataKey="saidas" stroke="#ef4444" fillOpacity={1} fill="url(#colorSaidas)" strokeWidth={3} />
@@ -250,7 +250,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                             <h4 className="text-xs font-black uppercase tracking-widest text-text-muted dark:text-dark-text-muted mb-6">Evolução Mensal de Despesas</h4>
                             <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={trendData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border-color dark:text-dark-border-color" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontFamily: 'JetBrains Mono' }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontFamily: 'JetBrains Mono' }} />
                                         <Tooltip 
@@ -262,7 +262,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                                 backgroundColor: 'var(--tw-bg-opacity, #fff)',
                                             }}
                                             itemStyle={{ fontWeight: 'bold' }}
-                                            className="dark:!bg-slate-900 dark:!text-white"
+                                            className="dark:!bg-dark-surface dark:!text-dark-text-primary"
                                         />
                                         <Bar 
                                             dataKey="saidas" 
