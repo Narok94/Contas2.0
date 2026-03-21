@@ -6,14 +6,7 @@ import AccountCard from './AccountCard';
 import SearchBar from './SearchBar';
 import MonthPicker from './MonthPicker';
 import FloatingCalculator from './FloatingCalculator';
-
-const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
-const isVariableExpense = (acc: Partial<Account>) => {
-    if (!acc) return false;
-    const nameMatch = acc.name?.toLowerCase().includes('cartão');
-    const categoryMatch = acc.category && (VARIABLE_CATEGORIES.includes(acc.category) || acc.category.includes('Água') || acc.category.includes('Luz'));
-    return nameMatch || categoryMatch;
-};
+import { getMonthlyAccounts } from '../utils/accountUtils';
 
 interface AccountsViewProps {
   accounts: Account[];
@@ -41,69 +34,9 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
   }, [selectedDate]);
 
   const currentMonthAccounts = useMemo(() => {
-    const selectedYear = safeDate.getFullYear();
-    const selectedMonth = safeDate.getMonth();
-    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+    const allForMonth = getMonthlyAccounts(accounts, safeDate);
     
-    const physicalRecords = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
-    const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
-
-    const recurrentTemplates = accounts.filter(acc => 
-        acc.isRecurrent && 
-        !acc.paymentDate &&
-        !physicalRecords.some(p => p.name === acc.name && p.category === acc.category)
-    ).map(acc => {
-        if (isVariableExpense(acc)) return { ...acc, value: 0 };
-        return acc;
-    });
-
-    const projectedInstallments: Account[] = [];
-    const seriesAnchors = new Map<string, Account>();
-    
-    accounts.forEach(acc => {
-        if (acc.isInstallment && acc.paymentDate) {
-            const anchorKey = acc.installmentId || `legacy-${acc.name}`;
-            const current = seriesAnchors.get(anchorKey);
-            if (!current || new Date(acc.paymentDate) > new Date(current.paymentDate!)) {
-                seriesAnchors.set(anchorKey, acc);
-            }
-        }
-    });
-
-    seriesAnchors.forEach((acc) => {
-        const startDate = new Date(acc.paymentDate!);
-        const monthDiff = (selectedYear - startDate.getFullYear()) * 12 + (selectedMonth - startDate.getMonth());
-
-        if (monthDiff > 0) {
-            const currentInst = Number(acc.currentInstallment || 1);
-            const targetInstallment = currentInst + monthDiff;
-            
-            const maxTotalInSeries = Math.max(
-                Number(acc.totalInstallments || 0),
-                ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => Number(a.totalInstallments || 0))
-            );
-
-            if (targetInstallment <= maxTotalInSeries) {
-                const alreadyExists = physicalRecords.some(p => 
-                    p.installmentId === acc.installmentId && 
-                    Number(p.currentInstallment) === targetInstallment
-                );
-
-                if (!alreadyExists) {
-                    projectedInstallments.push({
-                        ...acc,
-                        id: `projected-${acc.id}-${monthKey}`,
-                        currentInstallment: targetInstallment,
-                        totalInstallments: maxTotalInSeries,
-                        status: AccountStatus.PENDING,
-                        paymentDate: undefined 
-                    });
-                }
-            }
-        }
-    });
-
-    return [...physicalRecords, ...orphanAccounts, ...recurrentTemplates, ...projectedInstallments]
+    return allForMonth
         .filter(acc => {
             const matchesSearch = acc.name.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus = filterStatus === 'ALL' || acc.status === filterStatus;

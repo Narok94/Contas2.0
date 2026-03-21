@@ -7,9 +7,10 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
     PieChart, Pie, Cell, LineChart, Line, AreaChart, Area 
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, PieChart as PieIcon, Calendar, ArrowUpRight, ArrowDownRight, BarChart3, History } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, PieChart as PieIcon, Calendar, ArrowUpRight, ArrowDownRight, BarChart3, History, AlertCircle } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getMonthlyAccounts } from '../utils/accountUtils';
 
 interface DashboardProps {
   accounts: Account[];
@@ -38,28 +39,23 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
         return d.getMonth() === m && d.getFullYear() === y;
     });
     
-    const monthAccounts = accounts.filter(acc => {
-        if (!acc.paymentDate) return false;
-        const d = new Date(acc.paymentDate);
-        return d.getMonth() === m && d.getFullYear() === y;
-    });
+    const monthAccounts = getMonthlyAccounts(accounts, selectedDate);
 
     const totalIncome = monthIncomes.reduce((sum, inc) => sum + inc.value, 0);
     const paid = monthAccounts.filter(acc => acc.status === AccountStatus.PAID).reduce((sum, acc) => sum + acc.value, 0);
     const pending = monthAccounts.filter(acc => acc.status === AccountStatus.PENDING).reduce((sum, acc) => sum + acc.value, 0);
     
-    return { totalIncome, paid, pending, balance: totalIncome - (paid + pending) };
+    // Total geral pendente (todas as contas pendentes no sistema)
+    const totalPendingGlobal = accounts
+        .filter(acc => acc.status === AccountStatus.PENDING)
+        .reduce((sum, acc) => sum + acc.value, 0);
+    
+    return { totalIncome, paid, pending, balance: totalIncome - (paid + pending), totalPendingGlobal };
   }, [accounts, incomes, selectedDate]);
 
   // 2. Spending by Category (Pie Chart)
   const categoryData = useMemo(() => {
-    const m = selectedDate.getMonth();
-    const y = selectedDate.getFullYear();
-    const monthAccounts = accounts.filter(acc => {
-        if (!acc.paymentDate) return false;
-        const d = new Date(acc.paymentDate);
-        return d.getMonth() === m && d.getFullYear() === y;
-    });
+    const monthAccounts = getMonthlyAccounts(accounts, selectedDate);
 
     const categoriesMap = new Map<string, number>();
     monthAccounts.forEach(acc => {
@@ -126,14 +122,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                     className="space-y-6"
                 >
                     {/* Top Stats Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {[
                             { label: 'Entradas', value: stats.totalIncome, icon: <TrendingUp className="w-5 h-5" />, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
                             { label: 'Saídas Pagas', value: stats.paid, icon: <TrendingDown className="w-5 h-5" />, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
-                            { label: 'Saídas Pendentes', value: stats.pending, icon: <Calendar className="w-5 h-5" />, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+                            { label: 'Pendentes (Mês)', value: stats.pending, icon: <Calendar className="w-5 h-5" />, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+                            { label: 'Total a Pagar', value: stats.totalPendingGlobal, icon: <AlertCircle className="w-5 h-5" />, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
                             { label: 'Saldo Final', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-gold', bg: 'bg-gold/10 dark:bg-gold/20' },
                         ].map((stat, i) => (
-                            <div key={i} className="bg-surface dark:bg-dark-surface p-4 sm:p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm">
+                            <div key={i} className={`bg-surface dark:bg-dark-surface p-4 sm:p-6 rounded-[2rem] border border-border-color dark:border-dark-border-color shadow-sm ${i === 4 ? 'col-span-2 md:col-span-1' : ''}`}>
                                 <div className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.bg} ${stat.color} rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4`}>
                                     {stat.icon}
                                 </div>
@@ -177,9 +174,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                 Últimas Transações
                             </h3>
                             <div className="space-y-3">
-                                {[...accounts, ...incomes]
-                                    .filter(item => ('paymentDate' in item ? item.paymentDate : item.date)?.startsWith(format(selectedDate, 'yyyy-MM')))
-                                    .sort((a, b) => new Date(('paymentDate' in b ? b.paymentDate : b.date)!).getTime() - new Date(('paymentDate' in a ? a.paymentDate : a.date)!).getTime())
+                                {[...getMonthlyAccounts(accounts, selectedDate), ...incomes.filter(inc => {
+                                    const d = new Date(inc.date);
+                                    return d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
+                                })]
+                                    .sort((a, b) => {
+                                        const dateA = new Date(('paymentDate' in a ? a.paymentDate : 'date' in a ? a.date : null) || selectedDate.toISOString());
+                                        const dateB = new Date(('paymentDate' in b ? b.paymentDate : 'date' in b ? b.date : null) || selectedDate.toISOString());
+                                        return dateB.getTime() - dateA.getTime();
+                                    })
                                     .slice(0, 4)
                                     .map((item, i) => (
                                         <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color/50 dark:border-dark-border-color/50">
@@ -245,9 +248,15 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                 >
                     <h3 className="font-serif italic text-2xl text-slate-900 dark:text-white mb-8">Histórico Completo do Mês</h3>
                     <div className="space-y-4">
-                        {[...accounts, ...incomes]
-                            .filter(item => ('paymentDate' in item ? item.paymentDate : item.date)?.startsWith(format(selectedDate, 'yyyy-MM')))
-                            .sort((a, b) => new Date(('paymentDate' in b ? b.paymentDate : b.date)!).getTime() - new Date(('paymentDate' in a ? a.paymentDate : a.date)!).getTime())
+                        {[...getMonthlyAccounts(accounts, selectedDate), ...incomes.filter(inc => {
+                            const d = new Date(inc.date);
+                            return d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
+                        })]
+                            .sort((a, b) => {
+                                const dateA = new Date(('paymentDate' in a ? a.paymentDate : 'date' in a ? a.date : null) || selectedDate.toISOString());
+                                const dateB = new Date(('paymentDate' in b ? b.paymentDate : b.date)!).getTime();
+                                return dateB - dateA.getTime();
+                            })
                             .map((item, i) => (
                                 <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color">
                                     <div className="flex items-center gap-4">
@@ -263,7 +272,9 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                         <p className={`font-mono font-black text-sm ${'date' in item ? 'text-emerald-600' : 'text-rose-600'}`}>
                                             {'date' in item ? '+' : '-'} {formatCurrency(item.value)}
                                         </p>
-                                        <p className="text-[10px] text-slate-400 font-mono">{format(new Date(('paymentDate' in item ? item.paymentDate : item.date)!), 'dd/MM/yyyy')}</p>
+                                        <p className="text-[10px] text-slate-400 font-mono">
+                                            {format(new Date(('paymentDate' in item ? item.paymentDate : 'date' in item ? item.date : null) || selectedDate.toISOString()), 'dd/MM/yyyy')}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
