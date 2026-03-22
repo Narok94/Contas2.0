@@ -45,6 +45,7 @@ export interface Account {
   isInstallment: boolean;
   totalInstallments?: number;
   currentInstallment?: number;
+  totalValue?: number; // Total value of the installment
   installmentId?: string; // To group installments together
   paymentDate?: string; // ISO string date
 }

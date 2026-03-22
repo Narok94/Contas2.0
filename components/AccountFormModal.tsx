@@ -20,6 +20,7 @@ type AccountFormData = {
   isRecurrent: boolean;
   isInstallment: boolean;
   totalInstallments: string;
+  totalValue: string;
   paymentDate: string;
   groupId: string;
 };
@@ -31,6 +32,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
   const [isRecurrent, setIsRecurrent] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState('2');
+  const [totalValue, setTotalValue] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
@@ -54,6 +56,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             isRecurrent: account.isRecurrent,
             isInstallment: account.isInstallment,
             totalInstallments: String(account.totalInstallments || 2),
+            totalValue: String(account.totalValue || account.value * (account.totalInstallments || 1)),
             paymentDate: account.paymentDate ? account.paymentDate.split('T')[0] : defaultDateStr,
             groupId: initialGroupId,
           }
@@ -64,6 +67,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             isRecurrent: false,
             isInstallment: false,
             totalInstallments: '2',
+            totalValue: '',
             paymentDate: defaultDateStr,
             groupId: initialGroupId,
           };
@@ -76,6 +80,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       setIsRecurrent(initialState.isRecurrent);
       setIsInstallment(initialState.isInstallment);
       setTotalInstallments(initialState.totalInstallments);
+      setTotalValue(initialState.totalValue);
       setPaymentDate(initialState.paymentDate);
       setShowConfirmDialog(false); // Reset confirmation on open
     }
@@ -92,6 +97,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
     if (initialStateRef.current.isRecurrent !== isRecurrent) return true;
     if (initialStateRef.current.isInstallment !== isInstallment) return true;
     if (isInstallment && initialStateRef.current.totalInstallments !== totalInstallments) return true;
+    if (isInstallment && initialStateRef.current.totalValue !== totalValue) return true;
     if (initialStateRef.current.paymentDate !== paymentDate) return true;
     
     return false;
@@ -114,15 +120,31 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
     setShowConfirmDialog(false);
   };
 
+  // Update installment value in real-time
+  useEffect(() => {
+    if (isInstallment && totalValue && totalInstallments) {
+        const total = parseFloat(totalValue.replace(',', '.'));
+        const installments = parseInt(totalInstallments, 10);
+        if (!isNaN(total) && !isNaN(installments) && installments > 0) {
+            setValue((total / installments).toFixed(2));
+        }
+    }
+  }, [isInstallment, totalValue, totalInstallments]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !value || !category || !activeGroupId) return;
+    const finalValue = isInstallment 
+      ? parseFloat(totalValue) / parseInt(totalInstallments, 10)
+      : parseFloat(value);
+
+    if (!name || isNaN(finalValue) || !category || !activeGroupId) return;
 
     onSubmit({
       id: account?.id,
       name,
       category,
-      value: parseFloat(value),
+      value: finalValue,
+      totalValue: isInstallment ? parseFloat(totalValue) : undefined,
       isRecurrent,
       isInstallment,
       totalInstallments: isInstallment ? parseInt(totalInstallments, 10) : undefined,
@@ -180,10 +202,29 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
               <input id="account-name" type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-dark-text-primary" />
             </div>
             <div className="space-y-1">
-              <label htmlFor="account-value" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Valor (R$)</label>
-              <input id="account-value" type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all font-mono text-text-primary dark:text-dark-text-primary" />
+              <label htmlFor="account-value" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">
+                {isInstallment ? 'Valor Total (R$)' : 'Valor (R$)'}
+              </label>
+              <input 
+                id="account-value" 
+                type="number" 
+                step="0.01" 
+                value={isInstallment ? totalValue : value} 
+                onChange={e => isInstallment ? setTotalValue(e.target.value) : setValue(e.target.value)} 
+                required 
+                className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all font-mono text-text-primary dark:text-dark-text-primary" 
+              />
             </div>
           </div>
+
+          {isInstallment && totalValue && totalInstallments && (
+            <div className="p-4 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20 flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase text-primary/60">Valor da Parcela:</span>
+              <span className="font-mono font-black text-primary">
+                {(parseFloat(totalValue) / parseInt(totalInstallments, 10)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </span>
+            </div>
+          )}
 
           <div className="space-y-1">
             <label htmlFor="account-date" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Data</label>

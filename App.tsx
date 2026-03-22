@@ -201,9 +201,13 @@ const App: React.FC = () => {
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const targetDate = `${year}-${month}-10T12:00:00Z`;
 
-      const sanitizedValue = Number(data.value);
       const sanitizedTotal = data.totalInstallments ? Number(data.totalInstallments) : undefined;
       const sanitizedCurrent = data.currentInstallment ? Number(data.currentInstallment) : undefined;
+      
+      let sanitizedValue = Number(data.value);
+      if (data.isInstallment && data.totalValue && sanitizedTotal) {
+          sanitizedValue = Number(data.totalValue) / sanitizedTotal;
+      }
 
       if (data.id && (existingAccount || isEditingProjection)) {
           // ... (existing update logic)
@@ -261,6 +265,7 @@ const App: React.FC = () => {
                       ...data,
                       id: `acc-${Date.now()}-${i}`,
                       value: sanitizedValue,
+                      totalValue: data.totalValue,
                       isRecurrent: false, // Installments are fixed series
                       isInstallment: true,
                       installmentId: installmentId,
@@ -276,6 +281,7 @@ const App: React.FC = () => {
                   ...data,
                   id: `acc-${Date.now()}`,
                   value: sanitizedValue,
+                  totalValue: data.totalValue,
                   isRecurrent: isRec,
                   isInstallment: isInst,
                   installmentId: installmentId,

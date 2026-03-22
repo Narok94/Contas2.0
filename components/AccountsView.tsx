@@ -119,9 +119,16 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                             </div>
                                         </td>
                                         <td className="p-3 border-r border-border-color dark:border-dark-border-color font-mono font-black text-sm tracking-tighter text-right">
-                                            <span className={isPaid ? 'text-success/70' : 'text-primary dark:text-primary-light'}>
-                                                {acc.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                            </span>
+                                            <div className="flex flex-col items-end">
+                                                <span className={isPaid ? 'text-success/70' : 'text-primary dark:text-primary-light'}>
+                                                    {acc.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                </span>
+                                                {acc.isInstallment && acc.totalValue && (
+                                                    <span className="text-[9px] font-bold text-text-muted dark:text-dark-text-muted opacity-60">
+                                                        Total: {acc.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="p-3 border-r border-border-color dark:border-dark-border-color text-center">
                                             <span className={`text-[9px] font-black px-2 py-1 rounded uppercase border inline-block ${

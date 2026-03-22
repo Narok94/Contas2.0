@@ -82,6 +82,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
     const accountsData = validRows.map(row => ({
       name: row.name,
       value: row.value.replace(',', '.'), // O App.tsx fará o cast definitivo para Number
+      totalValue: row.isInstallment ? parseFloat(row.value.replace(',', '.')) : undefined,
       category: row.category,
       isRecurrent: Boolean(row.isRecurrent),
       isInstallment: Boolean(row.isInstallment),
@@ -114,7 +115,7 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                     {/* Header Row (Hidden on mobile) */}
                     <div className="hidden md:grid grid-cols-12 gap-3 px-2 text-sm font-semibold text-text-secondary dark:text-dark-text-secondary mb-2">
                         <div className="col-span-3">Nome</div>
-                        <div className="col-span-2">Valor (R$)</div>
+                        <div className="col-span-2">Valor / Total</div>
                         <div className="col-span-3">Categoria</div>
                         <div className="col-span-1 text-center">Recor.</div>
                         <div className="col-span-1 text-center">Parc.</div>
@@ -136,10 +137,10 @@ const BatchAccountModal: React.FC<BatchAccountModalProps> = ({ isOpen, onClose, 
                                 />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="md:hidden text-xs text-text-muted">Valor</label>
+                                <label className="md:hidden text-xs text-text-muted">{row.isInstallment ? 'Total' : 'Valor'}</label>
                                 <input 
                                     type="text" 
-                                    placeholder="0,00"
+                                    placeholder={row.isInstallment ? "Total" : "0,00"}
                                     value={row.value}
                                     onChange={(e) => updateRow(row.id, 'value', e.target.value)}
                                     className="w-full p-2 text-sm rounded bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary font-bold text-primary"
