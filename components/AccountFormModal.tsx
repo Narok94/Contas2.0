@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { type Account } from '../types';
+import { getCategoryIcon } from '../utils/categoryIcons';
+import { ChevronDown } from 'lucide-react';
 
 interface AccountFormModalProps {
   isOpen: boolean;
@@ -234,9 +236,23 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
           <div className="space-y-1">
             <label htmlFor="account-category" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Categoria</label>
             <div className="flex items-center space-x-3">
-                <select id="account-category" value={category} onChange={e => setCategory(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none cursor-pointer text-text-primary dark:text-dark-text-primary">
-                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
+                <div className="relative flex-1">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center pointer-events-none">
+                        {getCategoryIcon(category)}
+                    </div>
+                    <select 
+                        id="account-category" 
+                        value={category} 
+                        onChange={e => setCategory(e.target.value)} 
+                        required 
+                        className="w-full pl-14 pr-10 py-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all appearance-none cursor-pointer text-text-primary dark:text-dark-text-primary font-bold text-sm"
+                    >
+                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
+                        <ChevronDown className="w-4 h-4" />
+                    </div>
+                </div>
                 <button type="button" onClick={onManageCategories} className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Gerenciar Categorias">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" /></svg>
                 </button>
