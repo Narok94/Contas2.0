@@ -22,7 +22,7 @@ interface DashboardProps {
 const COLORS = ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, setSelectedDate }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'trends' | 'history'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'trends' | 'history' | 'detailed'>('summary');
   const formatCurrency = (val: number) => (
     <span className="font-mono tracking-tighter">
         {val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -89,6 +89,31 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
     return data;
   }, [accounts, incomes, selectedDate]);
 
+  // 4. Detailed Category Breakdown
+  const detailedData = useMemo(() => {
+    const monthAccounts = getMonthlyAccounts(accounts, selectedDate);
+    const categoriesMap = new Map<string, { total: number; items: Account[] }>();
+    
+    monthAccounts.forEach(acc => {
+        const current = categoriesMap.get(acc.category) || { total: 0, items: [] };
+        categoriesMap.set(acc.category, {
+            total: current.total + acc.value,
+            items: [...current.items, acc].sort((a, b) => b.value - a.value)
+        });
+    });
+
+    const totalExpenses = monthAccounts.reduce((sum, acc) => sum + acc.value, 0);
+
+    return Array.from(categoriesMap.entries())
+        .map(([name, data]) => ({
+            name,
+            total: data.total,
+            items: data.items,
+            percentage: totalExpenses > 0 ? (data.total / totalExpenses) * 100 : 0
+        }))
+        .sort((a, b) => b.total - a.total);
+  }, [accounts, selectedDate]);
+
   return (
     <div className="space-y-6 animate-fade-in pb-20 font-sans">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -99,10 +124,11 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                 <p className="text-text-secondary dark:text-dark-text-secondary font-medium text-sm">Visão analítica de {format(selectedDate, 'MMMM yyyy', { locale: ptBR })}</p>
             </div>
             <div className="flex items-center gap-3">
-                <div className="flex bg-surface-light dark:bg-dark-surface-light p-1 rounded-xl border border-border-color dark:border-dark-border-color">
-                    <button onClick={() => setActiveTab('summary')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'summary' ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm' : 'text-text-muted dark:text-dark-text-muted'}`}>Resumo</button>
-                    <button onClick={() => setActiveTab('trends')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'trends' ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm' : 'text-text-muted dark:text-dark-text-muted'}`}>Tendências</button>
-                    <button onClick={() => setActiveTab('history')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'history' ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm' : 'text-text-muted dark:text-dark-text-muted'}`}>Histórico</button>
+                <div className="flex bg-surface-light dark:bg-dark-surface-light p-1 rounded-xl border border-border-color dark:border-dark-border-color overflow-x-auto no-scrollbar">
+                    <button onClick={() => setActiveTab('summary')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'summary' ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm' : 'text-text-muted dark:text-dark-text-muted'}`}>Resumo</button>
+                    <button onClick={() => setActiveTab('detailed')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'detailed' ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm' : 'text-text-muted dark:text-dark-text-muted'}`}>Detalhamento</button>
+                    <button onClick={() => setActiveTab('trends')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'trends' ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm' : 'text-text-muted dark:text-dark-text-muted'}`}>Tendências</button>
+                    <button onClick={() => setActiveTab('history')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'history' ? 'bg-surface dark:bg-dark-surface text-primary shadow-sm' : 'text-text-muted dark:text-dark-text-muted'}`}>Histórico</button>
                 </div>
                 <MonthPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
             </div>
@@ -197,6 +223,69 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                             </div>
                         </div>
                     </div>
+                </motion.div>
+            )}
+
+            {activeTab === 'detailed' && (
+                <motion.div 
+                    key="detailed"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-6"
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {detailedData.map((category, idx) => (
+                            <div key={idx} className="bg-surface dark:bg-dark-surface p-6 rounded-[2.5rem] border border-border-color dark:border-dark-border-color shadow-sm flex flex-col">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="text-lg font-serif italic text-text-primary dark:text-dark-text-primary">{category.name}</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted dark:text-dark-text-muted">{category.items.length} itens</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-primary font-mono">{formatCurrency(category.total)}</p>
+                                        <p className="text-[10px] font-bold text-text-muted dark:text-dark-text-muted">{category.percentage.toFixed(1)}% do total</p>
+                                    </div>
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div className="w-full h-2 bg-surface-light dark:bg-dark-surface-light rounded-full mb-6 overflow-hidden">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${category.percentage}%` }}
+                                        transition={{ duration: 1, ease: "easeOut" }}
+                                        className="h-full bg-primary shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                                        style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                                    />
+                                </div>
+
+                                {/* Items List */}
+                                <div className="space-y-2 flex-grow">
+                                    {category.items.map((item, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-surface-light/50 dark:bg-dark-surface-light/30 border border-border-color/30 dark:border-dark-border-color/20">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${item.status === AccountStatus.PAID ? 'bg-success' : 'bg-warning animate-pulse'}`} />
+                                                <span className="text-[11px] font-bold text-text-primary dark:text-dark-text-primary truncate max-w-[150px]">{item.name}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[11px] font-mono font-black text-text-secondary dark:text-dark-text-secondary">{formatCurrency(item.value)}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {detailedData.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="w-20 h-20 bg-surface-light dark:bg-dark-surface-light rounded-full flex items-center justify-center mb-4 border border-border-color dark:border-dark-border-color">
+                                <PieIcon className="w-10 h-10 text-text-muted opacity-20" />
+                            </div>
+                            <h3 className="text-xl font-serif italic text-text-primary dark:text-dark-text-primary">Nenhum gasto registrado</h3>
+                            <p className="text-sm text-text-muted dark:text-dark-text-muted max-w-xs mx-auto mt-2">Você ainda não possui contas registradas para este mês.</p>
+                        </div>
+                    )}
                 </motion.div>
             )}
 
