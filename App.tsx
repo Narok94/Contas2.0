@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
@@ -335,6 +336,66 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportExcel = () => {
+    const accounts = realtimeService.getAccounts();
+    const incomes = realtimeService.getIncomes();
+    
+    const wb = XLSX.utils.book_new();
+
+    // 1. Add a "Resumo Geral" sheet first
+    const allData = [
+        ...incomes.map(inc => ({
+            'Tipo': 'Receita',
+            'Nome': inc.name,
+            'Valor': inc.value,
+            'Categoria': inc.category,
+            'Data': new Date(inc.date).toLocaleDateString('pt-BR'),
+            'Status': 'Pago'
+        })),
+        ...accounts.map(acc => ({
+            'Tipo': 'Despesa',
+            'Nome': acc.name,
+            'Valor': acc.value,
+            'Categoria': acc.category,
+            'Data': acc.paymentDate ? new Date(acc.paymentDate).toLocaleDateString('pt-BR') : 'N/A',
+            'Status': acc.status === AccountStatus.PAID ? 'Pago' : 'Pendente'
+        }))
+    ];
+    const wsAll = XLSX.utils.json_to_sheet(allData);
+    XLSX.utils.book_append_sheet(wb, wsAll, 'Resumo Geral');
+    
+    // 2. Group accounts by category in separate sheets
+    const categories = Array.from(new Set(accounts.map(a => a.category)));
+    
+    categories.forEach(cat => {
+        const catAccounts = accounts.filter(a => a.category === cat);
+        const data = catAccounts.map(acc => ({
+            'Nome': acc.name,
+            'Valor': acc.value,
+            'Status': acc.status === AccountStatus.PAID ? 'Pago' : 'Pendente',
+            'Data': acc.paymentDate ? new Date(acc.paymentDate).toLocaleDateString('pt-BR') : 'N/A',
+            'Recorrente': acc.isRecurrent ? 'Sim' : 'Não',
+            'Parcela': acc.isInstallment ? `${acc.currentInstallment}/${acc.totalInstallments}` : 'N/A'
+        }));
+        
+        const ws = XLSX.utils.json_to_sheet(data);
+        
+        // Auto-size columns
+        const maxWidths = data.reduce((acc: any, row: any) => {
+            Object.keys(row).forEach((key, i) => {
+                const val = String(row[key]);
+                acc[i] = Math.max(acc[i] || 0, val.length, key.length);
+            });
+            return acc;
+        }, []);
+        ws['!cols'] = maxWidths.map((w: number) => ({ wch: w + 2 }));
+
+        XLSX.utils.book_append_sheet(wb, ws, cat.replace(/[\[\]\*\?\/\\]/g, '').substring(0, 31) || 'Sem Categoria');
+    });
+
+    XLSX.writeFile(wb, `tatu_financeiro_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background font-sans">
@@ -405,6 +466,7 @@ const App: React.FC = () => {
           onExportData={handleExportJson} 
           onImportData={handleImportJson} 
           onExportToCsv={handleExportCsv} 
+          onExportToExcel={handleExportExcel}
           currentUser={currentUser} 
         />
         <AccountFormModal 

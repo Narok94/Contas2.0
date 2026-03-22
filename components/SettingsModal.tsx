@@ -218,10 +218,10 @@ const CloudStatusCard: React.FC = () => {
 
 interface SettingsModalProps {
     isOpen: boolean; onClose: () => void; theme: 'light' | 'dark'; toggleTheme: () => void;
-    onExportData: () => void; onImportData: (file: File) => void; onExportToCsv: () => void; currentUser: User | null;
+    onExportData: () => void; onImportData: (file: File) => void; onExportToCsv: () => void; onExportToExcel: () => void; currentUser: User | null;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onExportToCsv, currentUser }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onExportToCsv, onExportToExcel, currentUser }) => {
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
     const [whatsappEnabled, setWhatsappEnabled] = useState(false);
@@ -308,6 +308,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                         <button onClick={onExportToCsv} className="w-full flex items-center justify-between p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl hover:bg-accent/5 dark:hover:bg-accent/10 transition-colors">
                             <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">Exportar Relatório (CSV)</span>
                             <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                        <button onClick={onExportToExcel} className="w-full flex items-center justify-between p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl hover:bg-success/5 dark:hover:bg-success/10 transition-colors">
+                            <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">Exportar Excel (por Categoria)</span>
+                            <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </button>
                     </div>
                 </div>
