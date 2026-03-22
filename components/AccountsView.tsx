@@ -7,6 +7,7 @@ import MonthPicker from './MonthPicker';
 import FloatingCalculator from './FloatingCalculator';
 import { getMonthlyAccounts } from '../utils/accountUtils';
 import { getCategoryIcon } from '../utils/categoryIcons';
+import { format } from 'date-fns';
 import { Tag, Search, Calendar, DollarSign, Repeat, CheckCircle2, Edit2, Trash2, Receipt, Calculator, ArrowRightLeft } from 'lucide-react';
 
 interface AccountsViewProps {
@@ -134,7 +135,14 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                     <div className="space-y-1">
                                                         <p className="text-[8px] font-black uppercase tracking-widest text-text-muted dark:text-dark-text-muted">Vencimento</p>
                                                         <p className="text-xs font-mono font-bold text-text-secondary dark:text-dark-text-secondary">
-                                                            {format(new Date(acc.paymentDate), 'dd/MM/yyyy')}
+                                                            {(() => {
+                                                                try {
+                                                                    const d = new Date(acc.paymentDate);
+                                                                    return isNaN(d.getTime()) ? 'Data Inválida' : format(d, 'dd/MM/yyyy');
+                                                                } catch (e) {
+                                                                    return 'Data Inválida';
+                                                                }
+                                                            })()}
                                                         </p>
                                                     </div>
                                                     <div className="text-right">

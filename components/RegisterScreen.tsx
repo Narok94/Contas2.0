@@ -47,171 +47,135 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0A0A0A] text-white overflow-hidden font-sans selection:bg-primary selection:text-white">
-      {/* Immersive Background */}
+    <div className="relative min-h-[100dvh] bg-[#050505] text-white overflow-hidden font-sans selection:bg-primary selection:text-white flex items-center justify-center p-4 sm:p-6">
+      {/* Refined Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-secondary/20 rounded-full blur-[160px] animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] mix-blend-overlay" />
+        <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-secondary/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row min-h-[100dvh]">
-        {/* Left Side: Branding (Hidden on mobile or stacked) */}
-        <div className="flex-1 flex flex-col justify-center p-8 lg:p-20 border-b lg:border-b-0 lg:border-r border-white/5">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <div className="flex items-center gap-4 mb-12">
-              <div className="w-12 h-12 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center">
-                <TatuIcon className="w-8 h-8" />
-              </div>
-              <span className="text-xs font-black uppercase tracking-[0.4em] text-white/40">Financeiro</span>
-            </div>
-
-            <h1 className="text-[15vw] lg:text-[120px] font-serif italic font-black leading-[0.85] tracking-tighter mb-6">
-              JOIN<span className="text-primary">.</span>
-            </h1>
-            <p className="text-xl lg:text-2xl text-white/60 font-light max-w-md leading-relaxed">
-              Dê o primeiro passo para sua <span className="text-white font-medium italic">liberdade financeira</span>. Simples, rápido e seguro.
-            </p>
-
-            <div className="mt-12 space-y-4">
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 max-w-xs">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider">Segurança Total</h4>
-                  <p className="text-[10px] text-white/40">Seus dados criptografados.</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-[460px] bg-zinc-900/50 backdrop-blur-2xl border border-white/5 rounded-[2rem] p-6 sm:p-10 shadow-2xl shadow-black/50"
+      >
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-14 h-14 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center mb-5">
+            <TatuIcon className="w-8 h-8" />
+          </div>
+          <h1 className="text-3xl font-serif italic font-black tracking-tighter mb-1">
+            JOIN<span className="text-primary">.</span>
+          </h1>
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Nova Conta</p>
         </div>
 
-        {/* Right Side: Register Form */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-20 bg-white/[0.02] backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full max-w-[440px]"
-          >
-            <div className="mb-10">
-              <h2 className="text-3xl font-bold mb-2">Crie sua conta</h2>
-              <p className="text-white/50 text-sm">Preencha os campos abaixo para começar sua jornada.</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Nome Completo</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+                <UserPlus className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                required
+                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                placeholder="Seu nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome Completo</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-colors">
-                    <UserPlus className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-2xl outline-none transition-all text-white font-medium placeholder:text-white/10"
-                    placeholder="Seu nome completo"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Usuário</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+                <Mail className="w-4 h-4" />
               </div>
+              <input
+                type="text"
+                required
+                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                placeholder="Nome de usuário"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Usuário</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-colors">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-2xl outline-none transition-all text-white font-medium placeholder:text-white/10"
-                    placeholder="Nome de usuário"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Senha</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+                  <Lock className="w-4 h-4" />
                 </div>
+                <input
+                  type="password"
+                  required
+                  className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                  placeholder="••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-colors">
-                      <Lock className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="password"
-                      required
-                      className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-2xl outline-none transition-all text-white font-medium placeholder:text-white/10"
-                      placeholder="••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Confirma</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+                  <Lock className="w-4 h-4" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Confirma</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-colors">
-                      <Lock className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="password"
-                      required
-                      className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-2xl outline-none transition-all text-white font-medium placeholder:text-white/10"
-                      placeholder="••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                  </div>
-                </div>
+                <input
+                  type="password"
+                  required
+                  className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                  placeholder="••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
               </div>
+            </div>
+          </div>
 
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-xs font-bold text-center uppercase tracking-wider"
-                >
-                  {error}
-                </motion.div>
-              )}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger text-[10px] font-black text-center uppercase tracking-wider"
+            >
+              {error}
+            </motion.div>
+          )}
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-glow-primary transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    CRIAR MINHA CONTA
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                Criar Conta
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
 
-              <div className="pt-6 flex flex-col items-center gap-4">
-                <button
-                  type="button"
-                  onClick={onNavigateToLogin}
-                  className="text-xs font-bold text-white/40 hover:text-white transition-colors"
-                >
-                  Já tem uma conta? <span className="text-primary">Entre agora</span>
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      </div>
+          <div className="pt-4 flex flex-col items-center gap-4">
+            <button
+              type="button"
+              onClick={onNavigateToLogin}
+              className="text-[10px] font-bold text-white/30 hover:text-white transition-colors uppercase tracking-widest"
+            >
+              Já tem conta? <span className="text-primary">Entrar</span>
+            </button>
+          </div>
+        </form>
+      </motion.div>
 
       {/* Footer */}
       <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">

@@ -51,149 +51,112 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0A0A0A] text-white overflow-hidden font-sans selection:bg-primary selection:text-white">
-      {/* Immersive Background */}
+    <div className="relative min-h-[100dvh] bg-[#050505] text-white overflow-hidden font-sans selection:bg-primary selection:text-white flex items-center justify-center p-4 sm:p-6">
+      {/* Refined Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[160px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/10 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] mix-blend-overlay" />
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-primary/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-secondary/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row min-h-[100dvh]">
-        {/* Left Side: Branding (Hidden on mobile or stacked) */}
-        <div className="flex-1 flex flex-col justify-center p-8 lg:p-20 border-b lg:border-b-0 lg:border-r border-white/5">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <div className="flex items-center gap-4 mb-12">
-              <div className="w-12 h-12 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center">
-                {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
-                ) : (
-                  <TatuIcon className="w-8 h-8" />
-                )}
-              </div>
-              <span className="text-xs font-black uppercase tracking-[0.4em] text-white/40">Financeiro</span>
-            </div>
-
-            <h1 className="text-[15vw] lg:text-[120px] font-serif italic font-black leading-[0.85] tracking-tighter mb-6">
-              TATU<span className="text-primary">.</span>
-            </h1>
-            <p className="text-xl lg:text-2xl text-white/60 font-light max-w-md leading-relaxed">
-              Gestão financeira <span className="text-white font-medium italic">profissional</span> para quem busca clareza e controle absoluto.
-            </p>
-
-            <div className="mt-12 flex items-center gap-6">
-              <div className="flex -space-x-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-[#0A0A0A] bg-white/10 backdrop-blur-md flex items-center justify-center overflow-hidden">
-                    <img src={`https://picsum.photos/seed/user${i}/100/100`} alt="User" referrerPolicy="no-referrer" />
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs font-medium text-white/40 uppercase tracking-widest">
-                +1.2k usuários ativos
-              </p>
-            </div>
-          </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-[420px] bg-zinc-900/50 backdrop-blur-2xl border border-white/5 rounded-[2rem] p-6 sm:p-10 shadow-2xl shadow-black/50"
+      >
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-14 h-14 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center mb-5">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
+            ) : (
+              <TatuIcon className="w-8 h-8" />
+            )}
+          </div>
+          <h1 className="text-3xl font-serif italic font-black tracking-tighter mb-1">
+            TATU<span className="text-primary">.</span>
+          </h1>
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Gestão Financeira</p>
         </div>
 
-        {/* Right Side: Login Form */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-20 bg-white/[0.02] backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full max-w-[400px]"
-          >
-            <div className="mb-10">
-              <h2 className="text-3xl font-bold mb-2">Bem-vindo de volta</h2>
-              <p className="text-white/50 text-sm">Insira suas credenciais para acessar sua conta.</p>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Usuário</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+                <User className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                autoCapitalize="none"
+                required
+                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                placeholder="Seu usuário"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Usuário</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-colors">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    autoCapitalize="none"
-                    required
-                    className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-2xl outline-none transition-all text-white font-medium placeholder:text-white/10"
-                    placeholder="Seu usuário"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Senha</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+                <Lock className="w-4 h-4" />
               </div>
+              <input
+                type="password"
+                required
+                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-colors">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="password"
-                    required
-                    className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-2xl outline-none transition-all text-white font-medium placeholder:text-white/10"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-              </div>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger text-[10px] font-black text-center uppercase tracking-wider"
+            >
+              {error}
+            </motion.div>
+          )}
 
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-xs font-bold text-center uppercase tracking-wider"
-                >
-                  {error}
-                </motion.div>
-              )}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                Entrar no Sistema
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-glow-primary transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    ACESSAR DASHBOARD
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
+          <div className="pt-4 flex flex-col items-center gap-4">
+            <button
+              type="button"
+              onClick={onNavigateToRegister}
+              className="text-[10px] font-bold text-white/30 hover:text-white transition-colors uppercase tracking-widest"
+            >
+              Não tem conta? <span className="text-primary">Cadastre-se</span>
+            </button>
+            
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+              <ShieldCheck className="w-3 h-3 text-success/60" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-white/30">Ambiente Criptografado</span>
+            </div>
+          </div>
+        </form>
+      </motion.div>
 
-              <div className="pt-6 flex flex-col items-center gap-4">
-                <button
-                  type="button"
-                  onClick={onNavigateToRegister}
-                  className="text-xs font-bold text-white/40 hover:text-white transition-colors"
-                >
-                  Não tem uma conta? <span className="text-primary">Cadastre-se agora</span>
-                </button>
-                
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                  <ShieldCheck className="w-3 h-3 text-success" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Ambiente Seguro</span>
-                </div>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Footer (Mobile only or fixed) */}
+      {/* Footer */}
       <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
         <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">
           &copy; 2026 Tatu Financeiro &bull; Premium Experience
