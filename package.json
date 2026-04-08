@@ -4,8 +4,8 @@
   "description": "Um software de controle de contas moderno e intuitivo.",
   "private": true,
   "scripts": {
-    "build": "mkdir -p public && cp index.html public/index.html && esbuild index.tsx --bundle --format=esm --outfile=public/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --external:xlsx --define:process.env.API_KEY='\"'$API_KEY'\"'",
-    "dev": "npm run build && npx -y serve public -p 3000",
+    "build": "mkdir -p dist && cp index.html dist/index.html && esbuild index.tsx --bundle --format=esm --outfile=dist/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --external:xlsx --define:process.env.API_KEY='\"'$API_KEY'\"'",
+    "dev": "npm run build && npx -y serve dist -p 3000",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {

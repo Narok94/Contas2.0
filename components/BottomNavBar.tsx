@@ -25,17 +25,17 @@ const NavItem: React.FC<{
 
 const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, onAddClick, isAdmin }) => {
     return (
-        <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface/80 dark:bg-dark-surface/80 backdrop-blur-lg border-t border-border-color/50 dark:border-dark-border-color/50 z-40">
+        <div className="fixed bottom-0 left-0 right-0 h-14 bg-surface/80 dark:bg-dark-surface/80 backdrop-blur-lg border-t border-border-color/50 dark:border-dark-border-color/50 z-40">
             <div className="max-w-7xl mx-auto h-full grid grid-cols-5 items-center">
                 <NavItem 
                     label="Início"
-                    icon={<LayoutDashboard className="h-5 w-5" strokeWidth={activeView === 'dashboard' ? 2.5 : 1.5} />}
+                    icon={<LayoutDashboard className="h-4 w-4" strokeWidth={activeView === 'dashboard' ? 2.5 : 1.5} />}
                     isActive={activeView === 'dashboard'}
                     onClick={() => onViewChange('dashboard')}
                 />
                  <NavItem 
                     label="Contas"
-                    icon={<Receipt className="h-5 w-5" strokeWidth={activeView === 'accounts' ? 2.5 : 1.5} />}
+                    icon={<Receipt className="h-4 w-4" strokeWidth={activeView === 'accounts' ? 2.5 : 1.5} />}
                     isActive={activeView === 'accounts'}
                     onClick={() => onViewChange('accounts')}
                 />
@@ -43,16 +43,16 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, o
                 <div className="flex items-center justify-center">
                     <button 
                         onClick={onAddClick}
-                        className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:shadow-glow-primary transform transition-all hover:scale-105 active:scale-95 animate-orb-glow"
+                        className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:shadow-glow-primary transform transition-all hover:scale-105 active:scale-95"
                         aria-label="Adicionar conta"
                     >
-                         <PlusCircle className="h-8 w-8" strokeWidth={1.5} />
+                         <PlusCircle className="h-6 w-6" strokeWidth={2} />
                     </button>
                 </div>
 
                  <NavItem 
                     label="Entradas"
-                    icon={<Banknote className="h-5 w-5" strokeWidth={activeView === 'income' ? 2.5 : 1.5} />}
+                    icon={<Banknote className="h-4 w-4" strokeWidth={activeView === 'income' ? 2.5 : 1.5} />}
                     isActive={activeView === 'income'}
                     onClick={() => onViewChange('income')}
                 />
@@ -60,7 +60,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange, o
                 {isAdmin ? (
                     <NavItem 
                         label="Admin"
-                        icon={<ShieldCheck className="h-5 w-5" strokeWidth={activeView === 'admin' ? 2.5 : 1.5} />}
+                        icon={<ShieldCheck className="h-4 w-4" strokeWidth={activeView === 'admin' ? 2.5 : 1.5} />}
                         isActive={activeView === 'admin'}
                         onClick={() => onViewChange('admin')}
                     />
