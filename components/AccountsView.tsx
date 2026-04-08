@@ -80,6 +80,12 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
     }
   };
 
+  const totalSelectedValue = useMemo(() => {
+    return accounts
+      .filter(acc => selectedAccountIds.includes(acc.id))
+      .reduce((sum, acc) => sum + Number(acc.value), 0);
+  }, [accounts, selectedAccountIds]);
+
   const renderAccounts = (accountsList: Account[], title: string, colorClass: string) => {
     const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -241,7 +247,12 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                         <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs">
                           {selectedAccountIds.length}
                         </div>
-                        <p className="text-sm font-bold text-primary">Contas selecionadas</p>
+                        <div>
+                          <p className="text-sm font-bold text-primary leading-none">Contas selecionadas</p>
+                          <p className="text-[10px] font-bold text-primary/70 mt-0.5">
+                            Total: {totalSelectedValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button 
