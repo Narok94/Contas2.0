@@ -193,6 +193,47 @@ const App: React.FC = () => {
     }
   };
 
+  const handleToggleMultipleAccountStatus = (accs: Account[]) => {
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const targetDate = `${year}-${month}-10T12:00:00Z`;
+    const settings = realtimeService.getSettings();
+
+    accs.forEach(acc => {
+      const isPaying = acc.status !== AccountStatus.PAID;
+      
+      // Skip variable expenses with 0 value for batch processing to avoid multiple modals
+      if (isVariableExpense(acc) && isPaying && Number(acc.value) === 0) return;
+
+      const isVirtual = acc.id.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
+
+      if (isVirtual) {
+          const snapshot: Account = {
+              ...acc,
+              id: `acc-snap-${Date.now()}-${Math.random()}`,
+              isRecurrent: false,
+              status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
+              paymentDate: targetDate,
+              value: Number(acc.value)
+          };
+          dataService.addAccount(snapshot);
+          if (isPaying && settings?.whatsappEnabled) {
+              notifyPaymentViaWhatsApp(snapshot.name, snapshot.value, settings.whatsappGroupLink);
+          }
+      } else {
+          dataService.updateAccount({
+              ...acc, 
+              status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
+              paymentDate: acc.paymentDate || targetDate,
+              value: Number(acc.value)
+          });
+          if (isPaying && settings?.whatsappEnabled) {
+              notifyPaymentViaWhatsApp(acc.name, Number(acc.value), settings.whatsappGroupLink);
+          }
+      }
+    });
+  };
+
   const handleAccountSubmit = (data: any) => {
       const isEditingProjection = data.id && data.id.toString().startsWith('projected-');
       const existingAccount = accounts.find(a => a.id === data.id);
@@ -444,6 +485,7 @@ const App: React.FC = () => {
                   onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                   onDeleteAccount={(id) => dataService.deleteAccount(id)} 
                   onToggleStatus={handleToggleAccountStatus} 
+                  onToggleMultipleStatus={handleToggleMultipleAccountStatus}
                   onNotifyWhatsApp={(acc) => {
                       const settings = realtimeService.getSettings();
                       notifyPaymentViaWhatsApp(acc.name, acc.value, settings?.whatsappGroupLink);

@@ -15,6 +15,7 @@ interface AccountsViewProps {
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (accountId: string) => void;
   onToggleStatus: (account: Account) => void;
+  onToggleMultipleStatus: (accounts: Account[]) => void;
   onNotifyWhatsApp?: (account: Account) => void;
   whatsappEnabled?: boolean;
   selectedDate: Date;
@@ -23,13 +24,14 @@ interface AccountsViewProps {
   categories: string[];
 }
 
-const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, onDeleteAccount, onToggleStatus, onNotifyWhatsApp, whatsappEnabled, selectedDate, setSelectedDate, onOpenMoveModal, categories }) => {
+const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, onDeleteAccount, onToggleStatus, onToggleMultipleStatus, onNotifyWhatsApp, whatsappEnabled, selectedDate, setSelectedDate, onOpenMoveModal, categories }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<AccountStatus | 'ALL'>('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [filterRecurrent, setFilterRecurrent] = useState(false);
   const [filterInstallment, setFilterInstallment] = useState(false);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   
   const safeDate = useMemo(() => {
     return selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
@@ -64,6 +66,20 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
     };
   }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
+  const toggleSelection = (id: string) => {
+    setSelectedAccountIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handlePaySelected = () => {
+    const selectedAccounts = accounts.filter(acc => selectedAccountIds.includes(acc.id));
+    if (selectedAccounts.length > 0) {
+      onToggleMultipleStatus(selectedAccounts);
+      setSelectedAccountIds([]);
+    }
+  };
+
   const renderAccounts = (accountsList: Account[], title: string, colorClass: string) => {
     const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -92,13 +108,25 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                 initial={{ opacity: 0, scale: 0.98 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 exit={{ opacity: 0, scale: 0.98 }}
-                                                className="bg-surface dark:bg-dark-surface p-2.5 rounded-xl border border-border-color dark:border-dark-border-color shadow-sm relative flex flex-col justify-between"
+                                                onClick={() => toggleSelection(acc.id)}
+                                                className={`bg-surface dark:bg-dark-surface p-2.5 rounded-xl border transition-all cursor-pointer shadow-sm relative flex flex-col justify-between ${
+                                                  selectedAccountIds.includes(acc.id) 
+                                                    ? 'border-primary ring-1 ring-primary/30' 
+                                                    : 'border-border-color dark:border-dark-border-color'
+                                                }`}
                                             >
                                                 <div>
                                                     <div className="flex items-start justify-between mb-1.5">
                                                         <div className="flex items-center gap-2 overflow-hidden">
-                                                            <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${isPaid ? 'bg-text-muted/10 text-text-muted' : 'bg-primary/10 text-primary'}`}>
-                                                                {getCategoryIcon(acc.category)}
+                                                            <div className="relative">
+                                                              <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${isPaid ? 'bg-text-muted/10 text-text-muted' : 'bg-primary/10 text-primary'}`}>
+                                                                  {getCategoryIcon(acc.category)}
+                                                              </div>
+                                                              {selectedAccountIds.includes(acc.id) && (
+                                                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-white rounded-full flex items-center justify-center shadow-sm">
+                                                                  <CheckCircle2 className="w-2.5 h-2.5" strokeWidth={4} />
+                                                                </div>
+                                                              )}
                                                             </div>
                                                             <div className="overflow-hidden">
                                                                 <h3 className={`font-bold text-xs truncate ${isPaid ? 'text-text-muted line-through' : 'text-text-primary dark:text-white'}`}>{acc.name}</h3>
@@ -115,7 +143,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                             </div>
                                                         </div>
                                                         <button 
-                                                            onClick={() => onToggleStatus(acc)}
+                                                            onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
                                                             className={`w-6 h-6 shrink-0 rounded-lg border flex items-center justify-center transition-all ${
                                                                 isPaid 
                                                                     ? 'bg-success border-success text-white' 
@@ -146,20 +174,20 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
 
                                                 <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border-color/30 dark:border-dark-border-color/20">
                                                     <button 
-                                                        onClick={() => onEditAccount(acc)}
+                                                        onClick={(e) => { e.stopPropagation(); onEditAccount(acc); }}
                                                         className="flex-1 py-1 rounded-lg bg-surface-light dark:bg-dark-surface-light text-text-secondary dark:text-dark-text-secondary text-[9px] font-bold uppercase border border-border-color dark:border-dark-border-color hover:bg-primary/5 hover:text-primary transition-colors flex items-center justify-center gap-1"
                                                     >
                                                         <Edit2 className="w-2.5 h-2.5" /> Editar
                                                     </button>
                                                     <button 
-                                                        onClick={() => { if(window.confirm('Apagar esta conta?')) onDeleteAccount(acc.id); }}
+                                                        onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar esta conta?')) onDeleteAccount(acc.id); }}
                                                         className="flex-1 py-1 rounded-lg bg-danger/5 text-danger text-[9px] font-bold uppercase border border-danger/10 hover:bg-danger/10 transition-colors flex items-center justify-center gap-1"
                                                     >
                                                         <Trash2 className="w-2.5 h-2.5" /> Excluir
                                                     </button>
                                                     {isPaid && whatsappEnabled && (
                                                         <button 
-                                                            onClick={() => onNotifyWhatsApp?.(acc)}
+                                                            onClick={(e) => { e.stopPropagation(); onNotifyWhatsApp?.(acc); }}
                                                             className="p-1 rounded-lg bg-success/5 text-success border border-success/10 hover:bg-success/10 transition-colors"
                                                             title="Notificar WhatsApp"
                                                         >
@@ -201,6 +229,38 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
 
         <div className="grid grid-cols-1 gap-6 pb-24 px-2 sm:px-0">
             <div className="space-y-6">
+                <AnimatePresence>
+                  {selectedAccountIds.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex items-center justify-between shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs">
+                          {selectedAccountIds.length}
+                        </div>
+                        <p className="text-sm font-bold text-primary">Contas selecionadas</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setSelectedAccountIds([])}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-text-muted hover:text-text-primary transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button 
+                          onClick={handlePaySelected}
+                          className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold uppercase shadow-sm hover:bg-primary/90 transition-all flex items-center gap-2"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Marcar como Pago
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="bg-surface dark:bg-dark-surface p-2 rounded-xl border border-border-color dark:border-dark-border-color shadow-sm">
                     <SearchBar 
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
