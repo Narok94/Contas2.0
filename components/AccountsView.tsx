@@ -54,14 +54,6 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
   }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
   const renderAccounts = (accountsList: Account[], title: string, colorClass: string) => {
-    const groupedByCategory = accountsList.reduce((acc, account) => {
-        const cat = account.category || 'Sem Categoria';
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(account);
-        return acc;
-    }, {} as Record<string, Account[]>);
-
-    const sortedCategories = Object.keys(groupedByCategory).sort();
     const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
@@ -73,22 +65,14 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                 </h2>
             </div>
             
-            {sortedCategories.length === 0 ? (
+            {accountsList.length === 0 ? (
                 <div className="bg-surface dark:bg-dark-surface rounded-xl p-4 text-center border border-dashed border-border-color dark:border-dark-border-color">
                     <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest">Vazio</p>
                 </div>
             ) : (
-                <div className="space-y-6">
-                    {sortedCategories.map(category => (
-                        <div key={category} className="space-y-2">
-                            <div className="flex items-center gap-2 px-2">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-primary/70">{category}</span>
-                                <div className="h-px flex-1 bg-border-color dark:bg-dark-border-color opacity-20" />
-                            </div>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1 sm:px-0">
-                                <AnimatePresence mode="popLayout">
-                                    {groupedByCategory[category].map((acc) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1 sm:px-0">
+                    <AnimatePresence mode="popLayout">
+                        {accountsList.map((acc) => {
                                         const isPaid = acc.status === AccountStatus.PAID;
                                         return (
                                             <motion.div 
@@ -176,9 +160,6 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                         );
                                     })}
                                 </AnimatePresence>
-                            </div>
-                        </div>
-                    ))}
                 </div>
             )}
         </div>
