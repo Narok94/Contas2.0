@@ -47,9 +47,20 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
         return matchesSearch && matchesStatus && matchesCategory && matchesRecurrent && matchesInstallment;
     });
 
+    const sortFn = (a: Account, b: Account) => {
+        if (filterInstallment) {
+            const remainingA = (a.totalInstallments || 0) - (a.currentInstallment || 0);
+            const remainingB = (b.totalInstallments || 0) - (b.currentInstallment || 0);
+            if (remainingA !== remainingB) {
+                return remainingA - remainingB;
+            }
+        }
+        return a.name.localeCompare(b.name);
+    };
+
     return {
-        pendingAccounts: filtered.filter(acc => acc.status === AccountStatus.PENDING).sort((a, b) => a.name.localeCompare(b.name)),
-        paidAccounts: filtered.filter(acc => acc.status === AccountStatus.PAID).sort((a, b) => a.name.localeCompare(b.name))
+        pendingAccounts: filtered.filter(acc => acc.status === AccountStatus.PENDING).sort(sortFn),
+        paidAccounts: filtered.filter(acc => acc.status === AccountStatus.PAID).sort(sortFn)
     };
   }, [accounts, safeDate, searchTerm, filterStatus, filterCategory, filterRecurrent, filterInstallment]);
 
