@@ -46,9 +46,10 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       
       // Use selectedDate for new accounts to default to the viewed month
       const defaultDate = new Date(selectedDate);
-      // Set to 10th of the month by default as per existing logic in App.tsx
-      defaultDate.setDate(10);
-      const defaultDateStr = defaultDate.toISOString().split('T')[0];
+      // Set to 15th of the month by default to avoid timezone shifts to previous/next month
+      const year = defaultDate.getFullYear();
+      const month = String(defaultDate.getMonth() + 1).padStart(2, '0');
+      const defaultDateStr = `${year}-${month}-15`;
 
       const initialState: AccountFormData = account
         ? {
@@ -228,10 +229,8 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             </div>
           )}
 
-          <div className="space-y-1">
-            <label htmlFor="account-date" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Data</label>
-            <input id="account-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} required className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-dark-text-primary" />
-          </div>
+          {/* Date input removed as per user request */}
+          <input type="hidden" value={paymentDate} />
 
           <div className="space-y-1">
             <label htmlFor="account-category" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Categoria</label>

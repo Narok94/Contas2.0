@@ -147,7 +147,7 @@ const App: React.FC = () => {
     const isPaying = acc.status !== AccountStatus.PAID;
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const targetDate = `${year}-${month}-10T12:00:00Z`;
+    const targetDate = `${year}-${month}-15T12:00:00Z`;
 
     if (isVariableExpense(acc) && isPaying && Number(acc.value) === 0) {
         setAccountToEdit(acc);
@@ -196,7 +196,7 @@ const App: React.FC = () => {
   const handleToggleMultipleAccountStatus = (accs: Account[]) => {
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const targetDate = `${year}-${month}-10T12:00:00Z`;
+    const targetDate = `${year}-${month}-15T12:00:00Z`;
     const settings = realtimeService.getSettings();
 
     accs.forEach(acc => {
@@ -240,7 +240,7 @@ const App: React.FC = () => {
       
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const targetDate = `${year}-${month}-10T12:00:00Z`;
+      const targetDate = `${year}-${month}-15T12:00:00Z`;
 
       const sanitizedTotal = data.totalInstallments ? Number(data.totalInstallments) : undefined;
       const sanitizedCurrent = data.currentInstallment ? Number(data.currentInstallment) : undefined;

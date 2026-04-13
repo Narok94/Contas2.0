@@ -136,9 +136,8 @@ const MoveAccountsModal: React.FC<MoveAccountsModalProps> = ({ isOpen, onClose, 
                             {accountsInFromMonth.map(acc => (
                                 <div key={acc.id} className="flex items-center p-2 rounded-md hover:bg-surface-light dark:hover:bg-dark-surface-light">
                                     <input id={`acc-${acc.id}`} type="checkbox" checked={selectedIds.has(acc.id)} onChange={() => handleToggleId(acc.id)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"/>
-                                    <label htmlFor={`acc-${acc.id}`} className="ml-3 flex-1 grid grid-cols-3 gap-2 cursor-pointer">
+                                    <label htmlFor={`acc-${acc.id}`} className="ml-3 flex-1 grid grid-cols-2 gap-2 cursor-pointer">
                                         <span className="truncate">{acc.name}</span>
-                                        <span className="text-text-secondary dark:text-dark-text-secondary">{new Date(acc.paymentDate!).toLocaleDateString('pt-BR')}</span>
                                         <span className="font-medium text-right">{formatCurrency(acc.value)}</span>
                                     </label>
                                 </div>

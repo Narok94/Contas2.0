@@ -136,16 +136,6 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                             </div>
                                                             <div className="overflow-hidden">
                                                                 <h3 className={`font-bold text-xs truncate ${isPaid ? 'text-text-muted line-through' : 'text-text-primary dark:text-white'}`}>{acc.name}</h3>
-                                                                <p className="text-[9px] font-medium text-text-muted dark:text-dark-text-muted">
-                                                                    {(() => {
-                                                                        try {
-                                                                            const d = new Date(acc.paymentDate);
-                                                                            return isNaN(d.getTime()) ? 'Data Inválida' : format(d, 'dd/MM/yyyy');
-                                                                        } catch (e) {
-                                                                            return 'Data Inválida';
-                                                                        }
-                                                                    })()}
-                                                                </p>
                                                             </div>
                                                         </div>
                                                         <button 
