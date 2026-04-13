@@ -1,13 +1,14 @@
 
 import { type Account, AccountStatus } from '../types';
 
-const VARIABLE_CATEGORIES = ['💧 Água', '💡 Luz', '💳 Cartão'];
-
 export const isVariableExpense = (acc: Partial<Account>) => {
     if (!acc) return false;
-    const nameMatch = acc.name?.toLowerCase().includes('cartão');
-    const categoryMatch = acc.category && (VARIABLE_CATEGORIES.includes(acc.category) || acc.category.includes('Água') || acc.category.includes('Luz'));
-    return nameMatch || categoryMatch;
+    const nameLower = acc.name?.toLowerCase() || '';
+    const categoryLower = acc.category?.toLowerCase() || '';
+    const isCartao = nameLower.includes('cartão') || categoryLower.includes('cartão');
+    const isAgua = nameLower.includes('água') || categoryLower.includes('água');
+    const isLuz = nameLower.includes('luz') || categoryLower.includes('luz');
+    return isCartao || isAgua || isLuz;
 };
 
 export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
@@ -22,10 +23,7 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
         acc.isRecurrent && 
         !acc.paymentDate &&
         !physicalRecords.some(p => p.name === acc.name && p.category === acc.category)
-    ).map(acc => {
-        if (isVariableExpense(acc)) return { ...acc, value: 0 };
-        return acc;
-    });
+    );
 
     const projectedInstallments: Account[] = [];
     const seriesAnchors = new Map<string, Account>();

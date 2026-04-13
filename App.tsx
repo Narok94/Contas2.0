@@ -22,16 +22,9 @@ import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 import { notifyPaymentViaWhatsApp } from './utils/whatsapp';
+import { isVariableExpense } from './utils/accountUtils';
 
-const isVariableExpense = (acc: Partial<Account>) => {
-    if (!acc) return false;
-    const nameLower = acc.name?.toLowerCase() || '';
-    const categoryLower = acc.category?.toLowerCase() || '';
-    const isCartao = nameLower.includes('cartão') || categoryLower.includes('cartão');
-    const isAgua = nameLower.includes('água') || categoryLower.includes('água');
-    const isLuz = nameLower.includes('luz') || categoryLower.includes('luz');
-    return isCartao || isAgua || isLuz;
-};
+// isVariableExpense removed as it is now imported from accountUtils
 
 const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -318,21 +311,34 @@ const App: React.FC = () => {
               }
           } else {
               // Single account or simple recurrent template
+              const newAccount: Account = {
+              ...data,
+              id: `acc-${Date.now()}`,
+              value: sanitizedValue,
+              totalValue: data.totalValue,
+              isRecurrent: isRec,
+              isInstallment: isInst,
+              installmentId: installmentId,
+              currentInstallment: isInst ? (sanitizedCurrent || 1) : undefined,
+              totalInstallments: sanitizedTotal,
+              status: AccountStatus.PENDING,
+              paymentDate: (isRec && !isInst) ? undefined : (data.paymentDate || targetDate)
+          };
+          
+          dataService.addAccount(newAccount);
+          
+          // If it's a recurrent variable expense, also create a physical record for the current month
+          // so the user sees the value they just entered immediately.
+          if (isVar && isRec && !isInst) {
               dataService.addAccount({
-                  ...data,
-                  id: `acc-${Date.now()}`,
-                  value: sanitizedValue,
-                  totalValue: data.totalValue,
-                  isRecurrent: isRec,
-                  isInstallment: isInst,
-                  installmentId: installmentId,
-                  currentInstallment: isInst ? (sanitizedCurrent || 1) : undefined,
-                  totalInstallments: sanitizedTotal,
-                  status: AccountStatus.PENDING,
-                  paymentDate: (isRec && !isInst) ? undefined : (data.paymentDate || targetDate)
+                  ...newAccount,
+                  id: `acc-snap-${Date.now()}`,
+                  isRecurrent: false,
+                  paymentDate: data.paymentDate || targetDate
               });
           }
       }
+    }
   };
 
   const handleExportJson = () => {

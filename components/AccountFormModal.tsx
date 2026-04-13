@@ -126,7 +126,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
   // Update installment value in real-time
   useEffect(() => {
     if (isInstallment && totalValue && totalInstallments) {
-        const total = parseFloat(totalValue.replace(',', '.'));
+        const total = parseFloat(totalValue.toString().replace(',', '.'));
         const installments = parseInt(totalInstallments, 10);
         if (!isNaN(total) && !isNaN(installments) && installments > 0) {
             setValue((total / installments).toFixed(2));
@@ -137,24 +137,25 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalValue = isInstallment 
-      ? parseFloat(totalValue) / parseInt(totalInstallments, 10)
-      : parseFloat(value);
+      ? parseFloat(totalValue.replace(',', '.')) / parseInt(totalInstallments, 10)
+      : parseFloat(value.replace(',', '.'));
 
-    if (!name || isNaN(finalValue) || !category || !activeGroupId) return;
+    const groupId = account?.groupId || activeGroupId;
+    if (!name || isNaN(finalValue) || !category || !groupId) return;
 
     onSubmit({
       id: account?.id,
       name,
       category,
       value: finalValue,
-      totalValue: isInstallment ? parseFloat(totalValue) : undefined,
+      totalValue: isInstallment ? parseFloat(totalValue.replace(',', '.')) : undefined,
       isRecurrent,
       isInstallment,
       totalInstallments: isInstallment ? parseInt(totalInstallments, 10) : undefined,
       paymentDate: paymentDate ? `${paymentDate}T12:00:00Z` : undefined,
       currentInstallment: account?.currentInstallment,
       installmentId: account?.installmentId,
-      groupId: account?.groupId || activeGroupId,
+      groupId: groupId,
     });
     onClose(); 
   };
