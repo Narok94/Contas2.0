@@ -34,6 +34,7 @@ export const MOCK_USERS: User[] = [
   { id: 'user-3', name: 'Maria Dev', username: 'maria', password: '123', role: Role.USER, groupIds: ['group-2'] },
   { id: 'user-4', name: 'Jessica', username: 'jessica', password: '12345', role: Role.USER, groupIds: ['group-3'] },
   { id: 'user-5', name: 'Admin', username: 'admin', password: 'admin', role: Role.ADMIN, groupIds: ['group-1', 'group-2', 'group-3'] },
+  { id: 'user-6', name: 'Bruna', username: 'bruna', password: '2026', role: Role.USER, groupIds: ['group-3'] },
   { id: 'user-teste', name: 'Usuário Teste', username: 'teste', password: 'teste', role: Role.USER, groupIds: ['group-teste'] },
 ];
 

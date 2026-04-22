@@ -96,6 +96,12 @@ class RealtimeService {
         db.users.push(testUser);
     }
 
+    // Garantir que o usuário 'bruna' exista para login
+    const brunaUser = MOCK_USERS.find(u => u.username === 'bruna');
+    if (brunaUser && !db.users.find(u => u.username === 'bruna')) {
+        db.users.push(brunaUser);
+    }
+
     // Garantir que o grupo 'group-teste' exista
     const testGroup = MOCK_GROUPS.find(g => g.id === 'group-teste');
     if (testGroup && !db.groups.find(g => g.id === 'group-teste')) {
