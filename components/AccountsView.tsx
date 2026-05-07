@@ -8,7 +8,7 @@ import FloatingCalculator from './FloatingCalculator';
 import { getMonthlyAccounts } from '../utils/accountUtils';
 import { getCategoryIcon } from '../utils/categoryIcons';
 import { format } from 'date-fns';
-import { Tag, Search, Calendar, DollarSign, Repeat, CheckCircle2, Edit2, Trash2, Receipt, Calculator, ArrowRightLeft } from 'lucide-react';
+import { Tag, Search, Calendar, DollarSign, Repeat, CheckCircle2, Edit2, Trash2, Receipt, Calculator, ArrowRightLeft, MoreVertical } from 'lucide-react';
 
 interface AccountsViewProps {
   accounts: Account[];
@@ -86,110 +86,145 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
       .reduce((sum, acc) => sum + Number(acc.value), 0);
   }, [accounts, selectedAccountIds]);
 
+  const [activeActionsId, setActiveActionsId] = useState<string | null>(null);
+
   const renderAccounts = (accountsList: Account[], title: string, colorClass: string) => {
     const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-2 px-2">
-                <div className={`w-1.5 h-4 rounded-full ${colorClass}`} />
-                <h2 className="text-base font-bold text-text-primary dark:text-dark-text-primary">
-                    {title} <span className="text-[10px] font-medium opacity-50 ml-1">({accountsList.length})</span>
-                </h2>
+            <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-4 rounded-full ${colorClass}`} />
+                    <h2 className="text-base font-bold text-navy dark:text-white">
+                        {title}
+                    </h2>
+                </div>
+                <span className="text-[10px] font-bold text-text-muted bg-surface-light dark:bg-dark-surface-light px-2 py-1 rounded-full border border-border-color dark:border-dark-border-color">
+                    {accountsList.length} itens
+                </span>
             </div>
             
             {accountsList.length === 0 ? (
-                <div className="bg-surface dark:bg-dark-surface rounded-xl p-4 text-center border border-dashed border-border-color dark:border-dark-border-color">
-                    <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest">Vazio</p>
+                <div className="bg-surface dark:bg-dark-surface rounded-xl p-6 text-center border border-dashed border-border-color dark:border-dark-border-color">
+                    <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest italic">Nenhuma conta encontrada</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1 sm:px-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 px-1 sm:px-0">
                     <AnimatePresence mode="popLayout">
                         {accountsList.map((acc) => {
                                         const isPaid = acc.status === AccountStatus.PAID;
+                                        const borderColorClass = isPaid ? 'border-l-success' : 'border-l-warning';
+                                        
                                         return (
                                             <motion.div 
                                                 key={acc.id}
                                                 layout
-                                                initial={{ opacity: 0, scale: 0.98 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0, scale: 0.98 }}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
                                                 onClick={() => toggleSelection(acc.id)}
-                                                className={`bg-surface dark:bg-dark-surface p-2.5 rounded-xl border transition-all cursor-pointer shadow-sm relative flex flex-col justify-between ${
+                                                className={`bg-surface dark:bg-dark-surface p-4 rounded-xl border-t border-r border-b border-l-4 transition-all cursor-pointer shadow-sm hover:shadow-md group relative flex items-center justify-between gap-4 ${borderColorClass} ${
                                                   selectedAccountIds.includes(acc.id) 
-                                                    ? 'border-primary ring-1 ring-primary/30' 
-                                                    : 'border-border-color dark:border-dark-border-color'
+                                                    ? 'ring-2 ring-primary/40 border-primary/40' 
+                                                    : 'border-white/5 dark:border-dark-border-color/50'
                                                 }`}
                                             >
-                                                <div>
-                                                    <div className="flex items-start justify-between mb-1.5">
-                                                        <div className="flex items-center gap-2 overflow-hidden">
-                                                            <div className="relative">
-                                                              <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${isPaid ? 'bg-text-muted/10 text-text-muted' : 'bg-primary/10 text-primary'}`}>
-                                                                  {getCategoryIcon(acc.category)}
-                                                              </div>
-                                                              {selectedAccountIds.includes(acc.id) && (
-                                                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-white rounded-full flex items-center justify-center shadow-sm">
-                                                                  <CheckCircle2 className="w-2.5 h-2.5" strokeWidth={4} />
-                                                                </div>
-                                                              )}
-                                                            </div>
-                                                            <div className="overflow-hidden">
-                                                                <h3 className={`font-bold text-xs truncate ${isPaid ? 'text-text-muted line-through' : 'text-text-primary dark:text-white'}`}>{acc.name}</h3>
-                                                            </div>
-                                                        </div>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
-                                                            className={`w-6 h-6 shrink-0 rounded-lg border flex items-center justify-center transition-all ${
-                                                                isPaid 
-                                                                    ? 'bg-success border-success text-white' 
-                                                                    : 'border-primary/30 dark:border-primary/50 hover:border-primary'
-                                                            }`}
-                                                            title={isPaid ? "Marcar como pendente" : "Marcar como pago"}
-                                                        >
-                                                            {isPaid && <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={3} />}
-                                                        </button>
+                                                {/* Left Section: Icon & Info */}
+                                                <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                    <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center transition-colors ${
+                                                        isPaid ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
+                                                    }`}>
+                                                        {getCategoryIcon(acc.category)}
                                                     </div>
-
-                                                    <div className="flex items-center justify-between">
-                                                        <p className={`text-sm font-bold ${isPaid ? 'text-success/70' : 'text-primary'}`}>
-                                                            {formatCurrency(acc.value)}
-                                                        </p>
-                                                        <div className="flex gap-1">
-                                                            {acc.isInstallment && (
-                                                                <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-primary/5 text-primary/70">
-                                                                    {acc.currentInstallment}/{acc.totalInstallments}
+                                                    
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3 className={`font-bold text-sm truncate ${isPaid ? 'text-text-muted line-through' : 'text-navy dark:text-white'}`}>
+                                                            {acc.name}
+                                                        </h3>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            {acc.isInstallment ? (
+                                                                <span className="text-[10px] font-medium text-text-muted">
+                                                                    Parcela {acc.currentInstallment}/{acc.totalInstallments}
                                                                 </span>
+                                                            ) : acc.isRecurrent ? (
+                                                                <span className="text-[10px] font-medium text-text-muted">Recorrente</span>
+                                                            ) : (
+                                                                <span className="text-[10px] font-medium text-text-muted">Avulsa</span>
                                                             )}
-                                                            {acc.isRecurrent && !acc.isInstallment && (
-                                                                <span className="text-[8px] font-bold uppercase px-1 py-0.5 rounded bg-primary/5 text-primary/70">Recorrente</span>
-                                                            )}
+                                                            <div className="w-1 h-1 rounded-full bg-border-color dark:bg-dark-border-color" />
+                                                            <span className="text-[10px] font-medium text-text-muted truncate max-w-[100px]">{acc.category}</span>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border-color/30 dark:border-dark-border-color/20">
+                                                {/* Right Section: Value & Checkbox & Actions */}
+                                                <div className="flex items-center gap-3 shrink-0">
+                                                    <div className="text-right">
+                                                        <p className={`font-bold text-base tracking-tight ${isPaid ? 'text-success' : 'text-navy dark:text-white'}`}>
+                                                            {formatCurrency(acc.value)}
+                                                        </p>
+                                                    </div>
+
                                                     <button 
-                                                        onClick={(e) => { e.stopPropagation(); onEditAccount(acc); }}
-                                                        className="flex-1 py-1 rounded-lg bg-surface-light dark:bg-dark-surface-light text-text-secondary dark:text-dark-text-secondary text-[9px] font-bold uppercase border border-border-color dark:border-dark-border-color hover:bg-primary/5 hover:text-primary transition-colors flex items-center justify-center gap-1"
+                                                        onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
+                                                        className={`w-6 h-6 shrink-0 rounded-lg border flex items-center justify-center transition-all ${
+                                                            isPaid 
+                                                                ? 'bg-success border-success text-white' 
+                                                                : 'border-border-color dark:border-dark-border-color group-hover:border-primary'
+                                                        }`}
                                                     >
-                                                        <Edit2 className="w-2.5 h-2.5" /> Editar
+                                                        {isPaid && <CheckCircle2 className="w-4 h-4" strokeWidth={3} />}
                                                     </button>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar esta conta?')) onDeleteAccount(acc.id); }}
-                                                        className="flex-1 py-1 rounded-lg bg-danger/5 text-danger text-[9px] font-bold uppercase border border-danger/10 hover:bg-danger/10 transition-colors flex items-center justify-center gap-1"
-                                                    >
-                                                        <Trash2 className="w-2.5 h-2.5" /> Excluir
-                                                    </button>
-                                                    {isPaid && whatsappEnabled && (
+
+                                                    {/* Actions Menu Trigger */}
+                                                    <div className="relative">
                                                         <button 
-                                                            onClick={(e) => { e.stopPropagation(); onNotifyWhatsApp?.(acc); }}
-                                                            className="p-1 rounded-lg bg-success/5 text-success border border-success/10 hover:bg-success/10 transition-colors"
-                                                            title="Notificar WhatsApp"
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                setActiveActionsId(activeActionsId === acc.id ? null : acc.id); 
+                                                            }}
+                                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-light dark:hover:bg-dark-surface-light text-text-muted hover:text-navy transition-colors"
                                                         >
-                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.894-5.335 11.897-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                                                    </button>
-                                                    )}
+                                                            <MoreVertical className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Simple Actions Menu Overlay */}
+                                                        <AnimatePresence>
+                                                            {activeActionsId === acc.id && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-40" onClick={() => setActiveActionsId(null)} />
+                                                                    <motion.div 
+                                                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                                        className="absolute right-0 top-10 w-32 bg-white dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-xl shadow-xl z-50 overflow-hidden py-1"
+                                                                    >
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); onEditAccount(acc); setActiveActionsId(null); }}
+                                                                            className="w-full px-4 py-2 text-left text-[11px] font-bold text-text-primary dark:text-dark-text-primary hover:bg-surface-light dark:hover:bg-dark-surface-light flex items-center gap-2 transition-colors underline decoration-primary/30 underline-offset-2"
+                                                                        >
+                                                                            <Edit2 className="w-3 h-3" /> EDITAR
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar esta conta?')) onDeleteAccount(acc.id); setActiveActionsId(null); }}
+                                                                            className="w-full px-4 py-2 text-left text-[11px] font-bold text-danger hover:bg-danger/5 flex items-center gap-2 transition-colors"
+                                                                        >
+                                                                            <Trash2 className="w-3 h-3" /> EXCLUIR
+                                                                        </button>
+                                                                        {isPaid && whatsappEnabled && (
+                                                                            <button 
+                                                                                onClick={(e) => { e.stopPropagation(); onNotifyWhatsApp?.(acc); setActiveActionsId(null); }}
+                                                                                className="w-full px-4 py-2 text-left text-[11px] font-bold text-success hover:bg-success/5 flex items-center gap-2 transition-colors"
+                                                                            >
+                                                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.894-5.335 11.897-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WHATSAPP
+                                                                            </button>
+                                                                        )}
+                                                                    </motion.div>
+                                                                </>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         );
