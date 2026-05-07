@@ -47,40 +47,40 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#050505] text-white overflow-hidden font-sans selection:bg-primary selection:text-white flex items-center justify-center p-4 sm:p-6">
+    <div className="relative min-h-[100dvh] bg-white text-slate-900 overflow-hidden font-sans selection:bg-primary selection:text-white flex items-center justify-center p-4 sm:p-6">
       {/* Refined Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-secondary/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#059669]/10 rounded-full blur-[100px]" />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[460px] bg-zinc-900/50 backdrop-blur-2xl border border-white/5 rounded-[2rem] p-6 sm:p-10 shadow-2xl shadow-black/50"
+        className="relative z-10 w-full max-w-[480px] bg-white border border-slate-100 rounded-[3rem] p-8 sm:p-12 shadow-[0_20px_70px_-12px_rgba(0,0,0,0.08)]"
       >
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-14 h-14 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center mb-5">
-            <TatuIcon className="w-8 h-8" />
+          <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center mb-5">
+            <TatuIcon className="w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-serif italic font-black tracking-tighter mb-1">
-            JOIN<span className="text-primary">.</span>
+          <h1 className="text-4xl font-black tracking-tighter mb-1 uppercase text-slate-900">
+            JOIN<span className="text-[#059669]">.</span>
           </h1>
-          <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Nova Conta</p>
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Criar nova conta premium</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Nome Completo</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
-                <UserPlus className="w-4 h-4" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome Completo</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-300 group-focus-within:text-[#059669] transition-colors">
+                <UserPlus className="w-5 h-5" />
               </div>
               <input
                 type="text"
                 required
-                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                className="w-full pl-14 pr-5 py-4 bg-slate-50 border border-slate-200 focus:border-[#059669]/50 focus:bg-white focus:ring-[6px] focus:ring-[#059669]/5 rounded-2xl outline-none transition-all text-base font-medium placeholder:text-slate-300 text-slate-900"
                 placeholder="Seu nome"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -89,16 +89,16 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Usuário</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
-                <Mail className="w-4 h-4" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Usuário</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-300 group-focus-within:text-[#059669] transition-colors">
+                <Mail className="w-5 h-5" />
               </div>
               <input
                 type="text"
                 required
-                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
-                placeholder="Nome de usuário"
+                className="w-full pl-14 pr-5 py-4 bg-slate-50 border border-slate-200 focus:border-[#059669]/50 focus:bg-white focus:ring-[6px] focus:ring-[#059669]/5 rounded-2xl outline-none transition-all text-base font-medium placeholder:text-slate-300 text-slate-900"
+                placeholder="Ex: joao_silva"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -107,15 +107,15 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Senha</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Senha</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-[#059669] transition-colors">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
                   type="password"
                   required
-                  className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                  className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 focus:border-[#059669]/50 focus:bg-white focus:ring-[6px] focus:ring-[#059669]/5 rounded-2xl outline-none transition-all text-sm font-medium placeholder:text-slate-300 text-slate-900"
                   placeholder="••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -123,15 +123,15 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Confirma</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/20">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Confirma</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-[#059669] transition-colors">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
                   type="password"
                   required
-                  className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/40 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-white/10"
+                  className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 focus:border-[#059669]/50 focus:bg-white focus:ring-[6px] focus:ring-[#059669]/5 rounded-2xl outline-none transition-all text-sm font-medium placeholder:text-slate-300 text-slate-900"
                   placeholder="••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -144,7 +144,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger text-[10px] font-black text-center uppercase tracking-wider"
+              className="p-4 rounded-2xl bg-slate-50 border border-danger/20 text-danger text-[11px] font-bold text-center uppercase tracking-wider"
             >
               {error}
             </motion.div>
@@ -153,25 +153,25 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-5 bg-[#059669] text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-[#059669]/20 hover:scale-[1.02] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
           >
             {isLoading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                Criar Conta
-                <ArrowRight className="w-4 h-4" />
+                Criar Minha Conta
+                <ArrowRight className="w-5 h-5" />
               </>
             )}
           </button>
 
-          <div className="pt-4 flex flex-col items-center gap-4">
+          <div className="pt-6 flex flex-col items-center gap-6">
             <button
               type="button"
               onClick={onNavigateToLogin}
-              className="text-[10px] font-bold text-white/30 hover:text-white transition-colors uppercase tracking-widest"
+              className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-[0.2em]"
             >
-              Já tem conta? <span className="text-primary">Entrar</span>
+              Já tem conta? <span className="text-[#059669]">Fazer Login</span>
             </button>
           </div>
         </form>
@@ -179,7 +179,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateT
 
       {/* Footer */}
       <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
-        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
           &copy; 2026 Tatu Financeiro &bull; Premium Experience
         </p>
       </div>

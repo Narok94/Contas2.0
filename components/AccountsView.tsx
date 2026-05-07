@@ -8,7 +8,7 @@ import FloatingCalculator from './FloatingCalculator';
 import { getMonthlyAccounts } from '../utils/accountUtils';
 import { getCategoryIcon } from '../utils/categoryIcons';
 import { format } from 'date-fns';
-import { Tag, Search, Calendar, DollarSign, Repeat, CheckCircle2, Edit2, Trash2, Receipt, Calculator, ArrowRightLeft } from 'lucide-react';
+import { Tag, Search, Calendar, DollarSign, Repeat, CheckCircle2, Edit2, Trash2, Receipt, Calculator, ArrowRightLeft, MoreVertical } from 'lucide-react';
 
 interface AccountsViewProps {
   accounts: Account[];
@@ -88,22 +88,31 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
 
   const renderAccounts = (accountsList: Account[], title: string, colorClass: string) => {
     const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3">
             <div className="flex items-center gap-2 px-2">
                 <div className={`w-1.5 h-4 rounded-full ${colorClass}`} />
-                <h2 className="text-base font-bold text-text-primary dark:text-dark-text-primary">
-                    {title} <span className="text-[10px] font-medium opacity-50 ml-1">({accountsList.length})</span>
+                <h2 className="text-sm font-extrabold text-text-primary uppercase tracking-tight">
+                    {title} <span className="text-[10px] font-medium opacity-40 ml-1">({accountsList.length})</span>
                 </h2>
             </div>
             
             {accountsList.length === 0 ? (
-                <div className="bg-surface dark:bg-dark-surface rounded-xl p-4 text-center border border-dashed border-border-color dark:border-dark-border-color">
-                    <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest">Vazio</p>
+                <div className="bg-white dark:bg-dark-surface rounded-xl p-6 text-center border border-dashed border-border-color">
+                    <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest opacity-40">Nenhuma conta encontrada</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 px-1 sm:px-0">
+                <div className="flex flex-col gap-1.5 px-1 sm:px-0">
+                    {/* Header da Tabela */}
+                    <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-[10px] font-black uppercase text-text-muted tracking-widest border-b border-border-color">
+                        <div className="col-span-5">Conta / Categoria</div>
+                        <div className="col-span-3 text-right">Valor</div>
+                        <div className="col-span-3 text-center">Status</div>
+                        <div className="col-span-1 text-right">Ações</div>
+                    </div>
+
                     <AnimatePresence mode="popLayout">
                         {accountsList.map((acc) => {
                                         const isPaid = acc.status === AccountStatus.PAID;
@@ -111,85 +120,107 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                             <motion.div 
                                                 key={acc.id}
                                                 layout
-                                                initial={{ opacity: 0, scale: 0.98 }}
-                                                animate={{ opacity: 1, scale: 1 }}
+                                                initial={{ opacity: 0, y: 5 }}
+                                                animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.98 }}
                                                 onClick={() => toggleSelection(acc.id)}
-                                                className={`bg-surface dark:bg-dark-surface p-2.5 rounded-xl border transition-all cursor-pointer shadow-sm relative flex flex-col justify-between ${
+                                                className={`group bg-white dark:bg-dark-surface px-4 py-2 rounded-lg border transition-all cursor-pointer shadow-sm hover:shadow-md relative flex flex-col sm:grid sm:grid-cols-12 items-center gap-4 ${
                                                   selectedAccountIds.includes(acc.id) 
-                                                    ? 'border-primary ring-1 ring-primary/30' 
-                                                    : 'border-border-color dark:border-dark-border-color'
+                                                    ? 'border-primary bg-primary/[0.02]' 
+                                                    : 'border-border-color'
                                                 }`}
                                             >
-                                                <div>
-                                                    <div className="flex items-start justify-between mb-1.5">
-                                                        <div className="flex items-center gap-2 overflow-hidden">
-                                                            <div className="relative">
-                                                              <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ${isPaid ? 'bg-text-muted/10 text-text-muted' : 'bg-primary/10 text-primary'}`}>
-                                                                  {getCategoryIcon(acc.category)}
-                                                              </div>
-                                                              {selectedAccountIds.includes(acc.id) && (
-                                                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-white rounded-full flex items-center justify-center shadow-sm">
-                                                                  <CheckCircle2 className="w-2.5 h-2.5" strokeWidth={4} />
-                                                                </div>
-                                                              )}
-                                                            </div>
-                                                            <div className="overflow-hidden">
-                                                                <h3 className={`font-bold text-xs truncate ${isPaid ? 'text-text-muted line-through' : 'text-text-primary dark:text-white'}`}>{acc.name}</h3>
-                                                            </div>
-                                                        </div>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
-                                                            className={`w-6 h-6 shrink-0 rounded-lg border flex items-center justify-center transition-all ${
-                                                                isPaid 
-                                                                    ? 'bg-success border-success text-white' 
-                                                                    : 'border-primary/30 dark:border-primary/50 hover:border-primary'
-                                                            }`}
-                                                            title={isPaid ? "Marcar como pendente" : "Marcar como pago"}
-                                                        >
-                                                            {isPaid && <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={3} />}
-                                                        </button>
+                                                {/* Nome e Identificação Visual */}
+                                                <div className="col-span-5 flex items-center gap-3 w-full overflow-hidden">
+                                                    <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm shadow-inner transition-colors ${isPaid ? 'bg-slate-100 text-slate-400' : 'bg-primary/10 text-primary'}`}>
+                                                        {getCategoryIcon(acc.category)}
                                                     </div>
-
-                                                    <div className="flex items-center justify-between">
-                                                        <p className={`text-sm font-bold ${isPaid ? 'text-success/70' : 'text-primary'}`}>
-                                                            {formatCurrency(acc.value)}
-                                                        </p>
-                                                        <div className="flex gap-1">
+                                                    <div className="flex flex-col min-w-0">
+                                                        <h3 className={`font-bold text-[13px] truncate leading-tight ${isPaid ? 'text-text-muted line-through opacity-50' : 'text-text-primary'}`}>
+                                                            {acc.name}
+                                                        </h3>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-medium text-text-muted uppercase tracking-tighter">{acc.category}</span>
+                                                            {acc.isRecurrent && <Repeat className="w-2.5 h-2.5 text-text-muted opacity-50" />}
                                                             {acc.isInstallment && (
-                                                                <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-primary/5 text-primary/70">
+                                                                <span className="text-[10px] font-black text-primary/60">
                                                                     {acc.currentInstallment}/{acc.totalInstallments}
                                                                 </span>
-                                                            )}
-                                                            {acc.isRecurrent && !acc.isInstallment && (
-                                                                <span className="text-[8px] font-bold uppercase px-1 py-0.5 rounded bg-primary/5 text-primary/70">Recorrente</span>
                                                             )}
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border-color/30 dark:border-dark-border-color/20">
+                                                {/* Valor (Mais importante) */}
+                                                <div className="col-span-3 text-right w-full sm:w-auto">
+                                                    <p className={`text-base font-black tracking-tight ${isPaid ? 'text-text-muted opacity-40' : 'text-black'}`}>
+                                                        {formatCurrency(acc.value)}
+                                                    </p>
+                                                </div>
+
+                                                {/* Status e Ação Rápida */}
+                                                <div className="col-span-3 flex items-center justify-center gap-2 w-full sm:w-auto">
                                                     <button 
-                                                        onClick={(e) => { e.stopPropagation(); onEditAccount(acc); }}
-                                                        className="flex-1 py-1 rounded-lg bg-surface-light dark:bg-dark-surface-light text-text-secondary dark:text-dark-text-secondary text-[9px] font-bold uppercase border border-border-color dark:border-dark-border-color hover:bg-primary/5 hover:text-primary transition-colors flex items-center justify-center gap-1"
+                                                        onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
+                                                        className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase transition-all border ${
+                                                            isPaid 
+                                                                ? 'bg-primary text-white border-primary' 
+                                                                : 'bg-white border-border-color text-text-muted hover:border-primary hover:text-primary'
+                                                        }`}
                                                     >
-                                                        <Edit2 className="w-2.5 h-2.5" /> Editar
+                                                        {isPaid ? (
+                                                            <>
+                                                                <CheckCircle2 className="w-3 h-3" strokeWidth={3} /> Pago
+                                                            </>
+                                                        ) : (
+                                                            'Marcar Pago'
+                                                        )}
                                                     </button>
+                                                </div>
+
+                                                {/* Menu de Ações (...) */}
+                                                <div className="col-span-1 text-right relative flex justify-end">
                                                     <button 
-                                                        onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar esta conta?')) onDeleteAccount(acc.id); }}
-                                                        className="flex-1 py-1 rounded-lg bg-danger/5 text-danger text-[9px] font-bold uppercase border border-danger/10 hover:bg-danger/10 transition-colors flex items-center justify-center gap-1"
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            setOpenMenuId(openMenuId === acc.id ? null : acc.id);
+                                                        }}
+                                                        className="p-1.5 rounded-lg hover:bg-slate-50 text-text-muted transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100"
                                                     >
-                                                        <Trash2 className="w-2.5 h-2.5" /> Excluir
+                                                        <MoreVertical className="w-4 h-4" />
                                                     </button>
-                                                    {isPaid && whatsappEnabled && (
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); onNotifyWhatsApp?.(acc); }}
-                                                            className="p-1 rounded-lg bg-success/5 text-success border border-success/10 hover:bg-success/10 transition-colors"
-                                                            title="Notificar WhatsApp"
-                                                        >
-                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.894-5.335 11.897-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                                                    </button>
-                                                    )}
+
+                                                    <AnimatePresence>
+                                                        {openMenuId === acc.id && (
+                                                            <div className="absolute right-0 top-full mt-1 z-50">
+                                                                <motion.div 
+                                                                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                                    className="bg-white rounded-lg shadow-xl border border-border-color p-1 min-w-[120px]"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <button 
+                                                                        onClick={() => { onEditAccount(acc); setOpenMenuId(null); }}
+                                                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-text-secondary hover:bg-slate-50 rounded"
+                                                                    >
+                                                                        <Edit2 className="w-3 h-3" /> Editar
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => { if(window.confirm('Apagar esta conta?')) onDeleteAccount(acc.id); setOpenMenuId(null); }}
+                                                                        className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-danger hover:bg-danger/5 rounded"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" /> Excluir
+                                                                    </button>
+                                                                </motion.div>
+                                                                {/* Overlay para fechar ao clicar fora */}
+                                                                <div 
+                                                                    className="fixed inset-0 z-[-1]" 
+                                                                    onClick={() => setOpenMenuId(null)}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </AnimatePresence>
                                                 </div>
                                             </motion.div>
                                         );
