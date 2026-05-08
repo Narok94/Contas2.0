@@ -108,41 +108,41 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout 
 
   return (
     <header className="bg-surface/80 dark:bg-dark-background/80 backdrop-blur-2xl shadow-lg sticky top-0 z-30 border-b-2 border-border-color/30 dark:border-white/5">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-primary/20 shadow-lg border-2 border-primary/20 transform hover:scale-110 transition-transform cursor-pointer">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-primary/20 shadow-lg border-2 border-primary/20 transform hover:scale-110 transition-transform cursor-pointer">
                     {logoUrl ? (
                         <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                     ) : (
-                        <div className="w-8 h-8 flex items-center justify-center bg-primary rounded-xl text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]">
-                          <TatuIcon className="w-6 h-6" />
+                        <div className="w-7 h-7 flex items-center justify-center bg-primary rounded-lg text-white shadow-[0_0_12px_rgba(99,102,241,0.5)]">
+                          <TatuIcon className="w-5 h-5" />
                         </div>
                     )}
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-2xl font-black text-navy dark:text-gray-100 leading-none tracking-tighter">TATU<span className="text-primary italic animate-ping-slow">.</span></h1>
-                  <p className="text-[9px] font-black uppercase text-text-muted dark:text-gray-400 tracking-[0.2em] mt-0.5">Gestão Financeira</p>
+                  <h1 className="text-xl font-black text-navy dark:text-gray-100 leading-none tracking-tighter">TATU<span className="text-primary italic animate-ping-slow">.</span></h1>
+                  <p className="text-[8px] font-black uppercase text-text-muted dark:text-gray-400 tracking-[0.2em] mt-0.5">Gestão Financeira</p>
                 </div>
             </div>
-            <div className="h-10 w-px bg-border-color/50 dark:bg-white/10 hidden md:block" />
+            <div className="h-8 w-px bg-border-color/50 dark:bg-white/10 hidden md:block" />
             <SyncStatusIndicator />
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="group flex items-center gap-3 bg-surface-light dark:bg-dark-surface p-1.5 pr-4 rounded-2xl border-2 border-transparent hover:border-primary/30 transition-all shadow-sm active:scale-95"
+                className="group flex items-center gap-2 bg-surface-light dark:bg-dark-surface p-1 pr-3 rounded-2xl border-2 border-transparent hover:border-primary/30 transition-all shadow-sm active:scale-95"
                 aria-label="Abrir menu do usuário"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md group-hover:rotate-6 transition-transform">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-sm shadow-md group-hover:rotate-6 transition-transform">
                   {currentUser.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden md:block text-left">
-                  <p className="text-xs font-black text-text-primary dark:text-white leading-none">{currentUser.name.split(' ')[0]}</p>
-                  <p className="text-[10px] font-bold text-text-muted dark:text-gray-400 mt-0.5 tracking-tight flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" /> Online
+                  <p className="text-[11px] font-black text-text-primary dark:text-white leading-none">{currentUser.name.split(' ')[0]}</p>
+                  <p className="text-[9px] font-bold text-text-muted dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)] animate-pulse" /> Online
                   </p>
                 </div>
               </button>

@@ -487,7 +487,7 @@ const App: React.FC = () => {
 
       <div className="relative z-10">
         <Header currentUser={currentUser} onSettingsClick={() => setIsSettingsModalOpen(true)} onLogout={handleLogout} />
-        <main className="p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto pb-32">
+        <main className="p-3 sm:p-4 lg:p-6 max-w-[1440px] mx-auto pb-32">
           {view === 'dashboard' && (
               <Dashboard 
                   accounts={userAccounts} 

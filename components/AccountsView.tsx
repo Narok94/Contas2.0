@@ -110,7 +110,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                     <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest italic">Nenhuma conta encontrada</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-3 px-1 sm:px-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 px-1 sm:px-0">
                     <AnimatePresence mode="popLayout">
                         {accountsList.map((acc) => {
                                         const isPaid = acc.status === AccountStatus.PAID;
@@ -125,47 +125,47 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.95 }}
                                                 onClick={() => toggleSelection(acc.id)}
-                                                className={`bg-surface/90 dark:bg-dark-surface/80 backdrop-blur-md p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-sm ${glowClass} group relative flex items-center justify-between gap-4 ${
+                                                className={`bg-surface/90 dark:bg-dark-surface/80 backdrop-blur-md p-3 rounded-2xl border-2 transition-all cursor-pointer shadow-sm ${glowClass} group relative flex items-center justify-between gap-3 ${
                                                   selectedAccountIds.includes(acc.id) 
                                                     ? 'border-primary dark:border-primary ring-4 ring-primary/20 bg-primary/10 dark:bg-primary/20' 
                                                     : 'border-white/50 dark:border-white/5 hover:border-primary/30 dark:hover:border-primary/40'
                                                 }`}
                                             >
                                                 {/* Left Section: Icon & Info */}
-                                                <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                    <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center transition-all shadow-sm ${
-                                                        isPaid ? 'bg-success/20 text-success shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)]' : 'bg-primary/20 text-primary shadow-[0_0_15px_-3px_rgba(99,102,241,0.4)]'
-                                                    } border-2 ${isPaid ? 'border-success/30' : 'border-primary/30'} group-hover:scale-110 group-hover:rotate-3`}>
-                                                        {getCategoryIcon(acc.category, "w-7 h-7")}
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center transition-all shadow-sm ${
+                                                        isPaid ? 'bg-success/20 text-success shadow-[0_0_12px_-3px_rgba(16,185,129,0.4)]' : 'bg-primary/20 text-primary shadow-[0_0_12px_-3px_rgba(99,102,241,0.4)]'
+                                                    } border-2 ${isPaid ? 'border-success/30' : 'border-primary/30'} group-hover:scale-105`}>
+                                                        {getCategoryIcon(acc.category, "w-5 h-5")}
                                                     </div>
                                                     
                                                     <div className="min-w-0 flex-1">
-                                                        <h3 className={`font-black text-base tracking-tight leading-tight transition-colors ${isPaid ? 'text-text-muted line-through opacity-60' : 'text-navy dark:text-gray-100 group-hover:text-primary'}`}>
+                                                        <h3 className={`font-black text-sm tracking-tight leading-tight transition-colors ${isPaid ? 'text-text-muted line-through opacity-60' : 'text-navy dark:text-gray-100 group-hover:text-primary'}`}>
                                                             {acc.name}
                                                         </h3>
-                                                        <div className="flex items-center gap-2 mt-1">
+                                                        <div className="flex items-center gap-2 mt-0.5">
                                                             {acc.isInstallment ? (
-                                                                <span className="text-[10px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1.5 py-0.5 rounded-md border border-border-color/10">
+                                                                <span className="text-[9px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1 py-0.5 rounded-md border border-border-color/10">
                                                                     {acc.currentInstallment}/{acc.totalInstallments}
                                                                 </span>
                                                             ) : acc.isRecurrent ? (
-                                                                <span className="text-[10px] font-black text-text-muted dark:text-dark-text-secondary bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md border border-indigo-500/20">FIXO</span>
+                                                                <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 dark:bg-indigo-500/20 px-1 py-0.5 rounded-md border border-indigo-500/20">FIXO</span>
                                                             ) : (
-                                                                <span className="text-[10px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1.5 py-0.5 rounded-md border border-border-color/10">AVULSO</span>
+                                                                <span className="text-[9px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1 py-0.5 rounded-md border border-border-color/10">AVULSO</span>
                                                             )}
-                                                            <span className="text-[10px] font-bold text-text-muted dark:text-dark-text-muted uppercase tracking-wider truncate max-w-[100px]">{acc.category.split(' ')[1] || acc.category}</span>
+                                                            <span className="text-[9px] font-bold text-text-muted dark:text-dark-text-muted uppercase tracking-wider truncate max-w-[80px]">{acc.category.split(' ')[1] || acc.category}</span>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Right Section: Value & Checkbox & Actions */}
-                                                <div className="flex items-center gap-3 shrink-0">
+                                                <div className="flex items-center gap-2.5 shrink-0">
                                                     <div className="text-right">
-                                                        <p className={`font-black text-lg tracking-tighter ${isPaid ? 'text-success' : 'text-navy dark:text-white'}`}>
+                                                        <p className={`font-black text-base tracking-tighter ${isPaid ? 'text-success' : 'text-navy dark:text-white'}`}>
                                                             {formatCurrency(acc.value)}
                                                         </p>
                                                         {!isPaid && acc.dueDate && (
-                                                            <p className="text-[9px] font-black text-danger uppercase opacity-90 leading-none mt-0.5">
+                                                            <p className="text-[8px] font-black text-danger uppercase opacity-90 leading-none mt-0.5">
                                                                 Venc. {format(new Date(acc.dueDate), 'dd/MM')}
                                                             </p>
                                                         )}
@@ -173,13 +173,13 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
 
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
-                                                        className={`w-9 h-9 shrink-0 rounded-xl border-2 flex items-center justify-center transition-all shadow-sm ${
+                                                        className={`w-8 h-8 shrink-0 rounded-xl border-2 flex items-center justify-center transition-all shadow-sm ${
                                                             isPaid 
-                                                                ? 'bg-success border-success text-white shadow-[0_5px_15px_rgba(16,185,129,0.4)]' 
-                                                                : 'border-border-color dark:border-dark-border-color bg-surface-light dark:bg-dark-surface-light group-hover:border-primary group-hover:scale-110'
+                                                                ? 'bg-success border-success text-white shadow-[0_4px_12px_rgba(16,185,129,0.4)]' 
+                                                                : 'border-border-color dark:border-dark-border-color bg-surface-light dark:bg-dark-surface-light group-hover:border-primary group-hover:scale-105'
                                                         }`}
                                                     >
-                                                        {isPaid ? <CheckCircle2 className="w-5 h-5" strokeWidth={3} /> : <div className="w-2.5 h-2.5 rounded-full bg-border-color dark:bg-dark-border-color group-hover:bg-primary" />}
+                                                        {isPaid ? <CheckCircle2 className="w-4 h-4" strokeWidth={3} /> : <div className="w-2 h-2 rounded-full bg-border-color dark:bg-dark-border-color group-hover:bg-primary" />}
                                                     </button>
 
                                                     {/* Actions Menu Trigger */}
@@ -189,9 +189,9 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                                 e.stopPropagation(); 
                                                                 setActiveActionsId(activeActionsId === acc.id ? null : acc.id); 
                                                             }}
-                                                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-surface-light dark:hover:bg-dark-surface-light text-text-muted hover:text-navy dark:hover:text-white transition-all hover:rotate-90"
+                                                            className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-surface-light dark:hover:bg-dark-surface-light text-text-muted hover:text-navy dark:hover:text-white transition-all"
                                                         >
-                                                            <MoreVertical className="w-5 h-5" />
+                                                            <MoreVertical className="w-4 h-4" />
                                                         </button>
 
                                                         {/* Simple Actions Menu Overlay */}
