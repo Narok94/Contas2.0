@@ -48,9 +48,9 @@ export const categoryIconMap: Record<string, LucideIcon> = {
   'Investimentos': TrendingUp,
 };
 
-export const getCategoryIcon = (category: string) => {
+export const getCategoryIcon = (category: string, sizeClass: string = "w-4 h-4") => {
   const Icon = categoryIconMap[category] || MoreHorizontal;
-  return <Icon className="w-4 h-4" />;
+  return <Icon className={sizeClass} />;
 };
 
 export const getCategoryIconComponent = (category: string) => {

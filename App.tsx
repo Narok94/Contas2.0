@@ -466,7 +466,7 @@ const App: React.FC = () => {
   if (!currentUser || !activeGroupId) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
 
   return (
-    <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-hidden">
+    <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-x-hidden">
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px] animate-pulse" />
@@ -476,7 +476,7 @@ const App: React.FC = () => {
 
       <div className="relative z-10">
         <Header currentUser={currentUser} onSettingsClick={() => setIsSettingsModalOpen(true)} onLogout={handleLogout} />
-        <main className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto pb-32">
+        <main className="p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto pb-32">
           {view === 'dashboard' && (
               <Dashboard 
                   accounts={userAccounts} 

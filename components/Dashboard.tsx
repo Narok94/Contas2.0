@@ -100,7 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
   }, [accounts, selectedDate]);
 
   return (
-    <div className="space-y-4 pb-24 font-sans max-w-7xl mx-auto">
+    <div className="space-y-4 pb-24 font-sans max-w-[1600px] mx-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 px-2 sm:px-0">
             <div>
               <p className="text-text-muted dark:text-dark-text-muted font-black text-[9px] uppercase tracking-[0.25em] mb-0.5">Visão Geral</p>

@@ -110,7 +110,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                     <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest italic">Nenhuma conta encontrada</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 px-1 sm:px-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 px-1 sm:px-0">
                     <AnimatePresence mode="popLayout">
                         {accountsList.map((acc) => {
                                         const isPaid = acc.status === AccountStatus.PAID;
@@ -124,18 +124,18 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.95 }}
                                                 onClick={() => toggleSelection(acc.id)}
-                                                className={`bg-surface dark:bg-dark-surface p-4 rounded-xl border-t border-r border-b border-l-4 transition-all cursor-pointer shadow-sm hover:shadow-md group relative flex items-center justify-between gap-4 ${borderColorClass} ${
+                                                className={`bg-surface dark:bg-dark-surface p-3 rounded-xl border-t border-r border-b border-l-4 transition-all cursor-pointer shadow-sm hover:shadow-md group relative flex items-center justify-between gap-3 ${borderColorClass} ${
                                                   selectedAccountIds.includes(acc.id) 
                                                     ? 'ring-2 ring-primary/40 border-primary/40' 
                                                     : 'border-white/5 dark:border-dark-border-color/50'
                                                 }`}
                                             >
                                                 {/* Left Section: Icon & Info */}
-                                                <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                    <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center transition-colors ${
-                                                        isPaid ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
-                                                    }`}>
-                                                        {getCategoryIcon(acc.category)}
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center transition-all shadow-sm ${
+                                                        isPaid ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'
+                                                    } border-2 ${isPaid ? 'border-success/10' : 'border-primary/10'}`}>
+                                                        {getCategoryIcon(acc.category, "w-6 h-6")}
                                                     </div>
                                                     
                                                     <div className="min-w-0 flex-1">
