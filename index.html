@@ -33,30 +33,30 @@
               mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {
-              primary: { light: '#6366F1', DEFAULT: '#4169E1', dark: '#3152C3' }, // Azul Royal vibrante
-              navy: '#0F172A', // Azul Navy profundo
-              highlight: '#0F172A',
-              secondary: { light: '#38bdf8', DEFAULT: '#0ea5e9', dark: '#0284c7' },
-              accent: { light: '#fbbf24', DEFAULT: '#f59e0b', dark: '#d97706' },
-              background: '#F8FAFC', // Cinza muito claro
+              primary: { light: '#A5B4FC', DEFAULT: '#6366F1', dark: '#4F46E5' }, // Indigo vibrante
+              navy: '#0B0E14', 
+              highlight: '#2DD4BF', // Teal para destaque
+              secondary: { light: '#7DD3FC', DEFAULT: '#0EA5E9', dark: '#0369A1' },
+              accent: { light: '#FCD34D', DEFAULT: '#F59E0B', dark: '#D97706' },
+              background: '#F8FAFC', 
               surface: '#FFFFFF',
-              'surface-light': '#F8FAFC',
-              'border-color': '#e2e8f0',
-              'text-primary': '#0F172A', // Navy para texto principal
+              'surface-light': '#F1F5F9',
+              'border-color': '#E2E8F0',
+              'text-primary': '#0F172A', 
               'text-secondary': '#475569',
-              'text-muted': '#64748b',
+              'text-muted': '#94A3B8',
               dark: {
-                background: '#0F172A',
-                surface: '#1E293B',
-                'surface-light': '#334155',
+                background: '#020617', // Deep Space Blue
+                surface: '#0F172A', // Dark Navy
+                'surface-light': '#1E293B',
                 'border-color': '#334155',
                 'text-primary': '#F8FAFC',
-                'text-secondary': '#94a3b8',
-                'text-muted': '#64748b',
+                'text-secondary': '#CBD5E1',
+                'text-muted': '#64748B',
               },
-              success: '#4ADE80', // Verde Lima
-              danger: '#FB7185', // Rosa avermelhado
-              warning: '#FBBF24',
+              success: '#10B981', // Emerald vibrante
+              danger: '#EF4444', 
+              warning: '#F59E0B',
             },
             boxShadow: {
               'glow-primary': '0 0 20px -5px rgba(99, 102, 241, 0.5)',
@@ -72,8 +72,14 @@
               'fade-in-up': 'fade-in-up 0.5s ease-out',
               'orb-glow': 'orb-glow 3s ease-in-out infinite',
               'orb-glow-listening': 'orb-glow-listening 1s ease-in-out infinite',
+              'spin-reverse': 'spin-reverse 3s linear infinite',
+              'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
             },
             keyframes: {
+              'spin-reverse': {
+                from: { transform: 'rotate(360deg)' },
+                to: { transform: 'rotate(0deg)' }
+              },
               'fade-in-up': {
                 '0%': { opacity: '0', transform: 'translateY(15px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },

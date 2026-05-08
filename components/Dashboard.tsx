@@ -20,7 +20,7 @@ interface DashboardProps {
   setSelectedDate: (date: Date) => void;
 }
 
-const COLORS = ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+const COLORS = ['#6366F1', '#00DC82', '#FF4D4D', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
 
 const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, setSelectedDate }) => {
   const [activeTab, setActiveTab] = useState<'summary' | 'trends' | 'detailed'>('summary');
@@ -100,19 +100,19 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
   }, [accounts, selectedDate]);
 
   return (
-    <div className="space-y-4 pb-24 font-sans max-w-[1600px] mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 px-2 sm:px-0">
+    <div className="space-y-6 pb-24 font-sans max-w-[1600px] mx-auto">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2 sm:px-0">
             <div>
-              <p className="text-text-muted dark:text-dark-text-muted font-black text-[9px] uppercase tracking-[0.25em] mb-0.5">Visão Geral</p>
-              <h1 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary tracking-tight">
-                Dashboard<span className="text-primary">.</span>
+              <p className="text-primary font-black text-[10px] uppercase tracking-[0.3em] mb-1">Visão Geral</p>
+              <h1 className="text-3xl font-black text-text-primary dark:text-white tracking-tighter">
+                Painel<span className="text-primary italic animate-pulse">_</span>
               </h1>
             </div>
-            <div className="flex items-center gap-2 w-full md:w-auto">
-                <div className="flex bg-surface dark:bg-dark-surface p-1 rounded-xl border border-border-color dark:border-dark-border-color overflow-x-auto no-scrollbar">
-                    <button onClick={() => setActiveTab('summary')} className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'summary' ? 'bg-primary text-white shadow-sm' : 'text-text-muted'}`}>Resumo</button>
-                    <button onClick={() => setActiveTab('detailed')} className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'detailed' ? 'bg-primary text-white shadow-sm' : 'text-text-muted'}`}>Categorias</button>
-                    <button onClick={() => setActiveTab('trends')} className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'trends' ? 'bg-primary text-white shadow-sm' : 'text-text-muted'}`}>Tendências</button>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex bg-surface dark:bg-dark-surface p-1.5 rounded-2xl border-2 border-border-color dark:border-dark-border-color overflow-x-auto no-scrollbar shadow-sm">
+                    <button onClick={() => setActiveTab('summary')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'summary' ? 'bg-primary text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)]' : 'text-text-muted hover:text-text-primary dark:hover:text-white'}`}>Resumo</button>
+                    <button onClick={() => setActiveTab('detailed')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'detailed' ? 'bg-primary text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)]' : 'text-text-muted hover:text-text-primary dark:hover:text-white'}`}>Categorias</button>
+                    <button onClick={() => setActiveTab('trends')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-all ${activeTab === 'trends' ? 'bg-primary text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)]' : 'text-text-muted hover:text-text-primary dark:hover:text-white'}`}>Tendências</button>
                 </div>
                 <MonthPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
             </div>
@@ -122,64 +122,71 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
             {activeTab === 'summary' && (
                 <motion.div 
                     key="summary"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4 px-2 sm:px-0"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    className="space-y-6 px-2 sm:px-0"
                 >
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         {[
-                            { label: 'Entradas', value: stats.totalIncome, icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'text-success', bg: 'bg-success/10' },
-                            { label: 'Saídas Pagas', value: stats.paid, icon: <TrendingDown className="w-3.5 h-3.5" />, color: 'text-danger', bg: 'bg-danger/10' },
-                            { label: 'Pendentes', value: stats.pending, icon: <Calendar className="w-3.5 h-3.5" />, color: 'text-warning', bg: 'bg-warning/10' },
-                            { label: 'Saldo', value: stats.balance, icon: <DollarSign className="w-3.5 h-3.5" />, color: 'text-primary', bg: 'bg-primary/10' },
+                            { label: 'Entradas', value: stats.totalIncome, icon: <TrendingUp className="w-5 h-5" />, color: 'text-emerald-500 dark:text-emerald-400', bg: 'bg-emerald-500/10 dark:bg-emerald-500/20', borderColor: 'border-emerald-500/20 dark:border-emerald-500/30' },
+                            { label: 'Despesas Pagas', value: stats.paid, icon: <TrendingDown className="w-5 h-5" />, color: 'text-rose-500 dark:text-rose-400', bg: 'bg-rose-500/10 dark:bg-rose-500/20', borderColor: 'border-rose-500/20 dark:border-rose-500/30' },
+                            { label: 'A Pagar', value: stats.pending, icon: <Calendar className="w-5 h-5" />, color: 'text-amber-500 dark:text-amber-400', bg: 'bg-amber-500/10 dark:bg-amber-500/20', borderColor: 'border-amber-500/20 dark:border-amber-500/30' },
+                            { label: 'Saldo Atual', value: stats.balance, icon: <DollarSign className="w-5 h-5" />, color: 'text-indigo-500 dark:text-indigo-400', bg: 'bg-indigo-500/10 dark:bg-indigo-500/20', borderColor: 'border-indigo-500/20 dark:border-indigo-500/30' },
                         ].map((stat, i) => (
-                            <div key={i} className="bg-surface dark:bg-dark-surface p-3 rounded-xl border border-border-color dark:border-dark-border-color shadow-sm">
-                                <div className={`w-7 h-7 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center mb-2`}>
+                            <div key={i} className={`bg-surface/80 dark:bg-dark-surface/60 backdrop-blur-md p-5 rounded-3xl border-2 ${stat.borderColor} shadow-lg relative overflow-hidden group hover:-translate-y-1 transition-all duration-300`}>
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 rounded-bl-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+                                <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-4 shadow-sm group-hover:rotate-12 transition-transform`}>
                                     {stat.icon}
                                 </div>
-                                <p className="text-text-muted text-[8px] font-bold uppercase tracking-widest mb-0.5">{stat.label}</p>
-                                <h2 className="text-sm sm:text-base font-black text-text-primary dark:text-white tracking-tight truncate">{formatCurrency(stat.value)}</h2>
+                                <p className="text-text-muted dark:text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+                                <h2 className="text-2xl font-black text-text-primary dark:text-white tracking-tighter truncate">{formatCurrency(stat.value)}</h2>
                             </div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-surface dark:bg-dark-surface p-4 rounded-xl border border-border-color dark:border-dark-border-color shadow-sm">
-                            <h3 className="text-xs font-bold text-text-primary dark:text-dark-text-primary flex items-center gap-2 mb-4">
-                                <PieIcon className="w-3.5 h-3.5 text-primary" />
-                                Gastos por Categoria
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-3xl border-2 border-border-color dark:border-dark-border-color shadow-sm">
+                            <h3 className="text-sm font-black text-text-primary dark:text-white flex items-center gap-2 mb-6 uppercase tracking-wider">
+                                <PieIcon className="w-5 h-5 text-primary" />
+                                Alocação de Gastos
                             </h3>
-                            <div className="h-[180px] w-full flex flex-col sm:flex-row items-center gap-4">
+                            <div className="h-[240px] w-full flex flex-col sm:flex-row items-center gap-6">
                                 <div className="h-full w-full sm:w-1/2">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie data={categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={4} dataKey="value">
+                                            <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={6} dataKey="value">
                                                 {categoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                             </Pie>
-                                            <Tooltip contentStyle={{ fontSize: '10px', borderRadius: '8px', border: 'none' }} />
+                                            <Tooltip 
+                                              contentStyle={{ backgroundColor: '#0F172A', border: '2px solid #334155', borderRadius: '16px', color: '#fff', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                                              itemStyle={{ color: '#fff' }}
+                                            />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1.5 w-full sm:w-1/2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-1/2">
                                     {categoryData.slice(0, 6).map((cat, i) => (
-                                        <div key={i} className="flex items-center gap-1.5 bg-surface-light dark:bg-dark-surface-light p-1 rounded-lg border border-border-color/20">
-                                            <div className="w-4 h-4 rounded bg-white dark:bg-dark-surface flex items-center justify-center text-primary/70 shrink-0">
-                                                {getCategoryIcon(cat.name)}
+                                        <div key={i} className="flex items-center gap-2 bg-surface-light dark:bg-dark-surface-light p-2 rounded-xl border border-border-color/30 group hover:border-primary transition-all">
+                                            <div className="w-6 h-6 rounded-lg bg-surface dark:bg-dark-surface flex items-center justify-center text-primary shrink-0 shadow-sm border border-border-color/10">
+                                                {getCategoryIcon(cat.name, "w-3 h-3")}
                                             </div>
-                                            <span className="text-[8px] font-bold text-text-secondary truncate">{cat.name}</span>
+                                            <div className="min-w-0">
+                                                <p className="text-[9px] font-black text-text-secondary dark:text-dark-text-secondary truncate leading-tight">{cat.name}</p>
+                                                <p className="text-[10px] font-black text-primary font-mono leading-none mt-0.5">{formatCurrency(cat.value)}</p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-surface dark:bg-dark-surface p-4 rounded-xl border border-border-color dark:border-dark-border-color shadow-sm">
-                            <h3 className="text-xs font-bold text-text-primary dark:text-dark-text-primary flex items-center gap-2 mb-4">
-                                <History className="w-3.5 h-3.5 text-primary" />
-                                Últimas Transações
+                        <div className="bg-surface dark:bg-dark-surface p-6 rounded-3xl border-2 border-border-color dark:border-dark-border-color shadow-sm">
+                            <h3 className="text-sm font-black text-text-primary dark:text-white flex items-center gap-2 mb-6 uppercase tracking-wider">
+                                <History className="w-5 h-5 text-primary" />
+                                Fluxo Recente
                             </h3>
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                                 {[...getMonthlyAccounts(accounts, selectedDate), ...incomes.filter(inc => {
                                     const d = new Date(inc.date);
                                     return d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
@@ -191,14 +198,19 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                     })
                                     .slice(0, 5)
                                     .map((item, i) => (
-                                        <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-surface-light dark:bg-dark-surface-light border border-border-color/30">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${'date' in item ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-                                                    {'date' in item ? <ArrowUpRight className="w-3 h-3" /> : getCategoryIcon((item as Account).category)}
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-surface-light dark:bg-dark-surface-light border border-border-color/30 hover:border-primary/30 transition-all group">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${'date' in item ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'} group-hover:scale-110 transition-transform`}>
+                                                    {'date' in item ? <ArrowUpRight className="w-5 h-5" /> : getCategoryIcon((item as Account).category, "w-5 h-5")}
                                                 </div>
-                                                <span className="text-[10px] font-bold text-text-primary truncate max-w-[120px]">{item.name}</span>
+                                                <div>
+                                                    <p className="text-[11px] font-black text-text-primary dark:text-white truncate max-w-[150px] leading-tight">{item.name}</p>
+                                                    <p className="text-[9px] font-bold text-text-muted mt-0.5 tracking-tighter uppercase">{format(new Date(('paymentDate' in item ? item.paymentDate : 'date' in item ? item.date : null) || selectedDate.toISOString()), "dd 'de' MMM", { locale: ptBR })}</p>
+                                                </div>
                                             </div>
-                                            <span className={`text-[10px] font-mono font-black ${'date' in item ? 'text-success' : 'text-danger'}`}>{formatCurrency(item.value)}</span>
+                                            <div className="text-right">
+                                                <p className={`text-base font-mono font-black tracking-tighter ${'date' in item ? 'text-success' : 'text-danger'}`}>{formatCurrency(item.value)}</p>
+                                            </div>
                                         </div>
                                     ))}
                             </div>

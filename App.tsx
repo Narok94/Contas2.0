@@ -451,10 +451,20 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background font-sans">
-            <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <p className="font-serif italic font-black text-primary animate-pulse tracking-tighter text-2xl">TATU.</p>
+        <div className="min-h-screen flex items-center justify-center bg-[#0B0E14] font-sans">
+            <div className="flex flex-col items-center gap-6">
+                <div className="relative">
+                  <div className="w-20 h-20 border-t-4 border-l-4 border-primary rounded-3xl animate-spin shadow-[0_0_20px_rgba(99,102,241,0.5)]"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-10 h-10 border-t-4 border-r-4 border-highlight rounded-2xl animate-spin-reverse opacity-60"></div>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="font-sans font-black text-white tracking-[0.4em] text-3xl mb-1 flex items-center gap-2">
+                    TATU<span className="text-primary italic animate-ping">.</span>
+                  </p>
+                  <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest animate-pulse">Sincronizando finanças...</p>
+                </div>
             </div>
         </div>
     );
@@ -469,9 +479,10 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-x-hidden">
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-secondary/10 dark:bg-secondary/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] bg-accent/10 dark:bg-accent/20 rounded-full blur-[110px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-primary/20 dark:bg-primary/30 rounded-full blur-[150px] animate-pulse transition-colors duration-1000" />
+        <div className="absolute top-[10%] -right-[15%] w-[50%] h-[50%] bg-highlight/15 dark:bg-highlight/20 rounded-full blur-[130px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '1s' }} />
+        <div className="absolute -bottom-[20%] left-[10%] w-[55%] h-[55%] bg-indigo-500/10 dark:bg-blue-600/20 rounded-full blur-[140px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[40%] right-[20%] w-[25%] h-[25%] bg-success/10 dark:bg-emerald-500/20 rounded-full blur-[120px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '4s' }} />
       </div>
 
       <div className="relative z-10">
