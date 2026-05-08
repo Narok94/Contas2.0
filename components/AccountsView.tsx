@@ -110,7 +110,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                     <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest italic">Nenhuma conta encontrada</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 px-1 sm:px-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 px-1 sm:px-0">
                     <AnimatePresence mode="popLayout">
                         {accountsList.map((acc) => {
                                         const isPaid = acc.status === AccountStatus.PAID;
@@ -140,32 +140,32 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                     </div>
                                                     
                                                     <div className="min-w-0 flex-1">
-                                                        <h3 className={`font-black text-sm tracking-tight leading-tight transition-colors ${isPaid ? 'text-text-muted line-through opacity-60' : 'text-navy dark:text-gray-100 group-hover:text-primary'}`}>
+                                                        <h3 className={`font-bold text-xs tracking-tight leading-tight transition-colors ${isPaid ? 'text-text-muted line-through opacity-60' : 'text-navy dark:text-gray-100 group-hover:text-primary'}`}>
                                                             {acc.name}
                                                         </h3>
-                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                        <div className="flex items-center gap-1.5 mt-0.5">
                                                             {acc.isInstallment ? (
-                                                                <span className="text-[9px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1 py-0.5 rounded-md border border-border-color/10">
+                                                                <span className="text-[8px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1 py-0.5 rounded border border-border-color/10">
                                                                     {acc.currentInstallment}/{acc.totalInstallments}
                                                                 </span>
                                                             ) : acc.isRecurrent ? (
-                                                                <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 dark:bg-indigo-500/20 px-1 py-0.5 rounded-md border border-indigo-500/20">FIXO</span>
+                                                                <span className="text-[8px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 dark:bg-indigo-500/20 px-1 py-0.5 rounded border border-indigo-500/20">FIXO</span>
                                                             ) : (
-                                                                <span className="text-[9px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1 py-0.5 rounded-md border border-border-color/10">AVULSO</span>
+                                                                <span className="text-[8px] font-black text-text-muted dark:text-dark-text-secondary bg-surface-light dark:bg-dark-surface-light/50 px-1 py-0.5 rounded border border-border-color/10">AVULSO</span>
                                                             )}
-                                                            <span className="text-[9px] font-bold text-text-muted dark:text-dark-text-muted uppercase tracking-wider truncate max-w-[80px]">{acc.category.split(' ')[1] || acc.category}</span>
+                                                            <span className="text-[8px] font-bold text-text-muted dark:text-dark-text-muted uppercase tracking-normal truncate max-w-[70px]">{acc.category.split(' ')[1] || acc.category}</span>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Right Section: Value & Checkbox & Actions */}
-                                                <div className="flex items-center gap-2.5 shrink-0">
+                                                <div className="flex items-center gap-2 shrink-0">
                                                     <div className="text-right">
-                                                        <p className={`font-black text-base tracking-tighter ${isPaid ? 'text-success' : 'text-navy dark:text-white'}`}>
+                                                        <p className={`font-black text-sm tracking-tight ${isPaid ? 'text-success' : 'text-navy dark:text-white'}`}>
                                                             {formatCurrency(acc.value)}
                                                         </p>
                                                         {!isPaid && acc.dueDate && (
-                                                            <p className="text-[8px] font-black text-danger uppercase opacity-90 leading-none mt-0.5">
+                                                            <p className="text-[7px] font-black text-danger uppercase opacity-90 leading-none mt-0.5 tracking-wide">
                                                                 Venc. {format(new Date(acc.dueDate), 'dd/MM')}
                                                             </p>
                                                         )}
