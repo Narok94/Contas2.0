@@ -93,7 +93,7 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
 
     const overdueRecords = accounts.filter(acc => {
         const dateStr = getSafeDateStr(acc);
-        if (!dateStr || acc.status === AccountStatus.PAID || acc.id?.toString().startsWith('projected-')) return false;
+        if (!dateStr || acc.status === AccountStatus.PAID || acc.id?.toString().startsWith('projected-') || acc.isInstallment || acc.isRecurrent) return false;
         
         const accMonthKey = dateStr.substring(0, 7);
         return accMonthKey < monthKey && acc.status === AccountStatus.PENDING;

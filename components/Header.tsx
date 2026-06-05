@@ -50,11 +50,10 @@ const SyncStatusIndicator: React.FC = () => {
     return (
         <button 
             onClick={() => realtimeService.forceSync()} 
-            className="flex items-center space-x-1 px-2 py-1 bg-slate-50 dark:bg-dark-surface-light border border-slate-100 dark:border-dark-border-color rounded-xl hover:bg-slate-100 dark:hover:bg-dark-surface transition-colors active:scale-95 shadow-sm"
-            title="Forçar Sincronização"
+            className="flex items-center justify-center w-6 h-6 bg-slate-50 dark:bg-dark-surface-light border border-slate-100 dark:border-dark-border-color rounded-full hover:bg-slate-100 dark:hover:bg-dark-surface transition-colors active:scale-95 shadow-sm"
+            title={`Sincronização: ${text}`}
         >
             {icon}
-            <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-dark-text-secondary">{text}</span>
         </button>
     );
 };
