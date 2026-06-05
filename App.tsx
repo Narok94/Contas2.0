@@ -614,7 +614,7 @@ const App: React.FC = () => {
                 const isInst = Boolean(item.isInstallment);
                 const sanitizedTotal = item.totalInstallments ? Number(item.totalInstallments) : undefined;
                 const installmentId = isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined;
-                const sanitizedValue = Number(item.value);
+                const sanitizedValue = (isInst && sanitizedTotal && sanitizedTotal > 1) ? Number(item.value) / sanitizedTotal : Number(item.value);
                 
                 if (isInst && sanitizedTotal && sanitizedTotal > 1) {
                     const baseDate = new Date(defaultDate);

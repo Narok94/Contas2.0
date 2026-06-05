@@ -112,7 +112,6 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="text-lg font-black text-navy dark:text-gray-100 leading-none tracking-tighter">TATU<span className="text-primary italic">.</span></h1>
-                  <p className="text-[8px] font-black uppercase text-text-muted dark:text-gray-400 tracking-[0.2em] mt-0.5">Gestão Financeira</p>
                 </div>
             </div>
           </div>

@@ -173,7 +173,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                     <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest italic animate-pulse">Nenhuma conta encontrada</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-1 sm:px-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 px-1 sm:px-0">
                     <AnimatePresence mode="popLayout">
                         {accountsList.map((acc) => {
                                         const isPaid = acc.status === AccountStatus.PAID;
@@ -188,7 +188,7 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.95 }}
                                                 onClick={() => toggleSelection(acc.id)}
-                                                className={`bg-white dark:bg-dark-surface p-5 rounded-2xl border transition-all cursor-pointer group shadow-sm hover:shadow-md flex flex-col gap-4 ${
+                                                className={`bg-white dark:bg-dark-surface p-3 rounded-xl border transition-all cursor-pointer group shadow-sm hover:shadow-md flex flex-col gap-2.5 ${
                                                   selectedAccountIds.includes(acc.id) 
                                                     ? 'border-primary ring-2 ring-primary/10 dark:border-primary' 
                                                     : 'border-slate-100 dark:border-dark-border-color'
@@ -196,40 +196,40 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                             >
                                                 {/* Header: Category & Installment/Recurrent */}
                                                 <div className="flex justify-between items-center">
-                                                    <span className={`text-[9px] font-black uppercase border px-2 py-0.5 rounded-md tracking-wider ${catColors.bg} ${catColors.border} ${catColors.text}`}>
+                                                    <span className={`text-[8px] font-black uppercase border px-1.5 py-0.2 rounded tracking-wider ${catColors.bg} ${catColors.border} ${catColors.text}`}>
                                                         {catName}
                                                     </span>
                                                     {acc.isInstallment ? (
-                                                        <span className="text-[9px] font-black text-blue-600 bg-blue-50 border border-blue-150 px-1.5 py-0.5 rounded-md">
+                                                        <span className="text-[8px] font-black text-blue-600 bg-blue-50 border border-blue-150 px-1 py-0.2 rounded">
                                                             {acc.currentInstallment}/{acc.totalInstallments}
                                                         </span>
                                                     ) : acc.isRecurrent ? (
-                                                        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-150 p-1 rounded-md flex items-center justify-center">
-                                                            <Repeat className="w-3 h-3" />
+                                                        <span className="text-[8px] font-black text-indigo-600 bg-indigo-50 border border-indigo-150 p-0.5 rounded flex items-center justify-center">
+                                                            <Repeat className="w-2.5 h-2.5" />
                                                         </span>
                                                     ) : acc.paymentDate || (acc as any).dueDate || (acc as any).date ? (
-                                                        <span className="text-[9px] font-bold text-slate-400 bg-slate-50 dark:bg-dark-surface-light border border-slate-100 dark:border-dark-border-color px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                                                            <Calendar className="w-2.5 h-2.5" />
+                                                        <span className="text-[8px] font-bold text-slate-400 bg-slate-50 dark:bg-dark-surface-light border border-slate-100 dark:border-dark-border-color px-1 py-0.2 rounded flex items-center gap-0.5">
+                                                            <Calendar className="w-2 h-2" />
                                                             {format(new Date(acc.paymentDate || (acc as any).dueDate || (acc as any).date), 'dd/MM')}
                                                         </span>
                                                     ) : null}
                                                 </div>
 
                                                 {/* Body: Title & Value */}
-                                                <div className="flex flex-col gap-1">
-                                                    <h3 className={`font-bold text-[14px] sm:text-[15px] leading-tight line-clamp-2 uppercase tracking-tight ${isPaid ? 'text-slate-300 line-through' : 'text-slate-700 dark:text-gray-100'}`}>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <h3 className={`font-bold text-[11px] sm:text-[12px] leading-tight line-clamp-2 uppercase tracking-tight ${isPaid ? 'text-slate-300 line-through' : 'text-slate-700 dark:text-gray-100'}`}>
                                                         {acc.name}
                                                     </h3>
-                                                    <p className={`font-black tracking-tight ${isPaid ? 'text-slate-300 text-lg' : 'text-slate-900 dark:text-white text-[22px]'}`}>
+                                                    <p className={`font-black tracking-tight ${isPaid ? 'text-slate-300 text-xs' : 'text-slate-900 dark:text-white text-[16px]'}`}>
                                                         {formatCurrency(acc.value)}
                                                     </p>
                                                 </div>
 
                                                 {/* Action Buttons */}
-                                                <div className="flex items-center gap-2 mt-auto pt-2">
+                                                <div className="flex items-center gap-1.5 mt-auto pt-1.5">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
-                                                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border ${
+                                                        className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-3 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all border ${
                                                             isPaid 
                                                                 ? 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100' 
                                                                 : 'bg-emerald-500/10 border border-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
@@ -239,25 +239,25 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                     </button>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); onEditAccount(acc); }}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-100 dark:border-dark-border-color text-slate-300 hover:text-primary hover:border-primary/20 hover:bg-slate-50 dark:hover:bg-dark-surface-light transition-all"
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-100 dark:border-dark-border-color text-slate-300 hover:text-primary hover:border-primary/20 hover:bg-slate-50 dark:hover:bg-dark-surface-light transition-all"
                                                         title="Editar"
                                                     >
-                                                        <Edit2 className="w-3.5 h-3.5" />
+                                                        <Edit2 className="w-3 h-3" />
                                                     </button>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); if(window.confirm('Apagar esta conta?')) onDeleteAccount(acc.id); }}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-100 dark:border-dark-border-color text-slate-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-100 dark:border-dark-border-color text-slate-300 hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
                                                         title="Excluir"
                                                     >
-                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                        <Trash2 className="w-3 h-3" />
                                                     </button>
                                                     {isPaid && whatsappEnabled && (
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); onNotifyWhatsApp?.(acc); }}
-                                                            className="w-9 h-9 flex items-center justify-center rounded-xl border border-emerald-100 text-emerald-400 hover:bg-emerald-50 transition-colors"
+                                                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-emerald-100 text-emerald-400 hover:bg-emerald-50 transition-colors"
                                                             title="Notificar WhatsApp"
                                                         >
-                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.894-5.335 11.897-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.894-5.335 11.897-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                                                         </button>
                                                     )}
                                                 </div>

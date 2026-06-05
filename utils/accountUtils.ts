@@ -25,6 +25,20 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
         return String(d);
     };
 
+    // Parser 100% imune a fuso-horários para identificar o ano e mês dos registros
+    const parseSafeYearAndMonth = (dateStr: string): { year: number; month: number } => {
+        const parts = dateStr.substring(0, 7).split('-');
+        if (parts.length === 2) {
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; // Mês baseado em 0 (0-11)
+            if (!isNaN(year) && !isNaN(month)) {
+                return { year, month };
+            }
+        }
+        const d = new Date(dateStr);
+        return { year: d.getFullYear(), month: d.getMonth() };
+    };
+
     const physicalRecords = accounts.filter(acc => {
         const dateStr = getSafeDateStr(acc);
         return dateStr?.startsWith(monthKey);
@@ -48,34 +62,67 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
     accounts.forEach(acc => {
         const dateStr = getSafeDateStr(acc);
         if (acc.isInstallment && dateStr) {
-            const anchorKey = acc.installmentId || `legacy-${acc.name}`;
+            // Chave estável para agrupamento, evitando colisão entre grupos e parcelamentos distintos
+            const anchorKey = acc.installmentId || 
+                `${acc.groupId || 'default'}-${acc.name}-${acc.category || 'none'}-${acc.totalInstallments || 'unknown'}`;
+                
             const current = seriesAnchors.get(anchorKey);
-            const currentDateStr = current ? getSafeDateStr(current) : null;
-            if (!current || new Date(dateStr) > new Date(currentDateStr!)) {
+            
+            if (!current) {
                 seriesAnchors.set(anchorKey, acc);
+            } else {
+                const currentDateStr = getSafeDateStr(current);
+                if (currentDateStr) {
+                    const currentMeta = parseSafeYearAndMonth(currentDateStr);
+                    const accMeta = parseSafeYearAndMonth(dateStr);
+                    const currentMonths = currentMeta.year * 12 + currentMeta.month;
+                    const accMonths = accMeta.year * 12 + accMeta.month;
+                    if (accMonths > currentMonths) {
+                        seriesAnchors.set(anchorKey, acc);
+                    }
+                }
             }
         }
     });
 
     seriesAnchors.forEach((acc) => {
         const dateStr = getSafeDateStr(acc);
-        const startDate = new Date(dateStr!);
-        const monthDiff = (selectedYear - startDate.getFullYear()) * 12 + (selectedMonth - startDate.getMonth());
+        if (!dateStr) return;
+        
+        const { year: startYear, month: startMonth } = parseSafeYearAndMonth(dateStr);
+        const monthDiff = (selectedYear - startYear) * 12 + (selectedMonth - startMonth);
 
+        // Apenas projeta se o mês selecionado for posterior ao mês da âncora
         if (monthDiff > 0) {
             const currentInst = Number(acc.currentInstallment || 1);
             const targetInstallment = currentInst + monthDiff;
             
+            // Filtro preciso de itens da própria série de parcelas
+            const sameSeriesAccounts = accounts.filter(a => {
+                if (acc.installmentId) {
+                    return a.installmentId === acc.installmentId;
+                } else {
+                    return !a.installmentId && 
+                        a.groupId === acc.groupId && 
+                        a.name === acc.name && 
+                        a.category === acc.category;
+                }
+            });
+            
             const maxTotalInSeries = Math.max(
                 Number(acc.totalInstallments || 0),
-                ...accounts.filter(a => a.installmentId === acc.installmentId).map(a => Number(a.totalInstallments || 0))
+                ...sameSeriesAccounts.map(a => Number(a.totalInstallments || 0))
             );
 
             if (targetInstallment <= maxTotalInSeries) {
-                const alreadyExists = physicalRecords.some(p => 
-                    p.installmentId === acc.installmentId && 
-                    Number(p.currentInstallment) === targetInstallment
-                );
+                // Verifica se já existe um registro físico no mesmo mês para a mesma série
+                const alreadyExists = physicalRecords.some(p => {
+                    const matchesSeries = acc.installmentId 
+                        ? p.installmentId === acc.installmentId
+                        : (!p.installmentId && p.groupId === acc.groupId && p.name === acc.name && p.category === acc.category);
+                        
+                    return matchesSeries && Number(p.currentInstallment) === targetInstallment;
+                });
 
                 if (!alreadyExists) {
                     projectedInstallments.push({

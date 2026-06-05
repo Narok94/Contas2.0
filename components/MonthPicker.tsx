@@ -49,19 +49,16 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ selectedDate, onSelectDate })
 
   return (
     <div className="relative inline-block" ref={containerRef}>
-      {/* Gatilho Compacto */}
+      {/* Gatilho Compacto e Singelo */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color rounded-xl hover:bg-surface dark:hover:bg-dark-surface transition-all active:scale-95 group shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 dark:bg-dark-surface border border-slate-100 dark:border-white/5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-surface-light transition-all active:scale-95 group"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z" />
-        </svg>
-        <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">
-          {fullMonthNames[currentMonth]} <span className="text-primary/70">{currentYear}</span>
+        <span className="text-xs font-black text-text-primary dark:text-dark-text-primary">
+          {fullMonthNames[currentMonth]} <span className="text-primary">{currentYear}</span>
         </span>
-        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 text-text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
