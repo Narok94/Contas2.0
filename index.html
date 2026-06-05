@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tatu - Gestão Financeira Profissional</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Inter:wght@300..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       (function() {
@@ -14,7 +14,7 @@
           const storedTheme = localStorage.getItem('theme');
           const supportDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
           
-          if (storedTheme === 'dark' || (!storedTheme && supportDark) || !storedTheme) {
+          if (storedTheme === 'dark') {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
@@ -28,7 +28,7 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Outfit', 'sans-serif'],
+              sans: ['Inter', 'sans-serif'],
               serif: ['Cormorant Garamond', 'serif'],
               mono: ['JetBrains Mono', 'monospace'],
             },
@@ -52,19 +52,11 @@
                 'border-color': '#334155',
                 'text-primary': '#F8FAFC',
                 'text-secondary': '#CBD5E1',
-                'text-muted': '#94A3B8',
+                'text-muted': '#64748B',
               },
-              success: '#10B981', 
+              success: '#10B981', // Emerald vibrante
               danger: '#EF4444', 
               warning: '#F59E0B',
-            },
-            letterSpacing: {
-              tighter: '-0.03em',
-              tight: '-0.01em',
-              normal: '0',
-              wide: '0.02em',
-              wider: '0.05em',
-              widest: '0.1em',
             },
             boxShadow: {
               'glow-primary': '0 0 20px -5px rgba(99, 102, 241, 0.5)',

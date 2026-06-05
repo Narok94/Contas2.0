@@ -108,6 +108,8 @@ class RealtimeService {
         db.groups.push(testGroup);
     }
 
+    db.accounts = db.accounts.map(a => this.normalizeAccount(a));
+
     return db;
   }
 
@@ -248,6 +250,7 @@ class RealtimeService {
   private normalizeAccount(acc: Account): Account {
       return {
           ...acc,
+          id: acc.id || `acc-recovered-${Date.now()}-${Math.random()}`,
           value: Number(acc.value) || 0,
           totalInstallments: acc.totalInstallments ? Number(acc.totalInstallments) : undefined,
           currentInstallment: acc.currentInstallment ? Number(acc.currentInstallment) : undefined,
@@ -323,7 +326,20 @@ class RealtimeService {
   }
 
   public exportData = () => this.db;
-  public importData = (data: Db) => { this.db = data; this.notifyAll(); this.saveLocal(); this.persistRemote(); }
+  public importData = (data: Partial<Db> | any) => { 
+      const parsedData = data.db || data;
+      this.db = {
+          users: parsedData.users || this.db.users,
+          groups: parsedData.groups || this.db.groups,
+          accounts: (parsedData.accounts || this.db.accounts).map((a: Account) => this.normalizeAccount(a)),
+          incomes: parsedData.incomes || this.db.incomes,
+          categories: parsedData.categories || this.db.categories,
+          settings: parsedData.settings || this.db.settings
+      };
+      this.notifyAll(); 
+      this.saveLocal(); 
+      this.persistRemote(); 
+  }
 }
 
 export default new RealtimeService();

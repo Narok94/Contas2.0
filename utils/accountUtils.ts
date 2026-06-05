@@ -16,30 +16,50 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
     const selectedMonth = date.getMonth();
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
     
-    const physicalRecords = accounts.filter(acc => acc.paymentDate?.startsWith(monthKey));
-    const orphanAccounts = accounts.filter(acc => !acc.paymentDate && !acc.isRecurrent && !acc.isInstallment);
+    const getSafeDateStr = (acc: any): string | null => {
+        const d = acc.paymentDate || acc.dueDate || acc.date;
+        if (!d) return null;
+        if (typeof d === 'string') return d;
+        if (d instanceof Date) return d.toISOString();
+        if (typeof d === 'number') return new Date(d).toISOString();
+        return String(d);
+    };
 
-    const recurrentTemplates = accounts.filter(acc => 
-        acc.isRecurrent && 
-        !acc.paymentDate &&
-        !physicalRecords.some(p => p.name === acc.name && p.category === acc.category)
-    );
+    const physicalRecords = accounts.filter(acc => {
+        const dateStr = getSafeDateStr(acc);
+        return dateStr?.startsWith(monthKey);
+    });
+    
+    const orphanAccounts = accounts.filter(acc => {
+        const dateStr = getSafeDateStr(acc);
+        return !dateStr && !acc.isRecurrent && !acc.isInstallment;
+    });
+
+    const recurrentTemplates = accounts.filter(acc => {
+        const dateStr = getSafeDateStr(acc);
+        return acc.isRecurrent && 
+        !dateStr &&
+        !physicalRecords.some(p => p.name === acc.name && p.category === acc.category);
+    });
 
     const projectedInstallments: Account[] = [];
     const seriesAnchors = new Map<string, Account>();
     
     accounts.forEach(acc => {
-        if (acc.isInstallment && acc.paymentDate) {
+        const dateStr = getSafeDateStr(acc);
+        if (acc.isInstallment && dateStr) {
             const anchorKey = acc.installmentId || `legacy-${acc.name}`;
             const current = seriesAnchors.get(anchorKey);
-            if (!current || new Date(acc.paymentDate) > new Date(current.paymentDate!)) {
+            const currentDateStr = current ? getSafeDateStr(current) : null;
+            if (!current || new Date(dateStr) > new Date(currentDateStr!)) {
                 seriesAnchors.set(anchorKey, acc);
             }
         }
     });
 
     seriesAnchors.forEach((acc) => {
-        const startDate = new Date(acc.paymentDate!);
+        const dateStr = getSafeDateStr(acc);
+        const startDate = new Date(dateStr!);
         const monthDiff = (selectedYear - startDate.getFullYear()) * 12 + (selectedMonth - startDate.getMonth());
 
         if (monthDiff > 0) {
@@ -71,5 +91,13 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
         }
     });
 
-    return [...physicalRecords, ...orphanAccounts, ...recurrentTemplates, ...projectedInstallments];
+    const overdueRecords = accounts.filter(acc => {
+        const dateStr = getSafeDateStr(acc);
+        if (!dateStr || acc.status === AccountStatus.PAID || acc.id?.toString().startsWith('projected-')) return false;
+        
+        const accMonthKey = dateStr.substring(0, 7);
+        return accMonthKey < monthKey && acc.status === AccountStatus.PENDING;
+    });
+
+    return [...overdueRecords, ...physicalRecords, ...orphanAccounts, ...recurrentTemplates, ...projectedInstallments];
 };

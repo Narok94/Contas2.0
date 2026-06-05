@@ -69,7 +69,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div className="lg:col-span-4 order-1">
-                    <form onSubmit={handleSubmit} className="p-4 bg-surface dark:bg-dark-surface rounded-xl border border-border-color dark:border-dark-border-color shadow-sm space-y-4">
+                    <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-dark-surface rounded-xl border border-slate-100 dark:border-dark-border-color shadow-sm space-y-4">
                         <div className="flex items-center gap-2 mb-2">
                             <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                 {editingIncome ? <Edit2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -82,15 +82,15 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                                 <label className="text-[9px] font-black uppercase text-text-muted ml-1 flex items-center gap-1">
                                     <Tag className="w-2.5 h-2.5" /> Nome
                                 </label>
-                                <input type="text" placeholder="Ex: Salário" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 rounded-lg bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:border-primary outline-none transition-all text-xs text-text-primary dark:text-dark-text-primary" />
+                                <input type="text" placeholder="Ex: Salário" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 rounded-lg bg-slate-50 dark:bg-dark-surface-light border border-slate-200 dark:border-dark-border-color focus:border-primary outline-none transition-all text-xs text-text-primary dark:text-dark-text-primary" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[9px] font-black uppercase text-text-muted ml-1 flex items-center gap-1">
                                     <Banknote className="w-2.5 h-2.5" /> Valor (R$)
                                 </label>
-                                <input type="number" step="0.01" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} required className="w-full p-2 rounded-lg bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:border-primary outline-none transition-all font-mono text-xs text-text-primary dark:text-dark-text-primary" />
+                                <input type="number" step="0.01" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} required className="w-full p-2 rounded-lg bg-slate-50 dark:bg-dark-surface-light border border-slate-200 dark:border-dark-border-color focus:border-primary outline-none transition-all font-mono text-xs text-text-primary dark:text-dark-text-primary" />
                             </div>
-                            <div className="flex items-center gap-2 p-2 bg-surface-light dark:bg-dark-surface-light rounded-lg border border-border-color dark:border-dark-border-color cursor-pointer">
+                            <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-dark-surface-light rounded-lg border border-slate-200 dark:border-dark-border-color cursor-pointer">
                                 <input id="income-recurrent" type="checkbox" checked={isRecurrent} onChange={e => setIsRecurrent(e.target.checked)} className="h-4 w-4 text-primary border-border-color rounded cursor-pointer" />
                                 <label htmlFor="income-recurrent" className="text-[10px] font-bold text-text-secondary cursor-pointer flex items-center gap-1">
                                     <Repeat className="w-3 h-3" /> Recorrente
@@ -112,12 +112,12 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                 </div>
 
                 <div className="lg:col-span-8 order-2">
-                    <div className="bg-surface dark:bg-dark-surface rounded-xl border border-border-color dark:border-dark-border-color shadow-sm overflow-hidden">
-                        <div className="p-3 border-b border-border-color dark:border-dark-border-color bg-surface-light dark:bg-dark-surface-light flex items-center justify-between">
+                    <div className="bg-white dark:bg-dark-surface rounded-xl border border-slate-100 dark:border-dark-border-color shadow-sm overflow-hidden">
+                        <div className="p-3 border-b border-slate-100 dark:border-dark-border-color bg-slate-50 dark:bg-dark-surface-light flex items-center justify-between">
                             <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Entradas Ativas</h3>
                             <span className="text-[10px] font-mono opacity-50">{incomes.length} registros</span>
                         </div>
-                        <div className="divide-y divide-border-color dark:divide-dark-border-color max-h-[500px] overflow-y-auto">
+                        <div className="divide-y divide-slate-100 dark:divide-dark-border-color max-h-[500px] overflow-y-auto">
                             {incomes.length > 0 ? incomes.map(income => (
                                 <div key={income.id} className="flex items-center justify-between p-3 hover:bg-primary/5 transition-colors group">
                                     <div className="flex items-center gap-3">

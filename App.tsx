@@ -11,7 +11,6 @@ import AdminPanel from './components/AdminPanel';
 import AccountFormModal from './components/AccountFormModal';
 import BatchAccountModal from './components/BatchAccountModal';
 import AddSelectionModal from './components/AddSelectionModal';
-import BottomNavBar from './components/BottomNavBar';
 import AiChatModal, { AiChatModalRef } from './components/AiChatModal';
 import SettingsModal from './components/SettingsModal';
 import FloatingAiButton from './components/FloatingAiButton';
@@ -88,6 +87,59 @@ const App: React.FC = () => {
         unsubUsers(); unsubGroups(); unsubAccounts(); unsubIncomes(); unsubCategories(); unsubSettings();
     };
   }, []);
+
+  useEffect(() => {
+      // INJEÇÃO ÚNICA DAS CONTAS SOLICITADAS PELO USUÁRIO NO DIA 05 DE JUNHO
+      if (activeGroupId) {
+          const injected = localStorage.getItem('contas_injetadas_05_jun_v5');
+          if (!injected) {
+              const itemsToInject = [
+                  { name: 'Loja 1', value: 81.68, date: '2026-03-01T12:00:00Z', cat: '🛍️ Compras' },
+                  { name: 'Minas mas', value: 39.50, date: '2026-02-01T12:00:00Z', cat: '🛒 Mercado' },
+                  { name: 'Big suplementos', value: 55.00, date: '2026-02-01T12:00:00Z', cat: '💊 Saúde' },
+                  { name: 'Minas mais', value: 63.38, date: '2026-03-01T12:00:00Z', cat: '🛒 Mercado' },
+                  { name: 'Drogaria americana', value: 64.52, date: '2026-03-01T12:00:00Z', cat: '💊 Saúde' },
+                  { name: 'Araújo - 914 cartão', value: 88.00, date: '2026-03-01T12:00:00Z', cat: '💊 Saúde' },
+                  { name: 'Academia', value: 129.90, date: '2026-06-01T12:00:00Z', cat: '🏋️ Lazer / Esporte', rec: true },
+                  { name: 'Meire', value: 600.00, date: '2026-06-01T12:00:00Z', cat: '📄 Boleto' },
+                  { name: 'Unimed', value: 340.00, date: '2026-06-01T12:00:00Z', cat: '💊 Saúde', rec: true },
+                  { name: 'Avet', value: 120.00, date: '2026-06-01T12:00:00Z', cat: '🐶 Pet' },
+                  { name: 'Petlove', value: 133.00, date: '2026-06-01T12:00:00Z', cat: '🐶 Pet', inst: {cur: 2, tot: 2} },
+                  { name: 'Época', value: 74.88, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 6, tot: 8} },
+                  { name: 'Centauro', value: 99.90, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 7, tot: 10} },
+                  { name: 'Stanley', value: 23.80, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 7, tot: 10} },
+                  { name: 'Farmácia', value: 60.13, date: '2026-06-01T12:00:00Z', cat: '💊 Saúde', inst: {cur: 2, tot: 3} },
+                  { name: 'Disney', value: 46.90, date: '2026-06-01T12:00:00Z', cat: '📺 Assinaturas', rec: true },
+                  { name: 'Havan', value: 29.90, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 9, tot: 10} },
+                  { name: 'Compras bh', value: 242.40, date: '2026-06-01T12:00:00Z', cat: '🛒 Mercado', inst: {cur: 3, tot: 3} },
+                  { name: 'Aniversário Antônio, clube, celular', value: 648.90, date: '2026-06-01T12:00:00Z', cat: '🎉 Festa/Evento' },
+              ];
+
+              itemsToInject.forEach(item => {
+                  const alreadyExists = accounts.some(a => a.name === item.name && a.groupId === activeGroupId && a.value === item.value);
+                  if (!alreadyExists) {
+                      const newAccount = {
+                          name: item.name,
+                          value: item.value,
+                          groupId: activeGroupId,
+                          category: item.cat,
+                          status: AccountStatus.PENDING,
+                          paymentDate: item.date,
+                          isRecurrent: !!item.rec,
+                          isInstallment: !!item.inst,
+                          currentInstallment: item.inst?.cur,
+                          totalInstallments: item.inst?.tot,
+                          installmentId: item.inst ? `inst-${Date.now()}-${item.name}` : undefined,
+                          id: `acc-injected-${Date.now()}-${Math.random()}`
+                      } as unknown as Account;
+                      
+                      realtimeService.addAccount(newAccount);
+                  }
+              });
+              localStorage.setItem('contas_injetadas_05_jun_v5', 'true');
+          }
+      }
+  }, [activeGroupId, accounts]);
   
   const userAccounts = useMemo(() => {
     if (!activeGroupId) return [];
@@ -148,7 +200,7 @@ const App: React.FC = () => {
         return;
     }
 
-    const isVirtual = acc.id.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
+    const isVirtual = acc.id?.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
 
     if (isVirtual) {
         // Criando um snapshot físico para uma projeção ou template recorrente
@@ -198,7 +250,7 @@ const App: React.FC = () => {
       // Skip variable expenses with 0 value for batch processing to avoid multiple modals
       if (isVariableExpense(acc) && isPaying && Number(acc.value) === 0) return;
 
-      const isVirtual = acc.id.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
+      const isVirtual = acc.id?.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
 
       if (isVirtual) {
           const snapshot: Account = {
@@ -228,7 +280,7 @@ const App: React.FC = () => {
   };
 
   const handleAccountSubmit = (data: any) => {
-      const isEditingProjection = data.id && data.id.toString().startsWith('projected-');
+      const isEditingProjection = data.id && data.id?.toString().startsWith('projected-');
       const existingAccount = accounts.find(a => a.id === data.id);
       
       const year = selectedDate.getFullYear();
@@ -373,7 +425,7 @@ const App: React.FC = () => {
     let csv = 'Tipo,Nome,Valor,Categoria,Data,Status\n';
     
     accounts.forEach(acc => {
-        csv += `Despesa,"${acc.name}",${acc.value},"${acc.category}",${acc.paymentDate || acc.dueDate},${acc.status}\n`;
+        csv += `Despesa,"${acc.name}",${acc.value},"${acc.category}",${acc.paymentDate || (acc as any).dueDate},${acc.status}\n`;
     });
     
     incomes.forEach(inc => {
@@ -477,17 +529,25 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-x-hidden">
-      {/* Decorative Background Elements */}
+      {/* Decorative Background Elements (mostly visible in dark mode, extremely subtle in light) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-primary/20 dark:bg-primary/30 rounded-full blur-[150px] animate-pulse transition-colors duration-1000" />
-        <div className="absolute top-[10%] -right-[15%] w-[50%] h-[50%] bg-highlight/15 dark:bg-highlight/20 rounded-full blur-[130px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '1s' }} />
-        <div className="absolute -bottom-[20%] left-[10%] w-[55%] h-[55%] bg-indigo-500/10 dark:bg-blue-600/20 rounded-full blur-[140px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-[40%] right-[20%] w-[25%] h-[25%] bg-success/10 dark:bg-emerald-500/20 rounded-full blur-[120px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '4s' }} />
+        <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-primary/5 dark:bg-primary/30 rounded-full blur-[150px] animate-pulse transition-colors duration-1000" />
+        <div className="absolute top-[10%] -right-[15%] w-[50%] h-[50%] bg-highlight/5 dark:bg-highlight/20 rounded-full blur-[130px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '1s' }} />
+        <div className="absolute -bottom-[20%] left-[10%] w-[55%] h-[55%] bg-indigo-500/5 dark:bg-blue-600/20 rounded-full blur-[140px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[40%] right-[20%] w-[25%] h-[25%] bg-success/5 dark:bg-emerald-500/20 rounded-full blur-[120px] animate-pulse transition-colors duration-1000" style={{ animationDelay: '4s' }} />
       </div>
 
       <div className="relative z-10">
-        <Header currentUser={currentUser} onSettingsClick={() => setIsSettingsModalOpen(true)} onLogout={handleLogout} />
-        <main className="p-3 sm:p-4 lg:p-6 max-w-[1440px] mx-auto pb-32">
+        <Header 
+          currentUser={currentUser} 
+          onSettingsClick={() => setIsSettingsModalOpen(true)} 
+          onLogout={handleLogout} 
+          activeView={view}
+          onViewChange={setView}
+          isAdmin={currentUser.role === Role.ADMIN}
+          onAddClick={() => setIsSelectionModalOpen(true)}
+        />
+        <main className="p-3 sm:p-4 lg:p-6 max-w-[1200px] mx-auto pb-32">
           {view === 'dashboard' && (
               <Dashboard 
                   accounts={userAccounts} 
@@ -521,7 +581,6 @@ const App: React.FC = () => {
         </main>
         <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
         <FloatingAiButton onClick={() => setIsChatOpen(true)} onLongPress={() => {}} constraintsRef={constraintsRef} isListening={isAiListening} />
-        <BottomNavBar activeView={view} onViewChange={setView} onAddClick={() => setIsSelectionModalOpen(true)} isAdmin={currentUser.role === Role.ADMIN} />
         <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
         <SettingsModal 
           isOpen={isSettingsModalOpen} 
