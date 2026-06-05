@@ -26,9 +26,9 @@ import { isVariableExpense } from './utils/accountUtils';
 // isVariableExpense removed as it is now imported from accountUtils
 
 const App: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { theme, toggleTheme } = useTheme(currentUser?.username);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
