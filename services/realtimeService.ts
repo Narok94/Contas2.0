@@ -1,6 +1,6 @@
 
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from '../utils/mockData';
-import { User, Group, Account, Income, AppSettings } from '../types';
+import { User, Group, Account, Income, AppSettings, AccountStatus } from '../types';
 
 type CollectionKey = 'users' | 'groups' | 'accounts' | 'categories' | 'incomes' | 'settings';
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'local';
@@ -33,6 +33,8 @@ class RealtimeService {
 
   constructor() {
     this.db = this.loadAndArmorData();
+    this.ensureCelularHenrique();
+    this.ensureCelularJessica();
     this.init();
     window.addEventListener('storage', this.handleCrossTabSync);
   }
@@ -113,6 +115,88 @@ class RealtimeService {
     return db;
   }
 
+  private ensureCelularHenrique() {
+    const hasCelular = this.db.accounts.some(a => a.name.toLowerCase().includes('celular henrique'));
+    if (!hasCelular) {
+      console.log('[RealtimeService] Adicionando parcelas do Celular Henrique...');
+      const targetGroups = this.db.groups.map(g => g.id).filter(id => id);
+      if (targetGroups.length === 0) {
+        targetGroups.push('group-3');
+      }
+      
+      const newAccounts: Account[] = [];
+      const installmentId = `series-celular-henrique-${Date.now()}`;
+      
+      targetGroups.forEach(gId => {
+        for (let i = 1; i <= 7; i++) {
+          const isPaid = i < 4;
+          const monthOffset = i - 4; // Parcela 4/7 corresponds to June 2026 (current month)
+          const paymentDate = new Date(2026, 5 + monthOffset, 15, 12, 0, 0); // Month 5 is June
+          
+          newAccounts.push({
+            id: `acc-celular-henrique-${gId}-${i}`,
+            groupId: gId,
+            name: 'Celular Henrique',
+            category: '📦 Outros',
+            value: 130,
+            status: isPaid ? AccountStatus.PAID : AccountStatus.PENDING,
+            isRecurrent: false,
+            isInstallment: true,
+            currentInstallment: i,
+            totalInstallments: 7,
+            installmentId: installmentId,
+            paymentDate: paymentDate.toISOString()
+          });
+        }
+      });
+      
+      this.db.accounts = [...this.db.accounts, ...newAccounts];
+      this.saveLocal();
+      this.persistRemote();
+    }
+  }
+
+  private ensureCelularJessica() {
+    const hasCelular = this.db.accounts.some(a => a.name.toLowerCase().includes('celular jessica'));
+    if (!hasCelular) {
+      console.log('[RealtimeService] Adicionando parcelas do Celular Jessica...');
+      const targetGroups = this.db.groups.map(g => g.id).filter(id => id);
+      if (targetGroups.length === 0) {
+        targetGroups.push('group-3');
+      }
+      
+      const newAccounts: Account[] = [];
+      const installmentId = `series-celular-jessica-${Date.now()}`;
+      
+      targetGroups.forEach(gId => {
+        for (let i = 1; i <= 8; i++) {
+          const isPaid = i < 4;
+          const monthOffset = i - 4; // Parcela 4/8 corresponds to June 2026 (current month)
+          const paymentDate = new Date(2026, 5 + monthOffset, 15, 12, 0, 0); // Month 5 is June
+          
+          newAccounts.push({
+            id: `acc-celular-jessica-${gId}-${i}`,
+            groupId: gId,
+            name: 'Celular Jessica',
+            category: '📦 Outros',
+            value: 323.81,
+            status: isPaid ? AccountStatus.PAID : AccountStatus.PENDING,
+            isRecurrent: false,
+            isInstallment: true,
+            currentInstallment: i,
+            totalInstallments: 8,
+            installmentId: installmentId,
+            paymentDate: paymentDate.toISOString()
+          });
+        }
+      });
+      
+      this.db.accounts = [...this.db.accounts, ...newAccounts];
+      this.saveLocal();
+      this.persistRemote();
+    }
+  }
+
   private async init() {
     const userStr = sessionStorage.getItem('app_currentUser');
     if (userStr) {
@@ -164,6 +248,8 @@ class RealtimeService {
                     ...remoteUserData, 
                     settings: remoteSettingsData?.settings || this.db.settings 
                 };
+                this.ensureCelularHenrique();
+                this.ensureCelularJessica();
             }
 
             // Se for o usuário teste, garantir que ele tenha as 10 contas de teste se estiver vazio

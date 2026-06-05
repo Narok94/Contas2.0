@@ -339,13 +339,16 @@ const App: React.FC = () => {
           const isInst = Boolean(data.isInstallment);
           const installmentId = isInst ? `inst-${Date.now()}` : undefined;
           
-          if (isInst && sanitizedTotal && sanitizedTotal > 1) {
-              // Create all installments
+          if (isInst && sanitizedTotal && sanitizedTotal > 0) {
+              const currentInstallmentNum = sanitizedCurrent || 1;
               const baseDate = data.paymentDate ? new Date(data.paymentDate) : new Date(targetDate);
               
               for (let i = 1; i <= sanitizedTotal; i++) {
                   const currentDate = new Date(baseDate);
-                  currentDate.setMonth(baseDate.getMonth() + (i - 1));
+                  currentDate.setMonth(baseDate.getMonth() + (i - currentInstallmentNum));
+                  
+                  // Mark past installments as paid, and current / future as pending
+                  const status = i < currentInstallmentNum ? AccountStatus.PAID : AccountStatus.PENDING;
                   
                   dataService.addAccount({
                       ...data,
@@ -357,7 +360,7 @@ const App: React.FC = () => {
                       installmentId: installmentId,
                       currentInstallment: i,
                       totalInstallments: sanitizedTotal,
-                      status: AccountStatus.PENDING,
+                      status: status,
                       paymentDate: currentDate.toISOString()
                   });
               }

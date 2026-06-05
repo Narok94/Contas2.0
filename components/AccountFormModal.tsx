@@ -25,6 +25,7 @@ type AccountFormData = {
   totalValue: string;
   paymentDate: string;
   groupId: string;
+  currentInstallment: string;
 };
 
 const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, onSubmit, account, categories, onManageCategories, activeGroupId, selectedDate }) => {
@@ -34,6 +35,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
   const [isRecurrent, setIsRecurrent] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState('2');
+  const [currentInstallment, setCurrentInstallment] = useState('1');
   const [totalValue, setTotalValue] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -62,6 +64,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             totalValue: String(account.totalValue || account.value * (account.totalInstallments || 1)),
             paymentDate: account.paymentDate ? account.paymentDate.split('T')[0] : defaultDateStr,
             groupId: initialGroupId,
+            currentInstallment: String(account.currentInstallment || 1),
           }
         : {
             name: '',
@@ -73,6 +76,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
             totalValue: '',
             paymentDate: defaultDateStr,
             groupId: initialGroupId,
+            currentInstallment: '1',
           };
       
       initialStateRef.current = initialState;
@@ -83,6 +87,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       setIsRecurrent(initialState.isRecurrent);
       setIsInstallment(initialState.isInstallment);
       setTotalInstallments(initialState.totalInstallments);
+      setCurrentInstallment(initialState.currentInstallment);
       setTotalValue(initialState.totalValue);
       setPaymentDate(initialState.paymentDate);
       setShowConfirmDialog(false); // Reset confirmation on open
@@ -100,6 +105,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
     if (initialStateRef.current.isRecurrent !== isRecurrent) return true;
     if (initialStateRef.current.isInstallment !== isInstallment) return true;
     if (isInstallment && initialStateRef.current.totalInstallments !== totalInstallments) return true;
+    if (isInstallment && initialStateRef.current.currentInstallment !== currentInstallment) return true;
     if (isInstallment && initialStateRef.current.totalValue !== totalValue) return true;
     if (initialStateRef.current.paymentDate !== paymentDate) return true;
     
@@ -153,7 +159,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
       isInstallment,
       totalInstallments: isInstallment ? parseInt(totalInstallments, 10) : undefined,
       paymentDate: paymentDate ? `${paymentDate}T12:00:00Z` : undefined,
-      currentInstallment: account?.currentInstallment,
+      currentInstallment: isInstallment ? parseInt(currentInstallment, 10) : undefined,
       installmentId: account?.installmentId,
       groupId: groupId,
     });
@@ -271,9 +277,32 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
           </div>
 
           {isInstallment && (
-            <div className="animate-fade-in space-y-1">
-              <label htmlFor="account-total-installments" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Total de Parcelas</label>
-              <input id="account-total-installments" type="number" min="2" value={totalInstallments} onChange={e => setTotalInstallments(e.target.value)} required={isInstallment} className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-dark-text-primary" />
+            <div className="animate-fade-in grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label htmlFor="account-current-installment" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Parcela Atual</label>
+                <input 
+                  id="account-current-installment" 
+                  type="number" 
+                  min="1" 
+                  max={totalInstallments} 
+                  value={currentInstallment} 
+                  onChange={e => setCurrentInstallment(e.target.value)} 
+                  required={isInstallment} 
+                  className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-dark-text-primary" 
+                />
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="account-total-installments" className="text-[10px] font-black uppercase text-text-muted dark:text-dark-text-muted ml-1">Total de Parcelas</label>
+                <input 
+                  id="account-total-installments" 
+                  type="number" 
+                  min="1" 
+                  value={totalInstallments} 
+                  onChange={e => setTotalInstallments(e.target.value)} 
+                  required={isInstallment} 
+                  className="w-full p-3 rounded-xl bg-surface-light dark:bg-dark-surface-light border border-border-color dark:border-dark-border-color focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-text-primary dark:text-dark-text-primary" 
+                />
+              </div>
             </div>
           )}
 
