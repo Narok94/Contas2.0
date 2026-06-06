@@ -23,12 +23,25 @@ import MoveAccountsModal from './components/MoveAccountsModal';
 import { notifyPaymentViaWhatsApp } from './utils/whatsapp';
 import { isVariableExpense } from './utils/accountUtils';
 
+import { Plus } from 'lucide-react';
+
 // isVariableExpense removed as it is now imported from accountUtils
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { theme, toggleTheme } = useTheme(currentUser?.username);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -51,6 +64,13 @@ const App: React.FC = () => {
   const constraintsRef = useRef<HTMLDivElement>(null);
   const chatModalRef = useRef<AiChatModalRef>(null);
 
+  // Redirect to accounts view on mobile devices when logged in
+  useEffect(() => {
+    if (isMobile && activeGroupId && view !== 'accounts' && view !== 'login' && view !== 'register' && view !== 'groupSelection') {
+      setView('accounts');
+    }
+  }, [isMobile, activeGroupId, view]);
+
   useEffect(() => {
     const unsubUsers = realtimeService.subscribe('users', setUsers);
     const unsubGroups = realtimeService.subscribe('groups', setGroups);
@@ -72,7 +92,7 @@ const App: React.FC = () => {
                 realtimeService.setUser(storedUser.username);
                 if (storedGroupId) {
                     setActiveGroupId(storedGroupId);
-                    setView('dashboard');
+                    setView(isMobile ? 'accounts' : 'dashboard');
                 } else if (storedUser.groupIds.length > 0) {
                     setView('groupSelection');
                 } else {
@@ -185,7 +205,7 @@ const App: React.FC = () => {
   const handleGroupSelect = (groupId: string) => {
     setActiveGroupId(groupId);
     sessionStorage.setItem('app_activeGroupId', groupId);
-    setView('dashboard');
+    setView(isMobile ? 'accounts' : 'dashboard');
   };
 
   const handleToggleAccountStatus = (acc: Account) => {
@@ -583,6 +603,20 @@ const App: React.FC = () => {
           {view === 'admin' && <AdminPanel users={users} groups={groups} onAddUser={dataService.addUser} onUpdateUser={dataService.updateUser} onDeleteUser={dataService.deleteUser} onAddGroup={dataService.addGroup} onUpdateGroup={dataService.updateGroup} onDeleteGroup={dataService.deleteGroup} />}
         </main>
         <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
+        {isMobile && currentUser && activeGroupId && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+            <button
+              onClick={() => {
+                setAccountToEdit(null);
+                setIsAccountModalOpen(true);
+              }}
+              className="flex items-center justify-center w-14 h-14 bg-primary dark:bg-primary text-white rounded-full shadow-[0_8px_30px_rgba(99,102,241,0.5)] active:scale-95 transition-all border-[3px] border-white dark:border-[#0B0E14] hover:bg-opacity-95"
+              title="Adicionar Conta"
+            >
+              <Plus className="w-7 h-7" strokeWidth={3.5} />
+            </button>
+          </div>
+        )}
         <FloatingAiButton onClick={() => setIsChatOpen(true)} onLongPress={() => {}} constraintsRef={constraintsRef} isListening={isAiListening} />
         <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
         <SettingsModal 

@@ -118,7 +118,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
 
           {/* Embedded Nav tabs inside the header */}
           {onViewChange && (
-            <nav className="flex items-center bg-slate-50 dark:bg-dark-surface p-1 rounded-full border border-slate-100 dark:border-dark-border-color shadow-sm gap-1">
+            <nav className="hidden sm:flex items-center bg-slate-50 dark:bg-dark-surface p-1 rounded-full border border-slate-100 dark:border-dark-border-color shadow-sm gap-1">
               <button 
                 onClick={() => onViewChange('dashboard')} 
                 className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
@@ -168,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
             {onAddClick && (
               <button
                 onClick={onAddClick}
-                className="flex items-center justify-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-primary dark:bg-primary text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-opacity-90 hover:scale-105 active:scale-95 transition-all shadow-sm shadow-primary/25"
+                className="hidden sm:flex items-center justify-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-primary dark:bg-primary text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-opacity-90 hover:scale-105 active:scale-95 transition-all shadow-sm shadow-primary/25"
                 title="Novo Lançamento"
               >
                 <Plus className="w-3.5 h-3.5" strokeWidth={3} />
