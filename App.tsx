@@ -19,7 +19,7 @@ import IncomeManagement from './components/IncomeManagement';
 import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 import { notifyPaymentViaWhatsApp } from './utils/whatsapp';
-import { isVariableExpense } from './utils/accountUtils';
+import { isVariableExpense, getMonthlyAccounts } from './utils/accountUtils';
 
 import { Plus } from 'lucide-react';
 
@@ -160,6 +160,19 @@ const App: React.FC = () => {
     if (!activeGroupId) return [];
     return accounts.filter(acc => acc.groupId === activeGroupId);
   }, [accounts, activeGroupId]);
+
+  const mobileStats = useMemo(() => {
+    if (!activeGroupId) return { total: 0, paid: 0 };
+    const safeDate = selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
+    const allForMonth = getMonthlyAccounts(userAccounts, safeDate);
+    
+    const total = allForMonth.reduce((sum, acc) => sum + Number(acc.value || 0), 0);
+    const paid = allForMonth
+      .filter(acc => acc.status === AccountStatus.PAID)
+      .reduce((sum, acc) => sum + Number(acc.value || 0), 0);
+      
+    return { total, paid };
+  }, [userAccounts, selectedDate, activeGroupId]);
 
   const userIncomes = useMemo(() => {
     if (!activeGroupId) return [];
@@ -564,6 +577,7 @@ const App: React.FC = () => {
           onViewChange={setView}
           isAdmin={currentUser.role === Role.ADMIN}
           onAddClick={() => setIsSelectionModalOpen(true)}
+          mobileStats={mobileStats}
         />
         <main className="p-3 sm:p-4 lg:p-6 max-w-[1200px] mx-auto pb-32">
           {view === 'dashboard' && (

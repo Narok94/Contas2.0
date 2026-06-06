@@ -66,9 +66,10 @@ interface HeaderProps {
   onViewChange?: (view: any) => void;
   isAdmin?: boolean;
   onAddClick?: () => void;
+  mobileStats?: { total: number; paid: number };
 }
 
-const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout, activeView, onViewChange, isAdmin, onAddClick }) => {
+const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout, activeView, onViewChange, isAdmin, onAddClick, mobileStats }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -162,6 +163,18 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 </button>
               )}
             </nav>
+          )}
+
+          {/* Mobile Stats Summary */}
+          {mobileStats && (
+            <div className="flex sm:hidden flex-col items-center justify-center text-[10px] bg-slate-100/50 dark:bg-white/5 px-2.5 py-1 rounded-xl border border-slate-100 dark:border-white/10 font-semibold text-center leading-normal">
+              <div className="text-[8px] uppercase tracking-wider text-text-muted dark:text-dark-text-muted -mb-0.5 font-black">Resumo do Mês</div>
+              <div className="flex items-center gap-1.5 text-text-primary dark:text-[rgba(255,255,255,0.9)]">
+                <span>{mobileStats.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                <span className="text-slate-300 dark:text-white/10">•</span>
+                <span className="text-success font-black">{mobileStats.paid.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+              </div>
+            </div>
           )}
 
           <div className="flex items-center space-x-2.5">
