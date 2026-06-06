@@ -324,7 +324,6 @@ const App: React.FC = () => {
       }
 
       if (data.id && (existingAccount || isEditingProjection)) {
-          // ... (existing update logic)
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
               let baseId = data.id.toString().replace(/^projected-/, '');
               const parts = baseId.split('-');
@@ -333,6 +332,22 @@ const App: React.FC = () => {
               }
               
               const original = accounts.find(a => a.id === baseId);
+              
+              // Se o usuário desmarcou "Recorrente", atualiza o template original para virar físico não recorrente no mês atual
+              if (original && !data.isRecurrent) {
+                  const updatedOriginal: Account = {
+                      ...original,
+                      ...data,
+                      id: original.id,
+                      isRecurrent: false,
+                      paymentDate: data.paymentDate || targetDate,
+                      status: data.status || AccountStatus.PENDING,
+                      value: sanitizedValue
+                  };
+                  dataService.updateAccount(updatedOriginal);
+                  return;
+              }
+              
               const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `series-${Date.now()}` : undefined);
 
               const newSnapshot: Account = { 
@@ -363,7 +378,7 @@ const App: React.FC = () => {
           realtimeService.updateAccountAndSeries(updateData);
       } else {
           const isVar = isVariableExpense(data);
-          const isRec = isVar ? true : Boolean(data.isRecurrent);
+          const isRec = Boolean(data.isRecurrent);
           const isInst = Boolean(data.isInstallment);
           const installmentId = isInst ? `inst-${Date.now()}` : undefined;
           
@@ -592,7 +607,18 @@ const App: React.FC = () => {
               <AccountsView 
                   accounts={userAccounts} 
                   onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
-                  onDeleteAccount={(id) => dataService.deleteAccount(id)} 
+                  onDeleteAccount={(id) => {
+                      let targetId = id;
+                      if (id.toString().startsWith('projected-')) {
+                          let baseId = id.toString().replace(/^projected-/, '');
+                          const parts = baseId.split('-');
+                          if (parts.length > 2 && /^\d{4}$/.test(parts[parts.length-2])) {
+                              baseId = parts.slice(0, -2).join('-');
+                          }
+                          targetId = baseId;
+                      }
+                      dataService.deleteAccount(targetId);
+                  }} 
                   onToggleStatus={handleToggleAccountStatus} 
                   onToggleMultipleStatus={handleToggleMultipleAccountStatus}
                   onNotifyWhatsApp={(acc) => {
@@ -655,7 +681,7 @@ const App: React.FC = () => {
   
             batch.forEach(item => {
                 const isVar = isVariableExpense(item);
-                const isRec = isVar ? true : Boolean(item.isRecurrent);
+                const isRec = Boolean(item.isRecurrent);
                 const isInst = Boolean(item.isInstallment);
                 const sanitizedTotal = item.totalInstallments ? Number(item.totalInstallments) : undefined;
                 const installmentId = isInst ? `batch-series-${Date.now()}-${Math.random()}` : undefined;

@@ -140,6 +140,20 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ isOpen, onClose, on
     }
   }, [isInstallment, totalValue, totalInstallments]);
 
+  // Auto-check isRecurrent for typical variable expenses when creating a NEW account
+  useEffect(() => {
+    if (!account && name && isOpen) {
+        const nameLower = name.toLowerCase();
+        const categoryLower = category.toLowerCase();
+        const isCartao = nameLower.includes('cartão') || categoryLower.includes('cartão');
+        const isAgua = nameLower.includes('água') || categoryLower.includes('água');
+        const isLuz = nameLower.includes('luz') || categoryLower.includes('luz');
+        if (isCartao || isAgua || isLuz) {
+            setIsRecurrent(true);
+        }
+    }
+  }, [name, category, account, isOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalValue = isInstallment 
