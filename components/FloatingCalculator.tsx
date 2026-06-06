@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface FloatingCalculatorProps {
@@ -11,6 +11,24 @@ const FloatingCalculator: React.FC<FloatingCalculatorProps> = ({ isOpen, onClose
     const [display, setDisplay] = useState('0');
     const [equation, setEquation] = useState('');
     const [shouldReset, setShouldReset] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    const [constraints, setConstraints] = useState({ top: -400, bottom: 20, left: -400, right: 20 });
+
+    useEffect(() => {
+        const checkMobile = () => {
+            const mobile = window.innerWidth < 640;
+            setIsMobile(mobile);
+            setConstraints({
+                top: -window.innerHeight + 320,
+                bottom: 20,
+                left: -window.innerWidth + 280,
+                right: 20
+            });
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     if (!isOpen) return null;
 
@@ -74,8 +92,10 @@ const FloatingCalculator: React.FC<FloatingCalculatorProps> = ({ isOpen, onClose
 
     return (
         <motion.div
-            drag
+            drag={!isMobile}
             dragMomentum={false}
+            dragElastic={0}
+            dragConstraints={constraints}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
