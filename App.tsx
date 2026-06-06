@@ -324,6 +324,7 @@ const App: React.FC = () => {
       }
 
       if (data.id && (existingAccount || isEditingProjection)) {
+          // Caso A: Editando uma Projeção ou um Template de Recorrente
           if (isEditingProjection || (existingAccount?.isRecurrent && !existingAccount.paymentDate)) {
               let baseId = data.id.toString().replace(/^projected-/, '');
               const parts = baseId.split('-');
@@ -333,7 +334,7 @@ const App: React.FC = () => {
               
               const original = accounts.find(a => a.id === baseId);
               
-              // Se o usuário desmarcou "Recorrente", atualiza o template original para virar físico não recorrente no mês atual
+              // Se o usuário uncheckou Recorrente, atualiza o original para físico e remove duplicidades
               if (original && !data.isRecurrent) {
                   const updatedOriginal: Account = {
                       ...original,
@@ -345,29 +346,107 @@ const App: React.FC = () => {
                       value: sanitizedValue
                   };
                   dataService.updateAccount(updatedOriginal);
+                  
+                  const dupSnap = accounts.find(a => a.id !== original.id && a.id.startsWith('acc-snap-') && a.name === original.name && a.category === original.category);
+                  if (dupSnap) {
+                      dataService.deleteAccount(dupSnap.id);
+                  }
                   return;
               }
               
-              const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `series-${Date.now()}` : undefined);
+              // Se manteve Recorrente:
+              // 1. Atualizar o template original (para propagar a mudança de Nome, Categoria e Valor para os próximos meses)
+              if (original) {
+                  const updatedTemplate: Account = {
+                      ...original,
+                      name: data.name,
+                      category: data.category,
+                      value: sanitizedValue,
+                      groupId: data.groupId || original.groupId,
+                      isRecurrent: true,
+                      paymentDate: undefined // continua sendo template
+                  };
+                  dataService.updateAccount(updatedTemplate);
+              }
 
-              const newSnapshot: Account = { 
-                  ...data, 
-                  id: `acc-snap-${Date.now()}`, 
-                  value: sanitizedValue,
-                  paymentDate: data.paymentDate || targetDate, 
-                  status: data.status || AccountStatus.PENDING,
-                  currentInstallment: sanitizedCurrent,
-                  totalInstallments: sanitizedTotal || original?.totalInstallments,
-                  installmentId: finalInstallmentId
-              };
-              dataService.addAccount(newSnapshot);
+              // 2. Cria ou atualiza o snapshot do mês atual com os novos valores
+              const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `series-${Date.now()}` : undefined);
               
-              if (newSnapshot.installmentId) {
-                  realtimeService.updateAccountAndSeries(newSnapshot);
+              const existingSnap = accounts.find(a => 
+                  a.id.startsWith('acc-snap-') && 
+                  a.name === (original?.name || data.name) && 
+                  a.groupId === (data.groupId || original?.groupId) &&
+                  a.paymentDate?.startsWith(`${year}-${month}`)
+              );
+
+              if (existingSnap) {
+                  dataService.updateAccount({
+                      ...existingSnap,
+                      name: data.name,
+                      category: data.category,
+                      value: sanitizedValue,
+                      status: data.status || existingSnap.status,
+                      paymentDate: data.paymentDate || targetDate,
+                      isRecurrent: true
+                  });
+              } else {
+                  const newSnapshot: Account = { 
+                      ...data, 
+                      id: `acc-snap-${Date.now()}`, 
+                      name: data.name,
+                      category: data.category,
+                      value: sanitizedValue,
+                      paymentDate: data.paymentDate || targetDate, 
+                      status: data.status || AccountStatus.PENDING,
+                      isRecurrent: true,
+                      currentInstallment: sanitizedCurrent,
+                      totalInstallments: sanitizedTotal || original?.totalInstallments,
+                      installmentId: finalInstallmentId
+                  };
+                  dataService.addAccount(newSnapshot);
               }
               return;
           }
           
+          // Caso B: Editando um Snapshot Físico Existente (ex: acc-snap-xxx)
+          if (existingAccount && existingAccount.id.startsWith('acc-snap-')) {
+              // Tenta achar o template original correspondente pelo nome e categoria originais
+              const originalTemplate = accounts.find(a => 
+                  a.isRecurrent && 
+                  !a.paymentDate && 
+                  a.name === existingAccount.name && 
+                  a.category === existingAccount.category
+              );
+
+              if (originalTemplate) {
+                  if (!data.isRecurrent) {
+                      // Cancela a recorrência futura
+                      dataService.deleteAccount(originalTemplate.id);
+                  } else {
+                      // Mantém e atualiza o template
+                      dataService.updateAccount({
+                          ...originalTemplate,
+                          name: data.name,
+                          category: data.category,
+                          value: sanitizedValue,
+                          isRecurrent: true
+                      });
+                  }
+              }
+
+              const updateData = {
+                  ...data,
+                  value: sanitizedValue,
+                  totalInstallments: sanitizedTotal,
+                  currentInstallment: sanitizedCurrent,
+                  isRecurrent: data.isRecurrent,
+                  installmentId: data.installmentId || (data.isInstallment ? `repair-${Date.now()}` : undefined)
+              };
+              realtimeService.updateAccountAndSeries(updateData);
+              return;
+          }
+          
+          // Caso C: Atualizando qualquer outro registro físico padrão (ex: parcelas, avulsas)
           const updateData = {
               ...data,
               value: sanitizedValue,
