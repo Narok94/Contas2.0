@@ -2,7 +2,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import realtimeService, { SyncStatus } from '../services/realtimeService';
 import { User, Role, AppSettings } from '../types';
-import { GoogleGenAI } from "@google/genai";
 
 const CategoryManager: React.FC = () => {
     const [categories, setCategories] = useState<string[]>([]);
@@ -68,55 +67,7 @@ const CategoryManager: React.FC = () => {
     );
 };
 
-const AiLogoGenerator: React.FC<{ onLogoGenerated: (url: string) => void }> = ({ onLogoGenerated }) => {
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    const generateLogo = async () => {
-        setIsGenerating(true);
-        try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const prompt = "A modern, professional logo for a finance app called 'Tatu'. The icon should show a friendly and minimalist armadillo (tatu) related to money, savings or growth. Clean vectors, flat design, indigo and emerald color palette. White background.";
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
-                contents: { parts: [{ text: prompt }] },
-                config: { imageConfig: { aspectRatio: "1:1" } }
-            });
-
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    const url = `data:image/png;base64,${part.inlineData.data}`;
-                    setPreviewUrl(url);
-                    break;
-                }
-            }
-        } catch (e) { alert("Erro ao gerar logo."); } finally { setIsGenerating(false); }
-    };
-
-    return (
-        <div className="space-y-4">
-            <h3 className="text-lg font-black tracking-tight text-text-primary dark:text-dark-text-primary">Identidade com IA</h3>
-            <div className="p-6 bg-primary/5 dark:bg-primary/10 rounded-[2rem] border-2 border-primary/10 dark:border-primary/20">
-                {!previewUrl ? (
-                    <div className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-surface dark:bg-dark-surface rounded-full flex items-center justify-center mx-auto shadow-inner text-2xl">🎨</div>
-                        <button onClick={generateLogo} disabled={isGenerating} className="w-full py-3 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-50">
-                            {isGenerating ? 'Criando...' : 'Gerar Logo com IA'}
-                        </button>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        <img src={previewUrl} className="w-32 h-32 mx-auto rounded-3xl border-4 border-surface dark:border-dark-surface shadow-xl" />
-                        <div className="flex gap-2">
-                            <button onClick={() => setPreviewUrl(null)} className="flex-1 py-3 text-[10px] font-black text-text-muted dark:text-dark-text-muted">Descartar</button>
-                            <button onClick={() => { onLogoGenerated(previewUrl); setPreviewUrl(null); }} className="flex-1 py-3 bg-success text-white rounded-xl font-black text-[10px]">Aplicar</button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
 
 const WhatsappSettings: React.FC = () => {
     const [whatsappEnabled, setWhatsappEnabled] = useState(false);
@@ -275,7 +226,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                                     </div>
                                 </div>
                             </div>
-                            <AiLogoGenerator onLogoGenerated={(url) => realtimeService.updateSettings({ ...realtimeService.getSettings(), logoUrl: url })} />
                         </>
                     )}
                     <CategoryManager />

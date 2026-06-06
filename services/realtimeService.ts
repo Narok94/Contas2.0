@@ -34,7 +34,7 @@ class RealtimeService {
   constructor() {
     this.db = this.loadAndArmorData();
     this.ensureCelularHenrique();
-    this.ensureCelularJessica();
+    this.ensureJessicaCustomAccounts();
     this.init();
     window.addEventListener('storage', this.handleCrossTabSync);
   }
@@ -156,42 +156,85 @@ class RealtimeService {
     }
   }
 
-  private ensureCelularJessica() {
-    const hasCelular = this.db.accounts.some(a => a.name.toLowerCase().includes('celular jessica'));
-    if (!hasCelular) {
-      console.log('[RealtimeService] Adicionando parcelas do Celular Jessica...');
-      const targetGroups = this.db.groups.map(g => g.id).filter(id => id);
-      if (targetGroups.length === 0) {
-        targetGroups.push('group-3');
-      }
+  private ensureJessicaCustomAccounts() {
+    const customSpecs = [
+      { name: 'Pet love', value: 133.79, category: '📦 Outros', type: 'installment', current: 2, total: 2 },
+      { name: 'Época', value: 74.88, category: '📦 Outros', type: 'installment', current: 6, total: 8 },
+      { name: 'Centauro', value: 99.99, category: '📦 Outros', type: 'installment', current: 7, total: 10 },
+      { name: 'Stanley', value: 22.80, category: '📦 Outros', type: 'installment', current: 7, total: 10 },
+      { name: 'Celular Jessica', value: 323.81, category: '📦 Outros', type: 'installment', current: 17, total: 21 },
+      { name: 'Farmácia', value: 60.13, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
+      { name: 'Disney', value: 46.90, category: '🎮 Lazer', type: 'recurrent' },
+      { name: 'Academia Jessica', value: 129.90, category: '🏥 Saúde', type: 'recurrent' },
+      { name: 'Havan', value: 29.99, category: '📦 Outros', type: 'installment', current: 9, total: 10 },
+      { name: 'Compras bh', value: 242.40, category: '🍱 Alimentação', type: 'installment', current: 3, total: 3 },
+      { name: 'Farmácia minas master', value: 39.50, category: '🏥 Saúde', type: 'installment', current: 1, total: 2 },
+      { name: 'Big sup', value: 55.00, category: '🍱 Alimentação', type: 'installment', current: 1, total: 2 },
+      { name: 'Loja 61', value: 81.68, category: '📦 Outros', type: 'installment', current: 1, total: 3 },
+      { name: 'Farmácia minas master 2', value: 63.28, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 },
+      { name: 'Dragaria americana', value: 64.52, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 },
+      { name: 'Araújo', value: 88.00, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 }
+    ];
+
+    const targetGroup = 'group-3'; // Família Tatu
+    const hasPetLove = this.db.accounts.some(a => a.groupId === targetGroup && a.name.toLowerCase() === 'pet love');
+
+    if (!hasPetLove) {
+      console.log('[RealtimeService] Iniciando atualização profunda das contas da Jessica...');
       
+      // Let's filter out any existing accounts in group-3 that match these names to avoid duplicates
+      const namesToFilter = customSpecs.map(s => s.name.toLowerCase());
+      
+      let filteredAccounts = this.db.accounts.filter(a => {
+        if (a.groupId === targetGroup) {
+          const lowerName = a.name.toLowerCase();
+          return !namesToFilter.some(filterName => lowerName === filterName);
+        }
+        return true;
+      });
+
       const newAccounts: Account[] = [];
-      const installmentId = `series-celular-jessica-${Date.now()}`;
-      
-      targetGroups.forEach(gId => {
-        for (let i = 1; i <= 8; i++) {
-          const isPaid = i < 4;
-          const monthOffset = i - 4; // Parcela 4/8 corresponds to June 2026 (current month)
-          const paymentDate = new Date(2026, 5 + monthOffset, 15, 12, 0, 0); // Month 5 is June
+
+      customSpecs.forEach(spec => {
+        if (spec.type === 'installment') {
+          const installmentId = `series-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
           
+          for (let i = 1; i <= spec.total!; i++) {
+            const isPaid = i < spec.current!;
+            const monthOffset = i - spec.current!;
+            // current month is June 2026 (Month index 5 in JS Date)
+            const paymentDate = new Date(2026, 5 + monthOffset, 15, 12, 0, 0);
+
+            newAccounts.push({
+              id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${i}`,
+              groupId: targetGroup,
+              name: spec.name,
+              category: spec.category,
+              value: spec.value,
+              status: isPaid ? AccountStatus.PAID : AccountStatus.PENDING,
+              isRecurrent: false,
+              isInstallment: true,
+              currentInstallment: i,
+              totalInstallments: spec.total!,
+              installmentId: installmentId,
+              paymentDate: paymentDate.toISOString()
+            });
+          }
+        } else if (spec.type === 'recurrent') {
           newAccounts.push({
-            id: `acc-celular-jessica-${gId}-${i}`,
-            groupId: gId,
-            name: 'Celular Jessica',
-            category: '📦 Outros',
-            value: 323.81,
-            status: isPaid ? AccountStatus.PAID : AccountStatus.PENDING,
-            isRecurrent: false,
-            isInstallment: true,
-            currentInstallment: i,
-            totalInstallments: 8,
-            installmentId: installmentId,
-            paymentDate: paymentDate.toISOString()
+            id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-template`,
+            groupId: targetGroup,
+            name: spec.name,
+            category: spec.category,
+            value: spec.value,
+            status: AccountStatus.PENDING,
+            isRecurrent: true,
+            isInstallment: false
           });
         }
       });
-      
-      this.db.accounts = [...this.db.accounts, ...newAccounts];
+
+      this.db.accounts = [...filteredAccounts, ...newAccounts];
       this.saveLocal();
       this.persistRemote();
     }
@@ -249,7 +292,7 @@ class RealtimeService {
                     settings: remoteSettingsData?.settings || this.db.settings 
                 };
                 this.ensureCelularHenrique();
-                this.ensureCelularJessica();
+                this.ensureJessicaCustomAccounts();
             }
 
             // Se for o usuário teste, garantir que ele tenha as 10 contas de teste se estiver vazio

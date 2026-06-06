@@ -1,7 +1,5 @@
 {
   "name": "Tatu - Finanças Pessoais",
   "description": "Um software de controle de contas pessoal e inteligente, projetado para organizar a vida financeira a dois.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "requestFramePermissions": []
 }

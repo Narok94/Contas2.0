@@ -11,9 +11,7 @@ import AdminPanel from './components/AdminPanel';
 import AccountFormModal from './components/AccountFormModal';
 import BatchAccountModal from './components/BatchAccountModal';
 import AddSelectionModal from './components/AddSelectionModal';
-import AiChatModal, { AiChatModalRef } from './components/AiChatModal';
 import SettingsModal from './components/SettingsModal';
-import FloatingAiButton from './components/FloatingAiButton';
 import { useTheme } from './hooks/useTheme';
 import * as dataService from './services/dataService';
 import realtimeService from './services/realtimeService';
@@ -56,13 +54,10 @@ const App: React.FC = () => {
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isAiListening, setIsAiListening] = useState(false);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   
   const constraintsRef = useRef<HTMLDivElement>(null);
-  const chatModalRef = useRef<AiChatModalRef>(null);
 
   // Redirect to accounts view on mobile devices when logged in
   useEffect(() => {
@@ -617,8 +612,7 @@ const App: React.FC = () => {
             </button>
           </div>
         )}
-        <FloatingAiButton onClick={() => setIsChatOpen(true)} onLongPress={() => {}} constraintsRef={constraintsRef} isListening={isAiListening} />
-        <AiChatModal ref={chatModalRef} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} accounts={userAccounts} incomes={userIncomes} categories={categories} onCommand={(cmd) => "Comando processado com sucesso!"} startWithVoice={false} onListeningChange={setIsAiListening} />
+
         <SettingsModal 
           isOpen={isSettingsModalOpen} 
           onClose={() => setIsSettingsModalOpen(false)} 
