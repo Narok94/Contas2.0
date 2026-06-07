@@ -278,11 +278,28 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4 sm:space-y-5 max-w-7xl mx-auto py-1 font-sans"
     >
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 px-2 sm:px-0">
+        <header className="flex flex-col md:flex-row flex-wrap justify-between items-start md:items-center gap-3 px-2 sm:px-0">
             <div>
               <p className="text-text-muted dark:text-dark-text-muted font-black text-[9px] uppercase tracking-[0.25em] mb-0.5">Gestão de Pagamentos</p>
-              <h1 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary tracking-tight">
-                Minhas Contas<span className="text-primary">.</span>
+              <h1 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary tracking-tight flex items-center gap-4">
+                <span>Minhas Contas<span className="text-primary">.</span></span>
+                {/* Desktop Stats Summary */}
+                <div className="hidden lg:flex items-center gap-3 bg-white dark:bg-dark-surface px-3 py-1.5 rounded-xl border border-slate-100 dark:border-dark-border-color shadow-sm mt-1">
+                    <div className="flex flex-col">
+                        <span className="text-[8px] uppercase tracking-widest text-text-muted dark:text-dark-text-muted font-black">Em Aberto</span>
+                        <span className="text-xs font-black text-rose-500 font-mono tracking-tight">{pendingAccounts.reduce((sum, a) => sum + Number(a.value), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                    <div className="w-px h-5 bg-slate-200 dark:bg-slate-800" />
+                    <div className="flex flex-col">
+                        <span className="text-[8px] uppercase tracking-widest text-text-muted dark:text-dark-text-muted font-black">Pago</span>
+                        <span className="text-xs font-black text-success font-mono tracking-tight">{paidAccounts.reduce((sum, a) => sum + Number(a.value), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                    <div className="w-px h-5 bg-slate-200 dark:bg-slate-800" />
+                    <div className="flex flex-col">
+                        <span className="text-[8px] uppercase tracking-widest text-text-muted dark:text-dark-text-muted font-black">Total</span>
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-200 font-mono tracking-tight">{(pendingAccounts.reduce((sum, a) => sum + Number(a.value), 0) + paidAccounts.reduce((sum, a) => sum + Number(a.value), 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                </div>
               </h1>
             </div>
             <div className="flex items-center gap-2 w-full md:w-auto">

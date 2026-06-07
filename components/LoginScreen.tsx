@@ -51,85 +51,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-slate-50 text-slate-900 overflow-hidden font-sans selection:bg-primary selection:text-white flex flex-col lg:flex-row">
-      {/* Left Side: Immersive Brand Area */}
-      <div className="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-12 xl:p-20 overflow-hidden border-r border-slate-200 bg-white">
-        {/* Atmospheric Background with more colors */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] bg-primary/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-secondary/10 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '12s' }} />
-          <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '15s' }} />
-          <div className="absolute bottom-[20%] left-[10%] w-[40%] h-[40%] bg-cyan-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.01)_0%,transparent_70%)]" />
-        </div>
-
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-10"
-        >
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center backdrop-blur-sm">
-              {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-6 h-6 object-contain" />
-              ) : (
-                <TatuIcon className="w-6 h-6" />
-              )}
-            </div>
-            <span className="text-xl font-black tracking-tighter uppercase text-slate-900">Tatu<span className="text-primary">.</span></span>
-          </div>
-
-          <h1 className="text-6xl xl:text-8xl font-black leading-[0.85] tracking-tighter mb-8 max-w-md text-slate-900">
-            CONTROLE <br />
-            TOTAL<span className="text-primary">.</span> <br />
-            <span className="text-slate-200">SEM ESFORÇO.</span>
-          </h1>
-          
-          <p className="text-lg text-slate-500 max-w-sm font-medium leading-relaxed">
-            A plataforma definitiva para quem busca clareza financeira e liberdade para crescer.
-          </p>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative z-10 flex flex-wrap gap-4"
-        >
-          {[
-            { label: 'Segurança Bancária', icon: <ShieldCheck className="w-3 h-3" />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Relatórios em Tempo Real', icon: <TrendingUp className="w-3 h-3" />, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Multi-dispositivo', icon: <Smartphone className="w-3 h-3" />, color: 'text-sky-600', bg: 'bg-sky-50' }
-          ].map((feature, i) => (
-            <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-full ${feature.bg} border border-slate-100 shadow-sm`}>
-              <span className={feature.color}>{feature.icon}</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{feature.label}</span>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-1/4 right-[-5%] w-32 h-32 border border-slate-100 rounded-full" />
-        <div className="absolute bottom-1/4 right-10 w-16 h-16 border border-slate-200 rounded-full animate-bounce" style={{ animationDuration: '4s' }} />
+    <div className="relative min-h-[100dvh] bg-slate-50 text-slate-900 overflow-hidden font-sans selection:bg-primary selection:text-white flex items-center justify-center p-6">
+      {/* Background Elements with more colors */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-primary/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[100px]" />
+        <div className="absolute top-[40%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/5 rounded-full blur-[80px]" />
       </div>
 
-      {/* Right Side: Login Form Area */}
-      <div className="relative flex-1 flex items-center justify-center p-6 sm:p-12 xl:p-24 bg-slate-50">
-        {/* Mobile Background Elements with more colors */}
-        <div className="absolute inset-0 z-0 lg:hidden">
-          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-primary/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[100px]" />
-          <div className="absolute top-[40%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/5 rounded-full blur-[80px]" />
-        </div>
-
-        <motion.div
+      <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="relative z-10 w-full max-w-[400px] p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)]"
         >
-          <div className="lg:hidden flex flex-col items-center text-center mb-10">
+          <div className="flex flex-col items-center text-center mb-10">
             <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center mb-6">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
@@ -140,11 +76,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
             <h1 className="text-4xl font-black tracking-tighter mb-2 uppercase text-slate-900">
               TATU<span className="text-primary">.</span>
             </h1>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Gestão Financeira Premium</p>
-          </div>
-
-          <div className="mb-10 hidden lg:block text-center lg:text-left">
-            <h2 className="text-3xl font-black tracking-tight mb-2 text-slate-900">Bem-vindo de volta</h2>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Gestão Financeira Premium</p>
+            <h2 className="text-2xl font-black tracking-tight mb-1 text-slate-900">Bem-vindo de volta</h2>
             <p className="text-slate-500 text-sm font-medium">Insira suas credenciais para acessar sua conta.</p>
           </div>
 
@@ -170,7 +103,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Senha</label>
-                <button type="button" className="text-[10px] font-bold text-primary/60 hover:text-primary transition-colors uppercase tracking-wider">Esqueceu?</button>
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-primary transition-colors">
@@ -214,30 +146,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
               </span>
             </button>
 
-            <div className="pt-6 flex flex-col items-center gap-6">
-              <button
-                type="button"
-                onClick={onNavigateToRegister}
-                className="text-[11px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-[0.2em]"
-              >
-                Novo por aqui? <span className="text-primary">Crie sua conta</span>
-              </button>
-              
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-slate-50 border border-slate-100">
-                <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Servidor Protegido & Online</span>
-              </div>
-            </div>
           </form>
         </motion.div>
 
-        {/* Footer for Mobile */}
-        <div className="absolute bottom-8 left-0 right-0 text-center lg:hidden">
+        <div className="absolute bottom-8 left-0 right-0 text-center">
           <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-300">
-            &copy; 2026 Tatu Financeiro
+            &copy; {new Date().getFullYear()} Tatu Financeiro
           </p>
         </div>
-      </div>
     </div>
   );
 };
