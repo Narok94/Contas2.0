@@ -334,8 +334,25 @@ const App: React.FC = () => {
               
               const original = accounts.find(a => a.id === baseId);
               
-              // Se o usuário uncheckou Recorrente, atualiza o original para físico e remove duplicidades
-              if (original && !data.isRecurrent) {
+              if (data.isInstallment) {
+                  const finalInstallmentId = data.installmentId || original?.installmentId || `series-${Date.now()}`;
+                  const newPhysicalInstallment: Account = {
+                      ...data,
+                      id: `acc-${Date.now()}`,
+                      value: sanitizedValue,
+                      totalInstallments: sanitizedTotal || original?.totalInstallments,
+                      currentInstallment: sanitizedCurrent,
+                      paymentDate: data.paymentDate || targetDate,
+                      status: data.status || AccountStatus.PENDING,
+                      installmentId: finalInstallmentId
+                  };
+                  dataService.addAccount(newPhysicalInstallment);
+                  realtimeService.updateAccountAndSeries(newPhysicalInstallment);
+                  return;
+              }
+              
+              // Se o usuário desmarcou Recorrente, atualiza o original para físico e remove duplicidades
+              if (original && !data.isRecurrent && !data.isInstallment) {
                   const updatedOriginal: Account = {
                       ...original,
                       ...data,
@@ -356,7 +373,7 @@ const App: React.FC = () => {
               
               // Se manteve Recorrente:
               // 1. Atualizar o template original (para propagar a mudança de Nome, Categoria e Valor para os próximos meses)
-              if (original) {
+              if (original && data.isRecurrent) {
                   const updatedTemplate: Account = {
                       ...original,
                       name: data.name,
@@ -370,8 +387,6 @@ const App: React.FC = () => {
               }
 
               // 2. Cria ou atualiza o snapshot do mês atual com os novos valores
-              const finalInstallmentId = data.installmentId || original?.installmentId || (data.isInstallment ? `series-${Date.now()}` : undefined);
-              
               const existingSnap = accounts.find(a => 
                   a.id.startsWith('acc-snap-') && 
                   a.name === (original?.name || data.name) && 
@@ -400,8 +415,7 @@ const App: React.FC = () => {
                       status: data.status || AccountStatus.PENDING,
                       isRecurrent: true,
                       currentInstallment: sanitizedCurrent,
-                      totalInstallments: sanitizedTotal || original?.totalInstallments,
-                      installmentId: finalInstallmentId
+                      totalInstallments: sanitizedTotal || original?.totalInstallments
                   };
                   dataService.addAccount(newSnapshot);
               }
@@ -435,6 +449,7 @@ const App: React.FC = () => {
               }
 
               const updateData = {
+                  ...existingAccount,
                   ...data,
                   value: sanitizedValue,
                   totalInstallments: sanitizedTotal,
@@ -442,19 +457,20 @@ const App: React.FC = () => {
                   isRecurrent: data.isRecurrent,
                   installmentId: data.installmentId || (data.isInstallment ? `repair-${Date.now()}` : undefined)
               };
-              realtimeService.updateAccountAndSeries(updateData);
+              realtimeService.updateAccountAndSeries(updateData as Account);
               return;
           }
           
           // Caso C: Atualizando qualquer outro registro físico padrão (ex: parcelas, avulsas)
           const updateData = {
+              ...existingAccount,
               ...data,
               value: sanitizedValue,
               totalInstallments: sanitizedTotal,
               currentInstallment: sanitizedCurrent,
               installmentId: data.installmentId || (data.isInstallment ? `repair-${Date.now()}` : undefined)
           };
-          realtimeService.updateAccountAndSeries(updateData);
+          realtimeService.updateAccountAndSeries(updateData as Account);
       } else {
           const isVar = isVariableExpense(data);
           const isRec = Boolean(data.isRecurrent);
