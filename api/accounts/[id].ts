@@ -25,9 +25,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 RETURNING *
             `;
             return res.status(200).json(result[0] || null);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            return res.status(500).json({ error: 'Failed to update account' });
+            return res.status(500).json({ error: error.message, stack: error.stack });
         }
     }
 
@@ -35,9 +35,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
             await sql`DELETE FROM accounts WHERE id=${id}`;
             return res.status(200).json({ success: true });
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            return res.status(500).json({ error: 'Failed to delete account' });
+            return res.status(500).json({ error: error.message, stack: error.stack });
         }
     }
 

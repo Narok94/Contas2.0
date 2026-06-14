@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             console.error('API Error:', error);
             // Ignore missing table during initial load
             if (error?.message?.includes('does not exist')) return res.status(200).json([]);
-            return res.status(500).json({ error: 'Database error' });
+            return res.status(500).json({ error: error.message, stack: error.stack });
         }
     }
 
@@ -29,9 +29,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 RETURNING *
             `;
             return res.status(201).json(result[0]);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            return res.status(500).json({ error: 'Failed to create income' });
+            return res.status(500).json({ error: error.message, stack: error.stack });
         }
     }
 

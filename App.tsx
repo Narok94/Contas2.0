@@ -49,6 +49,7 @@ const App: React.FC = () => {
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false); // Can be kept or removed if settings aren't stored
   
   const constraintsRef = useRef<HTMLDivElement>(null);

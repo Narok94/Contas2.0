@@ -78,6 +78,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, message: 'Migration applied!' });
     } catch (error: any) {
         console.error('Migration error:', error);
-        return res.status(500).json({ error: 'Migration failed', details: error.message });
+        return res.status(500).json({ error: 'Migration failed', details: error.message, stack: error.stack });
     }
 }
