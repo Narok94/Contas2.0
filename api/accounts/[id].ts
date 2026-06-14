@@ -1,7 +1,6 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { neon } from '@neondatabase/serverless';
+const { neon } = require('@neondatabase/serverless');
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+const handler = async function handler(req: any, res: any) {
     if (!process.env.DATABASE_URL) {
         return res.status(500).json({ error: 'DATABASE_URL not configured' });
     }
@@ -43,3 +42,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(405).json({ error: 'Method Not Allowed' });
 }
+
+module.exports = handler;
+export default handler;

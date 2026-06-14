@@ -32,6 +32,7 @@ export interface Income {
   id: string;
   name: string;
   value: number;
+  category?: string;
   date: string; // ISO string date for when it was received
   isRecurrent: boolean; // Keep for compatibility if needed
 }

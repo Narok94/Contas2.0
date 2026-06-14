@@ -64,7 +64,7 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
         if (acc.isInstallment && dateStr) {
             // Chave estável para agrupamento, evitando colisão entre grupos e parcelamentos distintos
             const anchorKey = acc.installmentId || 
-                `${acc.groupId || 'default'}-${acc.name}-${acc.category || 'none'}-${acc.totalInstallments || 'unknown'}`;
+                `default-${acc.name}-${acc.category || 'none'}-${acc.totalInstallments || 'unknown'}`;
                 
             const current = seriesAnchors.get(anchorKey);
             
@@ -103,7 +103,6 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
                     return a.installmentId === acc.installmentId;
                 } else {
                     return !a.installmentId && 
-                        a.groupId === acc.groupId && 
                         a.name === acc.name && 
                         a.category === acc.category;
                 }
@@ -119,7 +118,7 @@ export const getMonthlyAccounts = (accounts: Account[], date: Date) => {
                 const alreadyExists = physicalRecords.some(p => {
                     const matchesSeries = acc.installmentId 
                         ? p.installmentId === acc.installmentId
-                        : (!p.installmentId && p.groupId === acc.groupId && p.name === acc.name && p.category === acc.category);
+                        : (!p.installmentId && p.name === acc.name && p.category === acc.category);
                         
                     return matchesSeries && Number(p.currentInstallment) === targetInstallment;
                 });

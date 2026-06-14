@@ -25,8 +25,7 @@ const SyncStatusIndicator: React.FC = () => {
     const [isSyncing, setIsSyncing] = useState(false);
     
     useEffect(() => {
-        const unsubscribe = apiService.setSyncListener(setIsSyncing);
-        return () => unsubscribe();
+        apiService.setSyncListener(setIsSyncing);
     }, []);
 
     const icon = isSyncing 

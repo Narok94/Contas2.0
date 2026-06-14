@@ -1,7 +1,6 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { neon } from '@neondatabase/serverless';
+const { neon } = require('@neondatabase/serverless');
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+const handler = async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     
     if (!process.env.DATABASE_URL) {
@@ -81,3 +80,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Migration failed', details: error.message, stack: error.stack });
     }
 }
+
+module.exports = handler;
+export default handler;

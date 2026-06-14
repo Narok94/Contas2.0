@@ -163,7 +163,7 @@ const App: React.FC = () => {
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const targetDate = `${year}-${month}-15T12:00:00Z`;
 
-    if (isVariableExpense(acc.name, acc.category) && isPaying && Number(acc.value) === 0) {
+    if (isVariableExpense(acc) && isPaying && Number(acc.value) === 0) {
         setAccountToEdit(acc);
         setIsAccountModalOpen(true);
         return;
@@ -527,7 +527,7 @@ const App: React.FC = () => {
     // 2. Group accounts by category in separate sheets
     const categories = Array.from(new Set(accounts.map(a => a.category)));
     
-    categories.forEach(cat => {
+    categories.forEach((cat: string) => {
         const catAccounts = accounts.filter(a => a.category === cat);
         const data = catAccounts.map(acc => ({
             'Nome': acc.name,
