@@ -1,0 +1,43 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { neon } from '@neondatabase/serverless';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    if (!process.env.DATABASE_URL) {
+        return res.status(500).json({ error: 'DATABASE_URL not configured' });
+    }
+    
+    const sql = neon(process.env.DATABASE_URL);
+    const { id } = req.query;
+
+    if (!id || typeof id !== 'string') {
+        return res.status(400).json({ error: 'Invalid ID' });
+    }
+
+    if (req.method === 'PUT') {
+        try {
+            const inc = req.body;
+            const result = await sql`
+                UPDATE incomes 
+                SET name=${inc.name}, amount=${inc.amount}, date=${inc.date}, category=${inc.category}
+                WHERE id=${id}
+                RETURNING *
+            `;
+            return res.status(200).json(result[0] || null);
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Failed to update income' });
+        }
+    }
+
+    if (req.method === 'DELETE') {
+        try {
+            await sql`DELETE FROM incomes WHERE id=${id}`;
+            return res.status(200).json({ success: true });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Failed to delete income' });
+        }
+    }
+
+    return res.status(405).json({ error: 'Method Not Allowed' });
+}

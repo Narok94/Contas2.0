@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { type Account, AccountStatus, type Income, type User } from '../types';
+import { type Account, AccountStatus, type Income } from '../types';
 import SearchBar from './SearchBar';
 import MonthPicker from './MonthPicker';
 import FloatingCalculator from './FloatingCalculator';

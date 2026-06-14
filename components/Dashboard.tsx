@@ -146,39 +146,35 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-6"
                 >
-                    <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-dark-surface px-5 py-3 rounded-xl border border-slate-100 dark:border-dark-border-color shadow-sm w-full lg:w-fit">
+                    <div className="flex flex-row justify-between w-full bg-white dark:bg-dark-surface px-4 py-3 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border-color">
                         {[
-                            { label: 'Entradas', value: stats.totalIncome, color: 'text-text-primary dark:text-white' },
-                            { label: 'Pagas', value: stats.paid, color: 'text-text-primary dark:text-white' },
-                            { label: 'A Pagar', value: stats.pending, color: 'text-text-primary dark:text-white' },
+                            { label: 'Entradas', value: stats.totalIncome, color: 'text-slate-700 dark:text-slate-300' },
+                            { label: 'Pagas', value: stats.paid, color: 'text-slate-700 dark:text-slate-300' },
+                            { label: 'A Pagar', value: stats.pending, color: 'text-slate-700 dark:text-slate-300' },
                             { label: 'Saldo', value: stats.balance, color: stats.balance >= 0 ? 'text-emerald-500' : 'text-rose-500' },
                         ].map((stat, i) => (
-                            <React.Fragment key={i}>
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted dark:text-gray-400 mb-0.5">{stat.label}</span>
-                                    <span className={`text-[15px] sm:text-base font-black font-mono tracking-tight leading-none ${stat.color}`}>
-                                        {formatCurrency(stat.value)}
-                                    </span>
-                                </div>
-                                {i < 3 && <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1 sm:mx-3" />}
-                            </React.Fragment>
+                            <div key={i} className="flex flex-col flex-1 items-center justify-center">
+                                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">{stat.label}</span>
+                                <span className={`text-sm font-semibold tracking-tight ${stat.color}`}>
+                                    {formatCurrency(stat.value)}
+                                </span>
+                            </div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-slate-100 dark:border-dark-border-color p-5 flex flex-col gap-6">
-                            <h3 className="text-[10px] font-semibold text-text-muted dark:text-gray-400 uppercase tracking-widest">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-auto lg:h-[400px]">
+                        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border-color p-4 flex flex-col gap-4 overflow-y-auto w-full no-scrollbar">
+                            <h3 className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 Alocação de Gastos
                             </h3>
                             
                             {(() => {
                                 const total = categoryData.reduce((sum, cat) => sum + cat.value, 0);
-                                if (total === 0) return <p className="text-sm text-text-muted">Nenhum gasto registrado.</p>;
+                                if (total === 0) return <p className="text-sm text-slate-400">Nenhum gasto.</p>;
                                 
                                 return (
-                                    <div className="space-y-8">
-                                        {/* Stacked Progress Bar */}
-                                        <div className="w-full h-3 flex overflow-hidden rounded-full bg-slate-100 dark:bg-dark-surface-light">
+                                    <div className="flex flex-col h-full gap-5">
+                                        <div className="w-full h-2 flex overflow-hidden rounded-full bg-slate-100 dark:bg-dark-surface-light">
                                             {categoryData.map((cat, idx) => (
                                                 <div 
                                                     key={idx} 
@@ -188,23 +184,22 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                                             ))}
                                         </div>
                                         
-                                        {/* Legend List */}
-                                        <div className="space-y-4">
-                                            {categoryData.slice(0, 6).map((cat, idx) => {
+                                        <div className="space-y-3 flex-1">
+                                            {categoryData.map((cat, idx) => {
                                                 const percent = ((cat.value / total) * 100).toFixed(1);
                                                 return (
                                                     <div key={idx} className="flex flex-col">
                                                         <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                                                                <span className="text-sm font-medium text-text-primary dark:text-white">{cat.name}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                                                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{cat.name}</span>
                                                             </div>
-                                                            <div className="flex items-center gap-4">
-                                                                <span className="text-xs font-medium text-text-muted">{percent}%</span>
-                                                                <span className="text-sm font-mono font-medium text-text-primary dark:text-white">{formatCurrency(cat.value)}</span>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-[10px] text-slate-400">{percent}%</span>
+                                                                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{formatCurrency(cat.value)}</span>
                                                             </div>
                                                         </div>
-                                                        {idx !== categoryData.slice(0, 6).length - 1 && <hr className="mt-4 border-slate-100 dark:border-dark-border-color" />}
+                                                        {idx !== categoryData.length - 1 && <hr className="mt-3 border-slate-50 dark:border-dark-border-color/50" />}
                                                     </div>
                                                 );
                                             })}
@@ -214,35 +209,30 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                             })()}
                         </div>
 
-                        <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-slate-100 dark:border-dark-border-color p-5 flex flex-col gap-6">
-                            <h3 className="text-[10px] font-semibold text-text-muted dark:text-gray-400 uppercase tracking-widest">
+                        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border-color p-4 flex flex-col gap-4 overflow-y-auto no-scrollbar">
+                            <h3 className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 Parcelamentos Próximos
                             </h3>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {endingInstallments.length === 0 ? (
-                                    <p className="text-sm text-text-muted">Nenhum parcelamento ativo neste mês.</p>
+                                    <p className="text-sm text-slate-400">Nenhum parcelamento ativo.</p>
                                 ) : (
                                     endingInstallments.map((item, i) => {
                                         const current = Number(item.currentInstallment || 1);
                                         const total = Number(item.totalInstallments || 1);
                                         return (
-                                            <div key={item.id || i} className="flex flex-col">
-                                                <div className="flex items-center justify-between py-3">
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <p className="text-sm font-semibold text-text-primary dark:text-white leading-none">
-                                                            {item.name}
-                                                        </p>
-                                                        <p className="text-[11px] font-medium text-text-muted">
-                                                            Parcela {current} de {total}
-                                                        </p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-sm font-mono font-semibold text-text-primary dark:text-white leading-none">
-                                                            {formatCurrency(item.value)}
-                                                        </p>
-                                                    </div>
+                                            <div key={item.id || i} className="flex justify-between items-center bg-slate-50/50 dark:bg-dark-surface-light/20 p-2.5 rounded-xl border border-slate-100/50 dark:border-dark-border-color/30">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
+                                                        {item.name}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400">
+                                                        Parcela {current} de {total}
+                                                    </p>
                                                 </div>
-                                                {i !== endingInstallments.length - 1 && <hr className="border-slate-100 dark:border-dark-border-color mt-1" />}
+                                                <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                                    {formatCurrency(item.value)}
+                                                </p>
                                             </div>
                                         );
                                     })
