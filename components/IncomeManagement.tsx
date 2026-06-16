@@ -7,19 +7,30 @@ interface IncomeManagementProps {
     incomes: Income[];
     onAddOrUpdate: (incomeData: Omit<Income, 'id' | 'date'> & { id?: string }) => void;
     onDelete: (incomeId: string) => void;
+    activeGroupId: string | null;
 }
 
-const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpdate, onDelete }) => {
+const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpdate, onDelete, activeGroupId }) => {
     const [name, setName] = useState('');
     const [value, setValue] = useState('');
     const [isRecurrent, setIsRecurrent] = useState(false);
     const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+    const [groupId, setGroupId] = useState(activeGroupId || '');
+
+    useEffect(() => {
+        if (editingIncome) {
+            setGroupId(editingIncome.groupId);
+        } else if (activeGroupId) {
+            setGroupId(activeGroupId);
+        }
+    }, [editingIncome, activeGroupId]);
 
     const resetForm = () => {
         setName('');
         setValue('');
         setIsRecurrent(false);
         setEditingIncome(null);
+        setGroupId(activeGroupId || '');
     };
     
     const handleEditClick = (income: Income) => {
@@ -27,6 +38,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
         setName(income.name);
         setValue(String(income.value));
         setIsRecurrent(income.isRecurrent);
+        setGroupId(income.groupId);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -36,6 +48,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
             name,
             value: parseFloat(value),
             isRecurrent,
+            groupId,
         });
         resetForm();
     };

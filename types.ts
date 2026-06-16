@@ -1,5 +1,10 @@
 
-export type View = 'login' | 'dashboard' | 'accounts' | 'income';
+export type View = 'login' | 'register' | 'dashboard' | 'accounts' | 'admin' | 'income' | 'groupSelection';
+
+export enum Role {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+}
 
 export enum AccountStatus {
   PENDING = 'PENDING',
@@ -13,8 +18,25 @@ export interface AppSettings {
   whatsappGroupLink?: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  username: string;
+  password: string; // Plaintext for this mock app
+  role: Role;
+  groupIds: string[];
+  mustChangePassword?: boolean;
+}
+
+export interface Group {
+  id:string;
+  name: string;
+  password?: string;
+}
+
 export interface Account {
   id: string;
+  groupId: string;
   name: string;
   category: string;
   value: number;
@@ -23,20 +45,26 @@ export interface Account {
   isInstallment: boolean;
   totalInstallments?: number;
   currentInstallment?: number;
-  totalValue?: number;
-  installmentId?: string;
+  totalValue?: number; // Total value of the installment
+  installmentId?: string; // To group installments together
   paymentDate?: string; // ISO string date
 }
 
 export interface Income {
   id: string;
+  groupId: string;
   name: string;
   value: number;
-  category?: string;
   date: string; // ISO string date for when it was received
-  isRecurrent: boolean; // Keep for compatibility if needed
+  isRecurrent: boolean;
 }
 
+export interface ChatMessage {
+    role: 'user' | 'model';
+    content: string;
+}
+
+// Added Goal interface to fix the import error in GoalTracker.tsx
 export interface Goal {
   id: string;
   name: string;

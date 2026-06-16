@@ -1,33 +1,34 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { type Account, AccountStatus, type Income, type View } from './types';
+import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import AccountsView from './components/AccountsView';
+import AdminPanel from './components/AdminPanel';
 import AccountFormModal from './components/AccountFormModal';
 import BatchAccountModal from './components/BatchAccountModal';
 import AddSelectionModal from './components/AddSelectionModal';
 import SettingsModal from './components/SettingsModal';
 import { useTheme } from './hooks/useTheme';
-import * as dataService from './services/apiService';
+import * as dataService from './services/dataService';
+import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
+import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 import { notifyPaymentViaWhatsApp } from './utils/whatsapp';
 import { isVariableExpense, getMonthlyAccounts } from './utils/accountUtils';
 
 import { Plus } from 'lucide-react';
-import { ACCOUNT_CATEGORIES } from './utils/mockData';
 
 // isVariableExpense removed as it is now imported from accountUtils
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { theme, toggleTheme } = useTheme('tatu');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { theme, toggleTheme } = useTheme(currentUser?.username);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -39,8 +40,12 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [view, setView] = useState<View>('login');
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -48,88 +53,118 @@ const App: React.FC = () => {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false); // Can be kept or removed if settings aren't stored
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   
   const constraintsRef = useRef<HTMLDivElement>(null);
 
+  // Redirect to accounts view on mobile devices when logged in
   useEffect(() => {
-    if (isMobile && isLoggedIn && view !== 'accounts' && view !== 'login') {
+    if (isMobile && activeGroupId && view !== 'accounts' && view !== 'login' && view !== 'register' && view !== 'groupSelection') {
       setView('accounts');
     }
-  }, [isMobile, isLoggedIn, view]);
-
-  // Handle local storage migration on first load
-  const runInitialMigration = async () => {
-      const migrated = localStorage.getItem('migration_done');
-      if (migrated) return;
-
-      const keysToSearch = ['tatu_v4_main_db', 'tatu_emergency_backup', 'ricka_local_db_v3', 'ricka_local_db_v2', 'ricka_local_db', 'app_db', 'tatu_db'];
-      let foundAccounts: any[] = [];
-      let foundIncomes: any[] = [];
-
-      keysToSearch.forEach(key => {
-          const raw = localStorage.getItem(key);
-          if (!raw) return;
-          try {
-              const parsed = JSON.parse(raw);
-              const data = parsed.db || parsed;
-              
-              if (data.accounts) {
-                  data.accounts.forEach((acc: any) => {
-                      if (!foundAccounts.find(a => a.id === acc.id)) foundAccounts.push(acc);
-                  });
-              }
-              if (data.incomes) {
-                  data.incomes.forEach((inc: any) => {
-                      if (!foundIncomes.find(i => i.id === inc.id)) foundIncomes.push(inc);
-                  });
-              }
-          } catch (e) {
-              console.warn(`Erro ao ler chave ${key}`);
-          }
-      });
-
-      await dataService.runMigration(foundAccounts as Account[], foundIncomes as Income[]);
-      localStorage.setItem('migration_done', 'true');
-  };
+  }, [isMobile, activeGroupId, view]);
 
   useEffect(() => {
-    const unsubAccounts = dataService.subscribe('accounts', () => setAccounts([...dataService.getCachedAccounts()]));
-    const unsubIncomes = dataService.subscribe('incomes', () => setIncomes([...dataService.getCachedIncomes()]));
-    dataService.setSyncListener(setIsSyncing);
+    const unsubUsers = realtimeService.subscribe('users', setUsers);
+    const unsubGroups = realtimeService.subscribe('groups', setGroups);
+    const unsubAccounts = realtimeService.subscribe('accounts', setAccounts);
+    const unsubIncomes = realtimeService.subscribe('incomes', setIncomes);
+    const unsubCategories = realtimeService.subscribe('categories', setCategories);
+    const unsubSettings = realtimeService.subscribe('settings', (s) => {
+        setWhatsappEnabled(!!s?.whatsappEnabled);
+    });
     
     const initAuth = async () => {
         setIsLoading(true);
-        const authed = localStorage.getItem('app_loggedIn');
-        if (authed === 'true') {
-            setIsLoggedIn(true);
-            setView(isMobile ? 'accounts' : 'dashboard');
-            await runInitialMigration();
-            dataService.pollData();
-        } else { 
-            setView('login'); 
-        }
+        const storedUserStr = sessionStorage.getItem('app_currentUser');
+        if (storedUserStr) {
+            try {
+                const storedUser = JSON.parse(storedUserStr);
+                const storedGroupId = sessionStorage.getItem('app_activeGroupId');
+                setCurrentUser(storedUser);
+                realtimeService.setUser(storedUser.username);
+                if (storedGroupId) {
+                    setActiveGroupId(storedGroupId);
+                    setView(isMobile ? 'accounts' : 'dashboard');
+                } else if (storedUser.groupIds.length > 0) {
+                    setView('groupSelection');
+                } else {
+                    setView('login');
+                }
+            } catch (e) { setView('login'); }
+        } else { setView('login'); }
         setIsLoading(false);
     };
     initAuth();
-    
-    // Polling every 30s
-    const pollInterval = setInterval(() => {
-        if (isLoggedIn) {
-            dataService.pollData();
-        }
-    }, 30000);
-
     return () => {
-        unsubAccounts(); unsubIncomes(); clearInterval(pollInterval);
+        unsubUsers(); unsubGroups(); unsubAccounts(); unsubIncomes(); unsubCategories(); unsubSettings();
     };
-  }, [isLoggedIn]);
+  }, []);
+
+  useEffect(() => {
+      // INJEÇÃO ÚNICA DAS CONTAS SOLICITADAS PELO USUÁRIO NO DIA 05 DE JUNHO
+      if (activeGroupId) {
+          const injected = localStorage.getItem('contas_injetadas_05_jun_v5');
+          if (!injected) {
+              const itemsToInject = [
+                  { name: 'Loja 1', value: 81.68, date: '2026-03-01T12:00:00Z', cat: '🛍️ Compras' },
+                  { name: 'Minas mas', value: 39.50, date: '2026-02-01T12:00:00Z', cat: '🛒 Mercado' },
+                  { name: 'Big suplementos', value: 55.00, date: '2026-02-01T12:00:00Z', cat: '💊 Saúde' },
+                  { name: 'Minas mais', value: 63.38, date: '2026-03-01T12:00:00Z', cat: '🛒 Mercado' },
+                  { name: 'Drogaria americana', value: 64.52, date: '2026-03-01T12:00:00Z', cat: '💊 Saúde' },
+                  { name: 'Araújo - 914 cartão', value: 88.00, date: '2026-03-01T12:00:00Z', cat: '💊 Saúde' },
+                  { name: 'Academia', value: 129.90, date: '2026-06-01T12:00:00Z', cat: '🏋️ Lazer / Esporte', rec: true },
+                  { name: 'Meire', value: 600.00, date: '2026-06-01T12:00:00Z', cat: '📄 Boleto' },
+                  { name: 'Unimed', value: 340.00, date: '2026-06-01T12:00:00Z', cat: '💊 Saúde', rec: true },
+                  { name: 'Avet', value: 120.00, date: '2026-06-01T12:00:00Z', cat: '🐶 Pet' },
+                  { name: 'Petlove', value: 133.00, date: '2026-06-01T12:00:00Z', cat: '🐶 Pet', inst: {cur: 2, tot: 2} },
+                  { name: 'Época', value: 74.88, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 6, tot: 8} },
+                  { name: 'Centauro', value: 99.90, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 7, tot: 10} },
+                  { name: 'Stanley', value: 23.80, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 7, tot: 10} },
+                  { name: 'Farmácia', value: 60.13, date: '2026-06-01T12:00:00Z', cat: '💊 Saúde', inst: {cur: 2, tot: 3} },
+                  { name: 'Disney', value: 46.90, date: '2026-06-01T12:00:00Z', cat: '📺 Assinaturas', rec: true },
+                  { name: 'Havan', value: 29.90, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 9, tot: 10} },
+                  { name: 'Compras bh', value: 242.40, date: '2026-06-01T12:00:00Z', cat: '🛒 Mercado', inst: {cur: 3, tot: 3} },
+                  { name: 'Aniversário Antônio, clube, celular', value: 648.90, date: '2026-06-01T12:00:00Z', cat: '🎉 Festa/Evento' },
+              ];
+
+              itemsToInject.forEach(item => {
+                  const alreadyExists = accounts.some(a => a.name === item.name && a.groupId === activeGroupId && a.value === item.value);
+                  if (!alreadyExists) {
+                      const newAccount = {
+                          name: item.name,
+                          value: item.value,
+                          groupId: activeGroupId,
+                          category: item.cat,
+                          status: AccountStatus.PENDING,
+                          paymentDate: item.date,
+                          isRecurrent: !!item.rec,
+                          isInstallment: !!item.inst,
+                          currentInstallment: item.inst?.cur,
+                          totalInstallments: item.inst?.tot,
+                          installmentId: item.inst ? `inst-${Date.now()}-${item.name}` : undefined,
+                          id: `acc-injected-${Date.now()}-${Math.random()}`
+                      } as unknown as Account;
+                      
+                      realtimeService.addAccount(newAccount);
+                  }
+              });
+              localStorage.setItem('contas_injetadas_05_jun_v5', 'true');
+          }
+      }
+  }, [activeGroupId, accounts]);
+  
+  const userAccounts = useMemo(() => {
+    if (!activeGroupId) return [];
+    return accounts.filter(acc => acc.groupId === activeGroupId);
+  }, [accounts, activeGroupId]);
 
   const mobileStats = useMemo(() => {
+    if (!activeGroupId) return { total: 0, paid: 0 };
     const safeDate = selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
-    const allForMonth = getMonthlyAccounts(accounts, safeDate);
+    const allForMonth = getMonthlyAccounts(userAccounts, safeDate);
     
     const total = allForMonth.reduce((sum, acc) => sum + Number(acc.value || 0), 0);
     const paid = allForMonth
@@ -137,24 +172,48 @@ const App: React.FC = () => {
       .reduce((sum, acc) => sum + Number(acc.value || 0), 0);
       
     return { total, paid };
-  }, [accounts, selectedDate]);
+  }, [userAccounts, selectedDate, activeGroupId]);
+
+  const userIncomes = useMemo(() => {
+    if (!activeGroupId) return [];
+    return incomes.filter(inc => inc.groupId === activeGroupId);
+  }, [incomes, activeGroupId]);
 
   const handleLogin = async (username: string, password: string): Promise<boolean> => {
-    if (username.toLowerCase() === 'tatu' && password === '986021') {
-        setIsLoggedIn(true);
-        localStorage.setItem('app_loggedIn', 'true');
-        setView(isMobile ? 'accounts' : 'dashboard');
-        await runInitialMigration();
-        dataService.pollData();
-        return true;
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user || user.password !== password) return false;
+    setCurrentUser(user);
+    sessionStorage.setItem('app_currentUser', JSON.stringify(user));
+    realtimeService.setUser(user.username);
+    if (user.groupIds.length === 1) {
+        handleGroupSelect(user.groupIds[0]);
+    } else if (user.groupIds.length > 1) {
+        setView('groupSelection');
     }
+    return true;
+  };
+
+  const handleRegister = async (name: string, username: string, password: string): Promise<boolean> => {
+    const existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (existing) return false;
+    const newUser = await dataService.addUser({ name, username, password, role: Role.USER, groupIds: ['group-3'] });
+    if (newUser) return handleLogin(username, password);
     return false;
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('app_loggedIn');
+    setCurrentUser(null);
+    setActiveGroupId(null);
+    sessionStorage.removeItem('app_currentUser');
+    sessionStorage.removeItem('app_activeGroupId');
+    realtimeService.setUser("");
     setView('login');
+  };
+
+  const handleGroupSelect = (groupId: string) => {
+    setActiveGroupId(groupId);
+    sessionStorage.setItem('app_activeGroupId', groupId);
+    setView(isMobile ? 'accounts' : 'dashboard');
   };
 
   const handleToggleAccountStatus = (acc: Account) => {
@@ -172,6 +231,7 @@ const App: React.FC = () => {
     const isVirtual = acc.id?.toString().startsWith('projected-') || (!acc.paymentDate && acc.isRecurrent);
 
     if (isVirtual) {
+        // Criando um snapshot físico para uma projeção ou template recorrente
         const snapshot: Account = {
             ...acc,
             id: `acc-snap-${Date.now()}`,
@@ -180,14 +240,29 @@ const App: React.FC = () => {
             paymentDate: targetDate,
             value: Number(acc.value)
         };
-        dataService.createAccount(snapshot);
+        dataService.addAccount(snapshot);
+        
+        if (isPaying) {
+            const settings = realtimeService.getSettings();
+            if (settings?.whatsappEnabled) {
+                notifyPaymentViaWhatsApp(snapshot.name, snapshot.value, settings.whatsappGroupLink);
+            }
+        }
     } else {
+        // Atualizando um registro físico existente
         dataService.updateAccount({
             ...acc, 
             status: isPaying ? AccountStatus.PAID : AccountStatus.PENDING,
             paymentDate: acc.paymentDate || targetDate,
             value: Number(acc.value)
         });
+
+        if (isPaying) {
+            const settings = realtimeService.getSettings();
+            if (settings?.whatsappEnabled) {
+                notifyPaymentViaWhatsApp(acc.name, Number(acc.value), settings.whatsappGroupLink);
+            }
+        }
     }
   };
 
@@ -195,6 +270,7 @@ const App: React.FC = () => {
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const targetDate = `${year}-${month}-15T12:00:00Z`;
+    const settings = realtimeService.getSettings();
 
     accs.forEach(acc => {
       const isPaying = acc.status !== AccountStatus.PAID;
@@ -213,7 +289,10 @@ const App: React.FC = () => {
               paymentDate: targetDate,
               value: Number(acc.value)
           };
-          dataService.createAccount(snapshot);
+          dataService.addAccount(snapshot);
+          if (isPaying && settings?.whatsappEnabled) {
+              notifyPaymentViaWhatsApp(snapshot.name, snapshot.value, settings.whatsappGroupLink);
+          }
       } else {
           dataService.updateAccount({
               ...acc, 
@@ -221,6 +300,9 @@ const App: React.FC = () => {
               paymentDate: acc.paymentDate || targetDate,
               value: Number(acc.value)
           });
+          if (isPaying && settings?.whatsappEnabled) {
+              notifyPaymentViaWhatsApp(acc.name, Number(acc.value), settings.whatsappGroupLink);
+          }
       }
     });
   };
@@ -264,7 +346,8 @@ const App: React.FC = () => {
                       status: data.status || AccountStatus.PENDING,
                       installmentId: finalInstallmentId
                   };
-                  dataService.createAccount(newPhysicalInstallment);
+                  dataService.addAccount(newPhysicalInstallment);
+                  realtimeService.updateAccountAndSeries(newPhysicalInstallment);
                   return;
               }
               
@@ -334,7 +417,7 @@ const App: React.FC = () => {
                       currentInstallment: sanitizedCurrent,
                       totalInstallments: sanitizedTotal || original?.totalInstallments
                   };
-                  dataService.createAccount(newSnapshot);
+                  dataService.addAccount(newSnapshot);
               }
               return;
           }
@@ -374,7 +457,7 @@ const App: React.FC = () => {
                   isRecurrent: data.isRecurrent,
                   installmentId: data.installmentId || (data.isInstallment ? `repair-${Date.now()}` : undefined)
               };
-              dataService.updateAccount(updateData as Account);
+              realtimeService.updateAccountAndSeries(updateData as Account);
               return;
           }
           
@@ -387,7 +470,7 @@ const App: React.FC = () => {
               currentInstallment: sanitizedCurrent,
               installmentId: data.installmentId || (data.isInstallment ? `repair-${Date.now()}` : undefined)
           };
-          dataService.updateAccount(updateData as Account);
+          realtimeService.updateAccountAndSeries(updateData as Account);
       } else {
           const isVar = isVariableExpense(data);
           const isRec = Boolean(data.isRecurrent);
@@ -405,7 +488,7 @@ const App: React.FC = () => {
                   // Mark past installments as paid, and current / future as pending
                   const status = i < currentInstallmentNum ? AccountStatus.PAID : AccountStatus.PENDING;
                   
-                  dataService.createAccount({
+                  dataService.addAccount({
                       ...data,
                       id: `acc-${Date.now()}-${i}`,
                       value: sanitizedValue,
@@ -435,12 +518,12 @@ const App: React.FC = () => {
               paymentDate: (isRec && !isInst) ? undefined : (data.paymentDate || targetDate)
           };
           
-          dataService.createAccount(newAccount);
+          dataService.addAccount(newAccount);
           
           // If it's a recurrent variable expense, also create a physical record for the current month
           // so the user sees the value they just entered immediately.
           if (isVar && isRec && !isInst) {
-              dataService.createAccount({
+              dataService.addAccount({
                   ...newAccount,
                   id: `acc-snap-${Date.now()}`,
                   isRecurrent: false,
@@ -452,7 +535,7 @@ const App: React.FC = () => {
   };
 
   const handleExportJson = () => {
-    const data = { accounts, incomes };
+    const data = realtimeService.exportData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -467,23 +550,23 @@ const App: React.FC = () => {
         const text = await file.text();
         const data = JSON.parse(text);
         if (window.confirm('Atenção: Importar um backup irá substituir TODOS os dados atuais. Deseja continuar?')) {
-            if (data.accounts || data.incomes) {
-                await dataService.runMigration(data.accounts || [], data.incomes || []);
-                dataService.pollData();
-                alert('Backup importado com sucesso!');
-                window.location.reload(); 
-            }
+            realtimeService.importData(data);
+            alert('Backup importado com sucesso!');
+            window.location.reload(); // Recarregar para garantir que tudo sincronize
         }
     } catch (e) {
-        alert('Erro ao importar arquivo');
+        alert('Erro ao importar backup. Verifique se o arquivo é um JSON válido.');
     }
   };
 
   const handleExportCsv = () => {
+    const accounts = realtimeService.getAccounts();
+    const incomes = realtimeService.getIncomes();
+    
     let csv = 'Tipo,Nome,Valor,Categoria,Data,Status\n';
     
     accounts.forEach(acc => {
-        csv += `Despesa,"${acc.name}",${acc.value},"${acc.category}",${acc.paymentDate || ''},${acc.status}\n`;
+        csv += `Despesa,"${acc.name}",${acc.value},"${acc.category}",${acc.paymentDate || (acc as any).dueDate},${acc.status}\n`;
     });
     
     incomes.forEach(inc => {
@@ -500,6 +583,9 @@ const App: React.FC = () => {
   };
 
   const handleExportExcel = () => {
+    const accounts = realtimeService.getAccounts();
+    const incomes = realtimeService.getIncomes();
+    
     const wb = XLSX.utils.book_new();
 
     // 1. Add a "Resumo Geral" sheet first
@@ -527,7 +613,7 @@ const App: React.FC = () => {
     // 2. Group accounts by category in separate sheets
     const categories = Array.from(new Set(accounts.map(a => a.category)));
     
-    categories.forEach((cat: string) => {
+    categories.forEach(cat => {
         const catAccounts = accounts.filter(a => a.category === cat);
         const data = catAccounts.map(acc => ({
             'Nome': acc.name,
@@ -577,8 +663,10 @@ const App: React.FC = () => {
     );
   }
 
-  if (view === 'login') return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => {}} />;
-  if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => {}} />;
+  if (view === 'login') return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
+  if (view === 'register') return <RegisterScreen onRegister={handleRegister} onNavigateToLogin={() => setView('login')} />;
+  if (view === 'groupSelection' && currentUser) return <GroupSelectionScreen user={currentUser} groups={groups} onSelectGroup={handleGroupSelect} onLogout={handleLogout} />;
+  if (!currentUser || !activeGroupId) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
 
   return (
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-x-hidden">
@@ -592,27 +680,27 @@ const App: React.FC = () => {
 
       <div className="relative z-10">
         <Header 
-          currentUser={{ name: 'Tatu', username: 'tatu' }} 
+          currentUser={currentUser} 
           onSettingsClick={() => setIsSettingsModalOpen(true)} 
           onLogout={handleLogout} 
           activeView={view}
           onViewChange={setView}
-          isAdmin={false}
+          isAdmin={currentUser.role === Role.ADMIN}
           onAddClick={() => setIsSelectionModalOpen(true)}
           mobileStats={mobileStats}
         />
         <main className="p-3 sm:p-4 lg:p-6 max-w-[1200px] mx-auto pb-32">
           {view === 'dashboard' && (
               <Dashboard 
-                  accounts={accounts} 
-                  incomes={incomes} 
+                  accounts={userAccounts} 
+                  incomes={userIncomes} 
                   selectedDate={selectedDate}
                   setSelectedDate={setSelectedDate}
               />
           )}
           {view === 'accounts' && (
               <AccountsView 
-                  accounts={accounts} 
+                  accounts={userAccounts} 
                   onEditAccount={(acc) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }} 
                   onDeleteAccount={(id) => {
                       let targetId = id;
@@ -628,20 +716,24 @@ const App: React.FC = () => {
                   }} 
                   onToggleStatus={handleToggleAccountStatus} 
                   onToggleMultipleStatus={handleToggleMultipleAccountStatus}
-                  onNotifyWhatsApp={() => {}}
-                  whatsappEnabled={false}
+                  onNotifyWhatsApp={(acc) => {
+                      const settings = realtimeService.getSettings();
+                      notifyPaymentViaWhatsApp(acc.name, acc.value, settings?.whatsappGroupLink);
+                  }}
+                  whatsappEnabled={whatsappEnabled}
                   selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
                   onOpenMoveModal={() => setIsMoveModalOpen(true)} 
-                  categories={ACCOUNT_CATEGORIES}
+                  categories={categories}
               />
           )}
-          {view === 'income' && <IncomeManagement incomes={incomes} onAddOrUpdate={(data) => {
+          {view === 'income' && <IncomeManagement incomes={userIncomes} onAddOrUpdate={(data) => {
               if (data.id) dataService.updateIncome({...data, date: new Date().toISOString()} as any);
-              else dataService.createIncome({...data, date: new Date().toISOString(), id: `inc-${Date.now()}`} as any);
-          }} onDelete={(id) => dataService.deleteIncome(id)} activeGroupId={null} />}
+              else dataService.addIncome({...data, date: new Date().toISOString(), id: `inc-${Date.now()}`} as any);
+          }} onDelete={(id) => dataService.deleteIncome(id)} activeGroupId={activeGroupId} />}
+          {view === 'admin' && <AdminPanel users={users} groups={groups} onAddUser={dataService.addUser} onUpdateUser={dataService.updateUser} onDeleteUser={dataService.deleteUser} onAddGroup={dataService.addGroup} onUpdateGroup={dataService.updateGroup} onDeleteGroup={dataService.deleteGroup} />}
         </main>
         <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
-        {isMobile && isLoggedIn && (
+        {isMobile && currentUser && activeGroupId && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
             <button
               onClick={() => {
@@ -665,16 +757,16 @@ const App: React.FC = () => {
           onImportData={handleImportJson} 
           onExportToCsv={handleExportCsv} 
           onExportToExcel={handleExportExcel}
-          currentUser={{ name: 'Tatu', username: 'tatu' }} 
+          currentUser={currentUser} 
         />
         <AccountFormModal 
           isOpen={isAccountModalOpen} 
           onClose={() => { setIsAccountModalOpen(false); setAccountToEdit(null); }} 
           onSubmit={handleAccountSubmit} 
           account={accountToEdit} 
-          categories={ACCOUNT_CATEGORIES} 
+          categories={categories} 
           onManageCategories={() => {}} 
-          activeGroupId={null}
+          activeGroupId={activeGroupId}
           selectedDate={selectedDate}
         />
         <BatchAccountModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSubmit={async (batch) => {
@@ -696,9 +788,10 @@ const App: React.FC = () => {
                         const currentDate = new Date(baseDate);
                         currentDate.setMonth(baseDate.getMonth() + (i - 1));
                         
-                        dataService.createAccount({
+                        dataService.addAccount({
                             ...item,
                             id: `batch-${Date.now()}-${Math.random()}-${i}`,
+                            groupId: activeGroupId,
                             value: sanitizedValue,
                             isRecurrent: false,
                             isInstallment: true,
@@ -710,9 +803,10 @@ const App: React.FC = () => {
                         });
                     }
                 } else {
-                    dataService.createAccount({
+                    dataService.addAccount({
                         ...item,
                         id: `batch-${Date.now()}-${Math.random()}`,
+                        groupId: activeGroupId,
                         value: sanitizedValue,
                         isRecurrent: isRec,
                         isInstallment: isInst,
@@ -724,12 +818,12 @@ const App: React.FC = () => {
                     });
                 }
             });
-        }} categories={ACCOUNT_CATEGORIES} />
+        }} categories={categories} />
         <AddSelectionModal isOpen={isSelectionModalOpen} onClose={() => setIsSelectionModalOpen(false)} onSelectSingle={() => setIsAccountModalOpen(true)} onSelectBatch={() => setIsBatchModalOpen(true)} />
         <MoveAccountsModal isOpen={isMoveModalOpen} onClose={() => setIsMoveModalOpen(false)} onSubmit={(ids, to) => {
             const accsToUpdate = accounts.filter(a => ids.includes(a.id)).map(a => ({...a, paymentDate: `${to}-10T12:00:00Z`}));
-            accsToUpdate.forEach(a => dataService.updateAccount(a));
-        }} allAccounts={accounts} currentDashboardMonth={selectedDate.toISOString().slice(0, 7)} />
+            dataService.updateMultipleAccounts(accsToUpdate);
+        }} allAccounts={userAccounts} currentDashboardMonth={selectedDate.toISOString().slice(0, 7)} />
       </div>
     </div>
   );

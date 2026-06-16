@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
+    "module": "CommonJS",
     "target": "ESNext",
-    "moduleResolution": "node",
     "esModuleInterop": true,
-    "jsx": "react-jsx",
     "strict": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["api/**/*.ts"],
+  "exclude": ["node_modules"]
 }

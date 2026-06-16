@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { type User } from '../types';
 import { Plus } from 'lucide-react';
-import * as apiService from '../services/apiService';
+import realtimeService, { type SyncStatus } from '../services/realtimeService';
 
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -20,23 +21,37 @@ const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
     <rect x="60" y="65" width="10" height="5" rx="1" fill="#6366f1" />
   </svg>
 );
-
 const SyncStatusIndicator: React.FC = () => {
-    const [isSyncing, setIsSyncing] = useState(false);
+    const [status, setStatus] = useState<SyncStatus>('local');
     
     useEffect(() => {
-        apiService.setSyncListener(setIsSyncing);
+        const unsubscribe = realtimeService.subscribeToSyncStatus((syncStatus) => {
+            setStatus(syncStatus);
+        });
+        return () => unsubscribe();
     }, []);
 
-    const icon = isSyncing 
-        ? <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-        : <div className="w-1.5 h-1.5 bg-success rounded-full" />;
+    const getStatusInfo = () => {
+        switch (status) {
+            case 'syncing':
+                return { text: 'Sinc...', color: 'text-primary dark:text-primary-light', icon: <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> };
+            case 'synced':
+                return { text: 'Postgres', color: 'text-success', icon: <div className="w-1.5 h-1.5 bg-success rounded-full" /> };
+            case 'error':
+                return { text: 'Offline', color: 'text-danger', icon: <div className="w-1.5 h-1.5 bg-danger rounded-full animate-pulse" /> };
+            case 'local':
+            default:
+                return { text: 'Local', color: 'text-text-muted dark:text-dark-text-muted', icon: <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" /> };
+        }
+    };
+
+    const { text, color, icon } = getStatusInfo();
 
     return (
         <button 
-            onClick={() => apiService.pollData()} 
+            onClick={() => realtimeService.forceSync()} 
             className="flex items-center justify-center w-6 h-6 bg-slate-50 dark:bg-dark-surface-light border border-slate-100 dark:border-dark-border-color rounded-full hover:bg-slate-100 dark:hover:bg-dark-surface transition-colors active:scale-95 shadow-sm"
-            title={isSyncing ? "Sincronizando..." : "Sincronizado (PostgreSQL)"}
+            title={`Sincronização: ${text}`}
         >
             {icon}
         </button>
@@ -44,7 +59,7 @@ const SyncStatusIndicator: React.FC = () => {
 };
 
 interface HeaderProps {
-  currentUser: any;
+  currentUser: User;
   onSettingsClick: () => void;
   onLogout: () => void;
   activeView?: string;
@@ -56,7 +71,18 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout, activeView, onViewChange, isAdmin, onAddClick, mobileStats }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const settings = realtimeService.getSettings();
+    if (settings) setLogoUrl(settings.logoUrl);
+
+    const unsub = realtimeService.subscribe('settings', (newSettings) => {
+        if (newSettings) setLogoUrl(newSettings.logoUrl);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,9 +103,13 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-primary/10 shadow-sm border border-primary/20 transform hover:scale-105 transition-transform cursor-pointer">
-                    <div className="w-7 h-7 flex items-center justify-center bg-primary rounded-lg text-white">
-                      <TatuIcon className="w-5 h-5" />
-                    </div>
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                        <div className="w-7 h-7 flex items-center justify-center bg-primary rounded-lg text-white">
+                          <TatuIcon className="w-5 h-5" />
+                        </div>
+                    )}
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="text-lg font-black text-navy dark:text-gray-100 leading-none tracking-tighter">TATU<span className="text-primary italic">.</span></h1>

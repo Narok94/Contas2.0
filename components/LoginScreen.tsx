@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Lock, ArrowRight, ShieldCheck, TrendingUp, Smartphone } from 'lucide-react';
+import realtimeService from '../services/realtimeService';
 
 interface LoginScreenProps {
   onLogin: (username: string, password: string) => Promise<boolean>;
@@ -26,6 +27,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const settings = realtimeService.getSettings();
+    if (settings) setLogoUrl(settings.logoUrl);
+
+    const unsub = realtimeService.subscribe('settings', (newSettings) => {
+        if (newSettings) setLogoUrl(newSettings.logoUrl);
+    });
+    return () => unsub();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
