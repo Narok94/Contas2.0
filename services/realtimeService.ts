@@ -345,8 +345,14 @@ class RealtimeService {
             });
             if (!res.ok) {
                 const errorText = await res.text();
+                let errMsg = errorText;
+                try {
+                    const parsed = JSON.parse(errorText);
+                    errMsg = parsed.message || parsed.error || parsed.detail || errorText;
+                } catch(e) {}
+                
                 console.error('[Sync Error] HTTP error:', res.status, errorText);
-                alert(`Erro ao sincronizar com servidor: HTTP ${res.status}`); // Alerta temporário para você ver!
+                alert(`Erro ao sincronizar com servidor: HTTP ${res.status}\nDetalhe do erro: ${errMsg}\n\nSe estiver no Vercel, confirme se a variável POSTGRES_URL foi adicionada no painel do Vercel.`);
                 this.setSyncStatus('error');
             } else {
                 this.lastSyncTime = new Date();

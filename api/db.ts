@@ -138,4 +138,12 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
   }
 };
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '15mb',
+    },
+  },
+};
+
 export default handler;
