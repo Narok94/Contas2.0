@@ -4,18 +4,24 @@
   "description": "Um software de controle de contas moderno e intuitivo.",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && cp index.html dist/index.html && esbuild index.tsx --bundle --format=esm --outfile=dist/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --external:xlsx --define:process.env.API_KEY='\"'$API_KEY'\"'",
-    "dev": "npm run build && npx -y serve dist -p 3000",
+    "build": "mkdir -p dist && cp index.html dist/index.html && esbuild index.tsx --bundle --format=esm --outfile=dist/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --external:xlsx --define:process.env.API_KEY='\"'$API_KEY'\"' && esbuild server.ts --bundle --platform=node --packages=external --format=cjs --outfile=dist/server.js",
+    "dev": "npm run build && node dist/server.js",
+    "start": "node dist/server.js",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.3",
     "@vercel/node": "^3.2.0",
     "esbuild": "0.23.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
     "@vercel/postgres": "^0.9.0",
+    "cors": "^2.8.6",
     "date-fns": "^4.1.0",
+    "express": "^5.2.1",
     "lucide-react": "^0.577.0",
     "recharts": "^3.8.0",
     "xlsx": "^0.18.5"

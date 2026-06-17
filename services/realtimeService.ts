@@ -293,6 +293,9 @@ class RealtimeService {
                 };
                 this.ensureCelularHenrique();
                 this.ensureJessicaCustomAccounts();
+            } else {
+                // Garante que o banco novo receba os dados locais automaticamente
+                this.persistRemote();
             }
 
             // Se for o usuário teste, garantir que ele tenha as 10 contas de teste se estiver vazio
