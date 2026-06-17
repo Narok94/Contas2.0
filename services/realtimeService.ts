@@ -338,14 +338,25 @@ class RealtimeService {
         this.setSyncStatus('syncing');
         try {
             const { settings, ...userData } = this.db;
-            await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
+            const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(userData)
             });
-            this.lastSyncTime = new Date();
-            this.setSyncStatus('synced');
-        } catch (e) { this.setSyncStatus('error'); }
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('[Sync Error] HTTP error:', res.status, errorText);
+                alert(`Erro ao sincronizar com servidor: HTTP ${res.status}`); // Alerta temporário para você ver!
+                this.setSyncStatus('error');
+            } else {
+                this.lastSyncTime = new Date();
+                this.setSyncStatus('synced');
+            }
+        } catch (e) { 
+            console.error('[Sync Error] Network/Fetch exception:', e);
+            alert(`Erro de rede ao sincronizar. Veja o console.`);
+            this.setSyncStatus('error'); 
+        }
     }, 2000);
   }
 
