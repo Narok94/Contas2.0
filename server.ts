@@ -148,3 +148,5 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log("Acesse o preview clicando no botão acima.");
 });
+
+export default app;
