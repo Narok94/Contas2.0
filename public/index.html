@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Controle de Contas Inteligente</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
     <script>
       // Aplica o tema escuro antes que o restante da página seja carregado para evitar FOUC
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -119,19 +119,18 @@
     {
       "imports": {
         "react": "https://esm.sh/react@19.0.0",
+        "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
         "react-dom": "https://esm.sh/react-dom@19.0.0",
         "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
         "framer-motion": "https://esm.sh/framer-motion@11.11.17?external=react,react-dom",
         "recharts": "https://esm.sh/recharts@2.13.3?external=react,react-dom",
-        "@google/genai": "https://esm.sh/@google/genai@1.2.0",
-        "@vercel/postgres": "https://esm.sh/@vercel/postgres@0.10.0",
-        "@vercel/node": "https://esm.sh/@vercel/node@5.5.28"
+        "@google/genai": "https://esm.sh/@google/genai@1.2.0"
       }
     }
     </script>
 </head>
 <body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased">
     <div id="root"></div>
-    <script type="module" src="bundle.js"></script>
+    <script type="module" src="bundle.js" crossorigin="anonymous"></script>
 </body>
 </html>

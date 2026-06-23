@@ -36,7 +36,7 @@ const SyncStatusIndicator: React.FC = () => {
             case 'syncing':
                 return { text: 'Sinc...', color: 'text-primary dark:text-primary-light', icon: <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> };
             case 'synced':
-                return { text: 'Postgres', color: 'text-success', icon: <div className="w-1.5 h-1.5 bg-success rounded-full" /> };
+                return { text: 'Sincronizado', color: 'text-success', icon: <div className="w-1.5 h-1.5 bg-success rounded-full" /> };
             case 'error':
                 return { text: 'Offline', color: 'text-danger', icon: <div className="w-1.5 h-1.5 bg-danger rounded-full animate-pulse" /> };
             case 'local':

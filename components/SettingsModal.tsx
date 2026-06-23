@@ -172,7 +172,7 @@ interface SettingsModalProps {
     onExportData: () => void; onImportData: (file: File) => void; onExportToCsv: () => void; onExportToExcel: () => void; currentUser: User | null;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onExportToCsv, onExportToExcel, currentUser }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, toggleTheme, onExportData, onImportData, onExportToCsv, onExportToExcel, currentUser }) => {
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
     const [whatsappEnabled, setWhatsappEnabled] = useState(false);

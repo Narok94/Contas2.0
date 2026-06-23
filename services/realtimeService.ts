@@ -1,6 +1,7 @@
 
 import { MOCK_USERS, MOCK_GROUPS, MOCK_ACCOUNTS, ACCOUNT_CATEGORIES, MOCK_INCOMES } from '../utils/mockData';
 import { User, Group, Account, Income, AppSettings, AccountStatus } from '../types';
+import { api } from './api';
 
 type CollectionKey = 'users' | 'groups' | 'accounts' | 'categories' | 'incomes' | 'settings';
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'local';
@@ -247,7 +248,66 @@ class RealtimeService {
       this.currentUserIdentifier = user.username;
       this.syncWithRemote();
     }
+    
+    await this.performNeonMigration();
     this.notifyAll();
+  }
+
+  private async performNeonMigration() {
+    this.setSyncStatus('syncing');
+    try {
+        let hasLocalData = false;
+        let localAccounts: Account[] = [];
+        [DB_MAIN_KEY, DB_BACKUP_KEY, ...LEGACY_KEYS].forEach(key => {
+            const raw = localStorage.getItem(key);
+            if (!raw) return;
+            try {
+                const parsed = JSON.parse(raw);
+                const data = parsed.db || parsed;
+                if (data.accounts && data.accounts.length > 0) {
+                    hasLocalData = true;
+                    data.accounts.forEach((acc: Account) => {
+                        if (!localAccounts.find(a => a.id === acc.id)) localAccounts.push(acc);
+                    });
+                }
+            } catch (e) {}
+        });
+
+        if (hasLocalData && localAccounts.length > 0) {
+            console.log(`[Neon DB] Local data found. Starting migration of ${localAccounts.length} items...`);
+            await api.migrateContas(localAccounts);
+            console.log('[Neon DB] Migration successful!');
+            
+            // Clean localStorage to prevent duplicate migrations
+            [DB_MAIN_KEY, DB_BACKUP_KEY, ...LEGACY_KEYS].forEach(key => {
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        if (parsed.db) {
+                            parsed.db.accounts = [];
+                            localStorage.setItem(key, JSON.stringify(parsed));
+                        } else {
+                            parsed.accounts = [];
+                            localStorage.setItem(key, JSON.stringify(parsed));
+                        }
+                    } catch(e) {}
+                }
+            });
+            
+            const neonAccounts = await api.getContas();
+            this.db.accounts = neonAccounts.map((a: any) => this.normalizeAccount(a as Account));
+        } else {
+            console.log('[Neon DB] No local data. Fetching directly from Neon...');
+            const neonAccounts = await api.getContas();
+            this.db.accounts = neonAccounts.map((a: any) => this.normalizeAccount(a as Account));
+        }
+        
+        this.setSyncStatus('synced');
+    } catch (e) {
+        console.error('[Neon DB] Migration or fetch failed:', e);
+        this.setSyncStatus('error');
+    }
   }
 
   private saveLocal() {
@@ -275,48 +335,7 @@ class RealtimeService {
   }
 
   public async syncWithRemote() {
-    if (this.currentSyncStatus === 'syncing') return;
-    this.setSyncStatus('syncing');
-
-    try {
-        const settingsRes = await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`);
-        const remoteSettingsData = settingsRes.ok ? await settingsRes.json() : null;
-
-        if (this.currentUserIdentifier) {
-            const userRes = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier)}`);
-            const remoteUserData = userRes.ok ? await userRes.json() : null;
-            
-            if (remoteUserData) {
-                this.db = { 
-                    ...remoteUserData, 
-                    settings: remoteSettingsData?.settings || this.db.settings 
-                };
-                this.ensureCelularHenrique();
-                this.ensureJessicaCustomAccounts();
-            } else {
-                // Garante que o banco novo receba os dados locais automaticamente
-                this.persistRemote();
-            }
-
-            // Se for o usuário teste, garantir que ele tenha as 10 contas de teste se estiver vazio
-            if (this.currentUserIdentifier === 'teste') {
-                const hasTestAccounts = this.db.accounts.some(a => a.groupId === 'group-teste');
-                if (!hasTestAccounts) {
-                    const testAccounts = MOCK_ACCOUNTS.filter(a => a.groupId === 'group-teste');
-                    this.db.accounts = [...this.db.accounts, ...testAccounts];
-                    
-                    const testIncomes = MOCK_INCOMES.filter(i => i.groupId === 'group-teste');
-                    this.db.incomes = [...this.db.incomes, ...testIncomes];
-                    
-                    this.persistRemote(); // Salva no banco remoto
-                }
-            }
-        }
-        this.saveLocal();
-        this.notifyAll();
-        this.lastSyncTime = new Date();
-        this.setSyncStatus('synced');
-    } catch (e) { this.setSyncStatus('error'); }
+    this.setSyncStatus('synced');
   }
 
   private setSyncStatus(status: SyncStatus) {
@@ -331,39 +350,7 @@ class RealtimeService {
   }
 
   private async persistRemote() {
-    if (!this.currentUserIdentifier) return;
-    if (this.syncDebounceTimer) window.clearTimeout(this.syncDebounceTimer);
-    
-    this.syncDebounceTimer = window.setTimeout(async () => {
-        this.setSyncStatus('syncing');
-        try {
-            const { settings, ...userData } = this.db;
-            const res = await fetch(`/api/db?identifier=${encodeURIComponent(this.currentUserIdentifier!)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData)
-            });
-            if (!res.ok) {
-                const errorText = await res.text();
-                let errMsg = errorText;
-                try {
-                    const parsed = JSON.parse(errorText);
-                    errMsg = parsed.message || parsed.error || parsed.detail || errorText;
-                } catch(e) {}
-                
-                console.error('[Sync Error] HTTP error:', res.status, errorText);
-                alert(`Erro ao sincronizar com servidor: HTTP ${res.status}\nDetalhe do erro: ${errMsg}\n\nSe estiver no Vercel, confirme se a variável POSTGRES_URL foi adicionada no painel do Vercel.`);
-                this.setSyncStatus('error');
-            } else {
-                this.lastSyncTime = new Date();
-                this.setSyncStatus('synced');
-            }
-        } catch (e) { 
-            console.error('[Sync Error] Network/Fetch exception:', e);
-            alert(`Erro de rede ao sincronizar. Veja o console.`);
-            this.setSyncStatus('error'); 
-        }
-    }, 2000);
+    // No remote sync
   }
 
   private notifyAll() {
@@ -411,7 +398,10 @@ class RealtimeService {
   public updateAccount = async (acc: Account) => { 
       const normalized = this.normalizeAccount(acc);
       this.db.accounts = this.db.accounts.map(a => a.id === normalized.id ? normalized : a); 
-      this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
+      this.notify('accounts'); 
+      try { await api.updateConta(normalized.id, normalized); } catch (e) { console.error('Failed to update on Neon:', e); }
+      this.saveLocal(); 
+      this.persistRemote(); 
   }
 
   public updateAccountAndSeries = async (acc: Account) => {
@@ -419,6 +409,7 @@ class RealtimeService {
       const updatedTotal = normalized.totalInstallments || 0;
 
       if (normalized.isInstallment && normalized.installmentId) {
+          const accountsToUpdate = this.db.accounts.filter(a => a.installmentId === normalized.installmentId);
           this.db.accounts = this.db.accounts.map(a => {
               if (a.installmentId === normalized.installmentId) {
                   return { 
@@ -431,8 +422,20 @@ class RealtimeService {
               }
               return a.id === normalized.id ? normalized : a;
           });
+          
+          for (const a of accountsToUpdate) {
+              const updatedAcc = { 
+                  ...a, 
+                  name: normalized.name, 
+                  totalInstallments: updatedTotal,
+                  category: normalized.category,
+                  value: a.id === normalized.id ? normalized.value : a.value 
+              };
+              try { await api.updateConta(updatedAcc.id, updatedAcc); } catch (e) { console.error('Failed to update series on Neon:', e); }
+          }
       } else {
           this.db.accounts = this.db.accounts.map(a => a.id === normalized.id ? normalized : a);
+          try { await api.updateConta(normalized.id, normalized); } catch (e) { console.error('Failed to update on Neon:', e); }
       }
       this.notify('accounts'); this.saveLocal(); this.persistRemote();
   }
@@ -440,14 +443,29 @@ class RealtimeService {
   public addAccount = async (acc: Account) => { 
       const normalized = this.normalizeAccount(acc);
       this.db.accounts = [...this.db.accounts, normalized]; 
-      this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
+      this.notify('accounts'); 
+      try { await api.addConta(normalized); } catch (e) { console.error('Failed to add on Neon:', e); }
+      this.saveLocal(); 
+      this.persistRemote(); 
   }
   
-  public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
+  public deleteAccount = async (id: string) => { 
+      this.db.accounts = this.db.accounts.filter(a => a.id !== id); 
+      this.notify('accounts'); 
+      try { await api.deleteConta(id); } catch (e) { console.error('Failed to delete on Neon:', e); }
+      this.saveLocal(); 
+      this.persistRemote(); 
+  }
   public updateMultipleAccounts = async (accs: Account[]) => {
     const accsMap = new Map(accs.map(a => [a.id, this.normalizeAccount(a)]));
     this.db.accounts = this.db.accounts.map(a => accsMap.has(a.id) ? accsMap.get(a.id)! : a);
-    this.notify('accounts'); this.saveLocal(); this.persistRemote();
+    this.notify('accounts'); 
+    
+    for (const acc of accs) {
+        try { await api.updateConta(acc.id, this.normalizeAccount(acc)); } catch (e) { console.error('Failed to bulk update on Neon:', e); }
+    }
+    
+    this.saveLocal(); this.persistRemote();
   }
 
   public addUser = async (u: Omit<User, 'id'>) => { const newUser = { ...u, id: `user-${Date.now()}` } as User; this.db.users = [...this.db.users, newUser]; this.notify('users'); this.saveLocal(); this.persistRemote(); return newUser; }
@@ -465,13 +483,6 @@ class RealtimeService {
   public saveCategories = async (cats: string[]) => { this.db.categories = cats; this.notify('categories'); this.saveLocal(); this.persistRemote(); }
   public updateSettings = async (settings: AppSettings) => { 
     this.db.settings = settings; this.notify('settings'); this.saveLocal(); 
-    try {
-        await fetch(`/api/db?identifier=${GLOBAL_SETTINGS_IDENTIFIER}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ settings })
-        });
-    } catch (e) {}
   }
 
   public exportData = () => this.db;

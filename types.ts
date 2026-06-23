@@ -57,6 +57,7 @@ export interface Income {
   value: number;
   date: string; // ISO string date for when it was received
   isRecurrent: boolean;
+  category?: string;
 }
 
 export interface ChatMessage {
