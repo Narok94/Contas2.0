@@ -46,11 +46,7 @@ const WhatsAppAssistant: React.FC<WhatsAppAssistantProps> = ({
     if (savedChat) {
       try {
         const parsed = JSON.parse(savedChat);
-        if (Array.isArray(parsed) && parsed.some(m => m.text && m.text.includes('Sou o seu assistente financeiro pessoal'))) {
-          loadDefaultWelcome();
-        } else {
-          setMessages(parsed);
-        }
+        setMessages(parsed);
       } catch (e) {
         loadDefaultWelcome();
       }
