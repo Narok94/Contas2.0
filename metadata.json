@@ -1,5 +1,6 @@
 {
   "name": "Tatu - Finanças Pessoais",
-  "description": "Um software de controle de contas pessoal e inteligente, projetado para organizar a vida financeira a dois.",
-  "requestFramePermissions": []
+  "description": "Um software de controle de contas pessoal, projetado para organizar a vida financeira de Jéssica.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

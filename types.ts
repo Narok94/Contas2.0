@@ -1,5 +1,4 @@
-
-export type View = 'login' | 'register' | 'dashboard' | 'accounts' | 'admin' | 'income' | 'groupSelection';
+export type View = 'login' | 'dashboard' | 'accounts' | 'income' | 'assistant';
 
 export enum Role {
   ADMIN = 'ADMIN',
@@ -22,16 +21,14 @@ export interface User {
   id: string;
   name: string;
   username: string;
-  password: string; // Plaintext for this mock app
+  password: string;
   role: Role;
   groupIds: string[];
-  mustChangePassword?: boolean;
 }
 
 export interface Group {
-  id:string;
+  id: string;
   name: string;
-  password?: string;
 }
 
 export interface Account {
@@ -45,9 +42,9 @@ export interface Account {
   isInstallment: boolean;
   totalInstallments?: number;
   currentInstallment?: number;
-  totalValue?: number; // Total value of the installment
-  installmentId?: string; // To group installments together
-  paymentDate?: string; // ISO string date
+  totalValue?: number;
+  installmentId?: string;
+  paymentDate?: string;
 }
 
 export interface Income {
@@ -55,20 +52,6 @@ export interface Income {
   groupId: string;
   name: string;
   value: number;
-  date: string; // ISO string date for when it was received
+  date: string;
   isRecurrent: boolean;
-  category?: string;
-}
-
-export interface ChatMessage {
-    role: 'user' | 'model';
-    content: string;
-}
-
-// Added Goal interface to fix the import error in GoalTracker.tsx
-export interface Goal {
-  id: string;
-  name: string;
-  currentValue: number;
-  targetValue: number;
 }

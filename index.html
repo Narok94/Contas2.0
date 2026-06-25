@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Inter:wght@300..900&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
       (function() {
         try {
@@ -101,12 +101,13 @@
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
-    "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "framer-motion": "https://esm.sh/framer-motion@11.11.17?external=react,react-dom",
     "recharts": "https://esm.sh/recharts@2.13.3?external=react,react-dom",
     "@google/genai": "https://esm.sh/@google/genai@1.2.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
     "xlsx": "https://esm.sh/xlsx@0.18.5"
   }
 }
@@ -145,6 +146,6 @@
 </head>
 <body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary antialiased overflow-x-hidden">
     <div id="root"></div>
-    <script type="module" src="bundle.js" crossorigin="anonymous"></script>
+    <script type="module" src="bundle.js"></script>
 </body>
 </html>

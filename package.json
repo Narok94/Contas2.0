@@ -4,24 +4,18 @@
   "description": "Um software de controle de contas moderno e intuitivo.",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && cp index.html dist/index.html && esbuild index.tsx --bundle --format=esm --outfile=dist/bundle.js --jsx=automatic --external:react --external:react-dom --external:react-dom/client --external:react/jsx-runtime --external:@google/genai --external:recharts --external:framer-motion --external:xlsx --define:process.env.NODE_ENV='\"production\"' --define:process.env.API_KEY='\"'$API_KEY'\"'",
-    "dev": "npm run build && npx -y tsx server.ts",
+    "build": "mkdir -p dist && cp index.html dist/index.html && esbuild index.tsx --bundle --format=esm --outfile=dist/bundle.js --jsx=automatic --external:react --external:react-dom/client --external:@google/genai --external:recharts --external:framer-motion --external:xlsx --define:process.env.API_KEY='\"'$API_KEY'\"'",
+    "dev": "npm run build && npx -y serve dist -p 3000",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@vercel/node": "^5.8.19",
+    "@google/genai": "^2.10.0",
+    "@types/node": "^26.0.1",
     "esbuild": "0.23.0",
-    "tsx": "^4.22.4",
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
-    "cors": "^2.8.6",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
     "framer-motion": "^12.41.0",
     "lucide-react": "^0.577.0",
     "recharts": "^3.8.0",

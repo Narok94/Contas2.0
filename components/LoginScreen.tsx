@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, ArrowRight, ShieldCheck, TrendingUp, Smartphone } from 'lucide-react';
+import { Lock, ArrowRight } from 'lucide-react';
 import realtimeService from '../services/realtimeService';
-
-interface LoginScreenProps {
-  onLogin: (username: string, password: string) => Promise<boolean>;
-  onNavigateToRegister: () => void;
-}
 
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -21,8 +16,12 @@ const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   </svg>
 );
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister }) => {
-  const [email, setEmail] = useState('');
+interface LoginScreenProps {
+  onLogin: (username: string, password: string) => Promise<boolean>;
+  onNavigateToRegister: () => void; // Unused but kept in prop definition to avoid type errors
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,117 +42,105 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onNavigateToRegister
     setIsLoading(true);
     setError('');
     
-    const success = await onLogin(email, password);
+    // Always login with 'jessica' under the hood
+    const success = await onLogin('jessica', password);
     if (!success) {
-      setError('Acesso negado. Verifique usuário e senha.');
+      setError('Senha incorreta. Tente novamente.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-slate-50 text-slate-900 overflow-hidden font-sans selection:bg-primary selection:text-white flex items-center justify-center p-6">
-      {/* Background Elements with more colors */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[100px]" />
-        <div className="absolute top-[40%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/5 rounded-full blur-[80px]" />
+    <div className="relative min-h-[100dvh] bg-slate-50 dark:bg-[#0B0E14] text-slate-900 dark:text-gray-100 overflow-hidden font-sans flex items-center justify-center p-6 transition-colors duration-500">
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-[100px]" />
       </div>
 
       <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative z-10 w-full max-w-[400px] p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)]"
-        >
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center mb-6">
-              {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
-              ) : (
-                <TatuIcon className="w-10 h-10" />
-              )}
+        initial={{ opacity: 0, y: 25 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-[400px] p-8 rounded-[2.5rem] bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-border-color shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] dark:shadow-none"
+      >
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-16 h-16 bg-slate-50 dark:bg-dark-surface-light rounded-2xl border border-slate-100 dark:border-dark-border-color flex items-center justify-center mb-6 shadow-xs">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+            ) : (
+              <TatuIcon className="w-10 h-10" />
+            )}
+          </div>
+          <h1 className="text-3xl font-black tracking-tighter mb-1 uppercase text-slate-900 dark:text-white">
+            TATU<span className="text-primary">.</span>
+          </h1>
+          <p className="text-slate-400 dark:text-slate-500 text-[9px] font-black uppercase tracking-[0.3em] mb-6">Finanças Pessoais</p>
+          
+          {/* Jessica Personal Profile Avatar */}
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-black text-2xl shadow-md mb-3 transform hover:scale-105 transition-transform duration-300">
+            J
+          </div>
+          
+          <h2 className="text-xl font-black tracking-tight mb-1 text-slate-900 dark:text-white">Olá, Jéssica!</h2>
+          <p className="text-slate-500 dark:text-dark-text-secondary text-xs font-medium">Insira sua senha para gerenciar suas contas.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Sua Senha</label>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter mb-2 uppercase text-slate-900">
-              TATU<span className="text-primary">.</span>
-            </h1>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Gestão Financeira Premium</p>
-            <h2 className="text-2xl font-black tracking-tight mb-1 text-slate-900">Bem-vindo de volta</h2>
-            <p className="text-slate-500 text-sm font-medium">Insira suas credenciais para acessar sua conta.</p>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 dark:text-slate-600 group-focus-within:text-primary transition-colors">
+                <Lock className="w-4 h-4" />
+              </div>
+              <input
+                type="password"
+                required
+                autoFocus
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-dark-surface-light border border-slate-200 dark:border-dark-border-color focus:border-primary/50 focus:bg-white dark:focus:bg-dark-surface focus:ring-4 focus:ring-primary/5 dark:focus:ring-primary/10 rounded-2xl outline-none transition-all text-sm font-medium placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Usuário</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-primary transition-colors">
-                  <User className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  autoCapitalize="none"
-                  required
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 focus:border-primary/50 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-2xl outline-none transition-all text-sm font-medium placeholder:text-slate-300 text-slate-900"
-                  placeholder="Seu nome de usuário"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Senha</label>
-              </div>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-primary transition-colors">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  type="password"
-                  required
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 focus:border-primary/50 focus:bg-white focus:ring-4 focus:ring-purple-500/5 rounded-2xl outline-none transition-all text-sm font-medium placeholder:text-slate-300 text-slate-900"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-4 rounded-2xl bg-danger/5 border border-danger/10 text-danger text-[11px] font-bold text-center uppercase tracking-wider"
-              >
-                {error}
-              </motion.div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full py-4 bg-gradient-to-r from-primary via-purple-600 to-primary bg-[length:200%_auto] text-white text-xs font-black uppercase tracking-widest rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 hover:bg-right duration-500 shadow-xl shadow-primary/20"
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 text-rose-600 dark:text-rose-400 text-[10px] font-black text-center uppercase tracking-wider"
             >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Acessar Painel
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </span>
-            </button>
+              {error}
+            </motion.div>
+          )}
 
-          </form>
-        </motion.div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="group relative w-full py-4 bg-gradient-to-r from-primary via-purple-600 to-primary bg-[length:200%_auto] text-white text-xs font-black uppercase tracking-widest rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 hover:bg-right duration-500 shadow-xl shadow-primary/20 dark:shadow-none"
+          >
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  Entrar no Painel
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </span>
+          </button>
+        </form>
+      </motion.div>
 
-        <div className="absolute bottom-8 left-0 right-0 text-center">
-          <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-300">
-            &copy; {new Date().getFullYear()} Tatu Financeiro
-          </p>
-        </div>
+      <div className="absolute bottom-8 left-0 right-0 text-center pointer-events-none">
+        <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-300 dark:text-slate-700">
+          &copy; {new Date().getFullYear()} Tatu Financeiro
+        </p>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import realtimeService, { SyncStatus } from '../services/realtimeService';
+import realtimeService from '../services/realtimeService';
 import { User, Role, AppSettings } from '../types';
 
 const CategoryManager: React.FC = () => {
@@ -146,26 +146,7 @@ const WhatsappSettings: React.FC = () => {
     );
 };
 
-const CloudStatusCard: React.FC = () => {
-    const [status, setStatus] = useState<SyncStatus>('local');
-    const [lastSync, setLastSync] = useState<Date | undefined>();
-    const userIdentifier = realtimeService.getCurrentUserIdentifier();
 
-    useEffect(() => {
-        const unsubscribe = realtimeService.subscribeToSyncStatus((s, t) => { setStatus(s); setLastSync(t); });
-        return () => unsubscribe();
-    }, []);
-
-    return (
-        <div className="p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl border border-border-color dark:border-dark-border-color space-y-3">
-            <div className="flex items-center space-x-3">
-                <span className="font-black text-xs uppercase tracking-widest text-text-primary dark:text-dark-text-primary">Sincronização: {status}</span>
-            </div>
-            <p className="text-[10px] font-bold uppercase text-text-muted dark:text-dark-text-muted">ID: {userIdentifier || 'Local'}</p>
-            <button onClick={() => realtimeService.forceSync()} className="w-full text-[10px] font-black uppercase py-2.5 bg-primary text-white rounded-xl shadow-lg shadow-primary/20">Sincronizar Agora</button>
-        </div>
-    );
-}
 
 interface SettingsModalProps {
     isOpen: boolean; onClose: () => void; theme: 'light' | 'dark'; toggleTheme: () => void;
@@ -177,7 +158,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
     const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
     const [whatsappEnabled, setWhatsappEnabled] = useState(false);
     const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
-    const isAdmin = currentUser?.role === Role.ADMIN;
+    const isAdmin = true;
 
     useEffect(() => {
         if (!isOpen) return;
@@ -230,7 +211,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, theme, t
                     )}
                     <CategoryManager />
                     <WhatsappSettings />
-                    <CloudStatusCard />
                     <div className="flex items-center justify-between p-4 bg-surface-light dark:bg-dark-surface-light rounded-2xl">
                         <span className="text-sm font-bold text-text-primary dark:text-dark-text-primary">Modo Escuro</span>
                         <button onClick={toggleTheme} className={`relative inline-flex items-center h-7 rounded-full w-12 ${theme === 'dark' ? 'bg-primary' : 'bg-border-color dark:bg-dark-border-color'}`}>

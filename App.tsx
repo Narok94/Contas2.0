@@ -3,11 +3,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { type User, type Group, type Account, Role, AccountStatus, type Income, type View } from './types';
 import LoginScreen from './components/LoginScreen';
-import RegisterScreen from './components/RegisterScreen';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import AccountsView from './components/AccountsView';
-import AdminPanel from './components/AdminPanel';
 import AccountFormModal from './components/AccountFormModal';
 import BatchAccountModal from './components/BatchAccountModal';
 import AddSelectionModal from './components/AddSelectionModal';
@@ -16,12 +14,12 @@ import { useTheme } from './hooks/useTheme';
 import * as dataService from './services/dataService';
 import realtimeService from './services/realtimeService';
 import IncomeManagement from './components/IncomeManagement';
-import GroupSelectionScreen from './components/GroupSelectionScreen';
 import MoveAccountsModal from './components/MoveAccountsModal';
 import { notifyPaymentViaWhatsApp } from './utils/whatsapp';
 import { isVariableExpense, getMonthlyAccounts } from './utils/accountUtils';
 
-import { Plus } from 'lucide-react';
+import { Plus, MessageSquare } from 'lucide-react';
+import WhatsAppAssistant from './components/WhatsAppAssistant';
 
 // isVariableExpense removed as it is now imported from accountUtils
 
@@ -57,11 +55,20 @@ const App: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   
+  const [isChatMode, setIsChatMode] = useState(() => {
+    const stored = localStorage.getItem('tatu_mobile_chat_mode');
+    return stored !== 'false';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tatu_mobile_chat_mode', String(isChatMode));
+  }, [isChatMode]);
+
   const constraintsRef = useRef<HTMLDivElement>(null);
 
-  // Redirect to accounts view on mobile devices when logged in
+  // Redirect to accounts view on mobile devices when logged in (allow other tabs in traditional layout)
   useEffect(() => {
-    if (isMobile && activeGroupId && view !== 'accounts' && view !== 'login' && view !== 'register' && view !== 'groupSelection') {
+    if (isMobile && activeGroupId && view !== 'accounts' && view !== 'dashboard' && view !== 'income' && view !== 'login') {
       setView('accounts');
     }
   }, [isMobile, activeGroupId, view]);
@@ -82,17 +89,10 @@ const App: React.FC = () => {
         if (storedUserStr) {
             try {
                 const storedUser = JSON.parse(storedUserStr);
-                const storedGroupId = sessionStorage.getItem('app_activeGroupId');
                 setCurrentUser(storedUser);
                 realtimeService.setUser(storedUser.username);
-                if (storedGroupId) {
-                    setActiveGroupId(storedGroupId);
-                    setView(isMobile ? 'accounts' : 'dashboard');
-                } else if (storedUser.groupIds.length > 0) {
-                    setView('groupSelection');
-                } else {
-                    setView('login');
-                }
+                setActiveGroupId('jessica-personal');
+                setView(isMobile ? 'accounts' : 'dashboard');
             } catch (e) { setView('login'); }
         } else { setView('login'); }
         setIsLoading(false);
@@ -103,58 +103,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-      // INJEÇÃO ÚNICA DAS CONTAS SOLICITADAS PELO USUÁRIO NO DIA 05 DE JUNHO
-      if (activeGroupId) {
-          const injected = localStorage.getItem('contas_injetadas_05_jun_v5');
-          if (!injected) {
-              const itemsToInject = [
-                  { name: 'Loja 1', value: 81.68, date: '2026-03-01T12:00:00Z', cat: '🛍️ Compras' },
-                  { name: 'Minas mas', value: 39.50, date: '2026-02-01T12:00:00Z', cat: '🛒 Mercado' },
-                  { name: 'Big suplementos', value: 55.00, date: '2026-02-01T12:00:00Z', cat: '💊 Saúde' },
-                  { name: 'Minas mais', value: 63.38, date: '2026-03-01T12:00:00Z', cat: '🛒 Mercado' },
-                  { name: 'Drogaria americana', value: 64.52, date: '2026-03-01T12:00:00Z', cat: '💊 Saúde' },
-                  { name: 'Araújo - 914 cartão', value: 88.00, date: '2026-03-01T12:00:00Z', cat: '💊 Saúde' },
-                  { name: 'Academia', value: 129.90, date: '2026-06-01T12:00:00Z', cat: '🏋️ Lazer / Esporte', rec: true },
-                  { name: 'Meire', value: 600.00, date: '2026-06-01T12:00:00Z', cat: '📄 Boleto' },
-                  { name: 'Unimed', value: 340.00, date: '2026-06-01T12:00:00Z', cat: '💊 Saúde', rec: true },
-                  { name: 'Avet', value: 120.00, date: '2026-06-01T12:00:00Z', cat: '🐶 Pet' },
-                  { name: 'Petlove', value: 133.00, date: '2026-06-01T12:00:00Z', cat: '🐶 Pet', inst: {cur: 2, tot: 2} },
-                  { name: 'Época', value: 74.88, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 6, tot: 8} },
-                  { name: 'Centauro', value: 99.90, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 7, tot: 10} },
-                  { name: 'Stanley', value: 23.80, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 7, tot: 10} },
-                  { name: 'Farmácia', value: 60.13, date: '2026-06-01T12:00:00Z', cat: '💊 Saúde', inst: {cur: 2, tot: 3} },
-                  { name: 'Disney', value: 46.90, date: '2026-06-01T12:00:00Z', cat: '📺 Assinaturas', rec: true },
-                  { name: 'Havan', value: 29.90, date: '2026-06-01T12:00:00Z', cat: '🛍️ Compras', inst: {cur: 9, tot: 10} },
-                  { name: 'Compras bh', value: 242.40, date: '2026-06-01T12:00:00Z', cat: '🛒 Mercado', inst: {cur: 3, tot: 3} },
-                  { name: 'Aniversário Antônio, clube, celular', value: 648.90, date: '2026-06-01T12:00:00Z', cat: '🎉 Festa/Evento' },
-              ];
 
-              itemsToInject.forEach(item => {
-                  const alreadyExists = accounts.some(a => a.name === item.name && a.groupId === activeGroupId && a.value === item.value);
-                  if (!alreadyExists) {
-                      const newAccount = {
-                          name: item.name,
-                          value: item.value,
-                          groupId: activeGroupId,
-                          category: item.cat,
-                          status: AccountStatus.PENDING,
-                          paymentDate: item.date,
-                          isRecurrent: !!item.rec,
-                          isInstallment: !!item.inst,
-                          currentInstallment: item.inst?.cur,
-                          totalInstallments: item.inst?.tot,
-                          installmentId: item.inst ? `inst-${Date.now()}-${item.name}` : undefined,
-                          id: `acc-injected-${Date.now()}-${Math.random()}`
-                      } as unknown as Account;
-                      
-                      realtimeService.addAccount(newAccount);
-                  }
-              });
-              localStorage.setItem('contas_injetadas_05_jun_v5', 'true');
-          }
-      }
-  }, [activeGroupId, accounts]);
   
   const userAccounts = useMemo(() => {
     if (!activeGroupId) return [];
@@ -185,20 +134,8 @@ const App: React.FC = () => {
     setCurrentUser(user);
     sessionStorage.setItem('app_currentUser', JSON.stringify(user));
     realtimeService.setUser(user.username);
-    if (user.groupIds.length === 1) {
-        handleGroupSelect(user.groupIds[0]);
-    } else if (user.groupIds.length > 1) {
-        setView('groupSelection');
-    }
+    handleGroupSelect('jessica-personal');
     return true;
-  };
-
-  const handleRegister = async (name: string, username: string, password: string): Promise<boolean> => {
-    const existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (existing) return false;
-    const newUser = await dataService.addUser({ name, username, password, role: Role.USER, groupIds: ['group-3'] });
-    if (newUser) return handleLogin(username, password);
-    return false;
   };
 
   const handleLogout = () => {
@@ -570,7 +507,7 @@ const App: React.FC = () => {
     });
     
     incomes.forEach(inc => {
-        csv += `Receita,"${inc.name}",${inc.value},"${inc.category}",${inc.date},PAGO\n`;
+        csv += `Receita,"${inc.name}",${inc.value},"Entrada",${inc.date},PAGO\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -594,7 +531,7 @@ const App: React.FC = () => {
             'Tipo': 'Receita',
             'Nome': inc.name,
             'Valor': inc.value,
-            'Categoria': inc.category,
+            'Categoria': 'Entrada',
             'Data': new Date(inc.date).toLocaleDateString('pt-BR'),
             'Status': 'Pago'
         })),
@@ -663,10 +600,24 @@ const App: React.FC = () => {
     );
   }
 
-  if (view === 'login') return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
-  if (view === 'register') return <RegisterScreen onRegister={handleRegister} onNavigateToLogin={() => setView('login')} />;
-  if (view === 'groupSelection' && currentUser) return <GroupSelectionScreen user={currentUser} groups={groups} onSelectGroup={handleGroupSelect} onLogout={handleLogout} />;
-  if (!currentUser || !activeGroupId) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setView('register')} />;
+  if (view === 'login') return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => {}} />;
+  if (!currentUser || !activeGroupId) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => {}} />;
+
+  if (isMobile && isChatMode) {
+    return (
+      <div className="fixed inset-0 h-[100dvh] w-full bg-[#efeae2] dark:bg-[#0b141a] overflow-hidden flex flex-col z-50">
+        <WhatsAppAssistant
+          currentUser={currentUser}
+          activeGroupId={activeGroupId}
+          accounts={userAccounts}
+          incomes={userIncomes}
+          categories={categories}
+          selectedDate={selectedDate}
+          onSwitchToTraditional={() => setIsChatMode(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-x-hidden">
@@ -730,7 +681,6 @@ const App: React.FC = () => {
               if (data.id) dataService.updateIncome({...data, date: new Date().toISOString()} as any);
               else dataService.addIncome({...data, date: new Date().toISOString(), id: `inc-${Date.now()}`} as any);
           }} onDelete={(id) => dataService.deleteIncome(id)} activeGroupId={activeGroupId} />}
-          {view === 'admin' && <AdminPanel users={users} groups={groups} onAddUser={dataService.addUser} onUpdateUser={dataService.updateUser} onDeleteUser={dataService.deleteUser} onAddGroup={dataService.addGroup} onUpdateGroup={dataService.updateGroup} onDeleteGroup={dataService.deleteGroup} />}
         </main>
         <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
         {isMobile && currentUser && activeGroupId && (
@@ -746,6 +696,15 @@ const App: React.FC = () => {
               <Plus className="w-7 h-7" strokeWidth={3.5} />
             </button>
           </div>
+        )}
+        {isMobile && !isChatMode && (
+          <button
+            onClick={() => setIsChatMode(true)}
+            className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-[#00a884] text-white rounded-full shadow-[0_8px_30px_rgba(0,168,132,0.4)] active:scale-95 transition-all border-[3px] border-white dark:border-[#0B0E14] hover:bg-opacity-95 pointer-events-auto"
+            title="Conversar com o Bot"
+          >
+            <MessageSquare className="w-6 h-6" />
+          </button>
         )}
 
         <SettingsModal 

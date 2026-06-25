@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { type User } from '../types';
 import { Plus } from 'lucide-react';
-import realtimeService, { type SyncStatus } from '../services/realtimeService';
+import realtimeService from '../services/realtimeService';
 
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -21,42 +21,7 @@ const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
     <rect x="60" y="65" width="10" height="5" rx="1" fill="#6366f1" />
   </svg>
 );
-const SyncStatusIndicator: React.FC = () => {
-    const [status, setStatus] = useState<SyncStatus>('local');
-    
-    useEffect(() => {
-        const unsubscribe = realtimeService.subscribeToSyncStatus((syncStatus) => {
-            setStatus(syncStatus);
-        });
-        return () => unsubscribe();
-    }, []);
 
-    const getStatusInfo = () => {
-        switch (status) {
-            case 'syncing':
-                return { text: 'Sinc...', color: 'text-primary dark:text-primary-light', icon: <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> };
-            case 'synced':
-                return { text: 'Sincronizado', color: 'text-success', icon: <div className="w-1.5 h-1.5 bg-success rounded-full" /> };
-            case 'error':
-                return { text: 'Offline', color: 'text-danger', icon: <div className="w-1.5 h-1.5 bg-danger rounded-full animate-pulse" /> };
-            case 'local':
-            default:
-                return { text: 'Local', color: 'text-text-muted dark:text-dark-text-muted', icon: <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" /> };
-        }
-    };
-
-    const { text, color, icon } = getStatusInfo();
-
-    return (
-        <button 
-            onClick={() => realtimeService.forceSync()} 
-            className="flex items-center justify-center w-6 h-6 bg-slate-50 dark:bg-dark-surface-light border border-slate-100 dark:border-dark-border-color rounded-full hover:bg-slate-100 dark:hover:bg-dark-surface transition-colors active:scale-95 shadow-sm"
-            title={`Sincronização: ${text}`}
-        >
-            {icon}
-        </button>
-    );
-};
 
 interface HeaderProps {
   currentUser: User;
@@ -150,18 +115,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
               >
                 Entradas
               </button>
-              {isAdmin && (
-                <button 
-                  onClick={() => onViewChange('admin')} 
-                  className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
-                    activeView === 'admin' 
-                      ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
-                  }`}
-                >
-                  Admin
-                </button>
-              )}
+
             </nav>
           )}
 
@@ -188,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 <span className="hidden sm:inline">Novo</span>
               </button>
             )}
-            <SyncStatusIndicator />
+
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -200,8 +154,8 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-[11px] font-black text-text-primary dark:text-white leading-none">{currentUser.name.split(' ')[0]}</p>
-                  <p className="text-[9px] font-bold text-text-muted dark:text-gray-400 mt-0.5 flex items-center gap-1">
-                    <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)] animate-pulse" /> Online
+                  <p className="text-[9px] font-bold text-text-muted dark:text-gray-400 mt-0.5">
+                    Painel Pessoal
                   </p>
                 </div>
               </button>
