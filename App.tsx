@@ -473,7 +473,22 @@ const App: React.FC = () => {
 
   const handleExportJson = () => {
     const data = realtimeService.exportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const safeDate = selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
+    const year = safeDate.getFullYear();
+    
+    let allExpanded: any[] = [];
+    for (let i = 0; i < 12; i++) {
+        allExpanded = [...allExpanded, ...getMonthlyAccounts(data.accounts, new Date(year, i, 1))];
+    }
+    
+    // Deduplicate physical records that appear across months (if any), though getMonthlyAccounts 
+    // only returns physical records matching that exact month, plus projected ones.
+    const exportPayload = {
+      ...data,
+      accounts: allExpanded
+    };
+
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -497,12 +512,19 @@ const App: React.FC = () => {
   };
 
   const handleExportCsv = () => {
-    const accounts = realtimeService.getAccounts();
+    const baseAccounts = realtimeService.getAccounts();
     const incomes = realtimeService.getIncomes();
+    const safeDate = selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
+    const year = safeDate.getFullYear();
+    
+    let allExpanded: any[] = [];
+    for (let i = 0; i < 12; i++) {
+        allExpanded = [...allExpanded, ...getMonthlyAccounts(baseAccounts, new Date(year, i, 1))];
+    }
     
     let csv = 'Tipo,Nome,Valor,Categoria,Data,Status\n';
     
-    accounts.forEach(acc => {
+    allExpanded.forEach(acc => {
         csv += `Despesa,"${acc.name}",${acc.value},"${acc.category}",${acc.paymentDate || (acc as any).dueDate},${acc.status}\n`;
     });
     
@@ -520,8 +542,16 @@ const App: React.FC = () => {
   };
 
   const handleExportExcel = () => {
-    const accounts = realtimeService.getAccounts();
+    const baseAccounts = realtimeService.getAccounts();
     const incomes = realtimeService.getIncomes();
+    
+    const safeDate = selectedDate instanceof Date && !isNaN(selectedDate.getTime()) ? selectedDate : new Date();
+    const year = safeDate.getFullYear();
+    
+    let allExpanded: any[] = [];
+    for (let i = 0; i < 12; i++) {
+        allExpanded = [...allExpanded, ...getMonthlyAccounts(baseAccounts, new Date(year, i, 1))];
+    }
     
     const wb = XLSX.utils.book_new();
 
@@ -535,7 +565,7 @@ const App: React.FC = () => {
             'Data': new Date(inc.date).toLocaleDateString('pt-BR'),
             'Status': 'Pago'
         })),
-        ...accounts.map(acc => ({
+        ...allExpanded.map(acc => ({
             'Tipo': 'Despesa',
             'Nome': acc.name,
             'Valor': acc.value,
@@ -548,10 +578,10 @@ const App: React.FC = () => {
     XLSX.utils.book_append_sheet(wb, wsAll, 'Resumo Geral');
     
     // 2. Group accounts by category in separate sheets
-    const categories = Array.from(new Set(accounts.map(a => a.category)));
+    const categories = Array.from(new Set(allExpanded.map(a => a.category)));
     
     categories.forEach(cat => {
-        const catAccounts = accounts.filter(a => a.category === cat);
+        const catAccounts = allExpanded.filter(a => a.category === cat);
         const data = catAccounts.map(acc => ({
             'Nome': acc.name,
             'Valor': acc.value,

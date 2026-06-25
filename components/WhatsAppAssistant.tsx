@@ -493,7 +493,7 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
     <div id="whatsapp-mobile-view" className="flex flex-col h-full w-full bg-[#efeae2] dark:bg-[#0b141a] rounded-none md:rounded-3xl overflow-hidden shadow-2xl border-0 md:border md:border-slate-200/60 dark:md:border-slate-800/60 transition-all duration-300 relative">
       
       {/* WhatsApp Header - Elegant dark slate/emerald header */}
-      <div className="flex items-center justify-between px-4 py-4 bg-[#075e54] dark:bg-[#1f2c34] text-white select-none shadow-md z-10">
+      <div className="shrink-0 flex items-center justify-between px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top))] bg-[#075e54] dark:bg-[#1f2c34] text-white select-none shadow-md z-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-slate-700 flex items-center justify-center font-black text-xl text-primary overflow-hidden relative border border-white/20 shadow-inner">
             🦦
@@ -595,7 +595,7 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
       </div>
 
       {/* WhatsApp Input Footer - Styled elegantly, guaranteed visible send button */}
-      <div className="bg-[#f0f2f5] dark:bg-[#111b21] px-4 py-4 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-2 z-10 relative">
+      <div className="shrink-0 bg-[#f0f2f5] dark:bg-[#111b21] px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-2 z-10 relative">
         <form onSubmit={handleSend} className="flex items-center gap-2.5 w-full">
           <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-full flex items-center px-3.5 py-1.5 border border-slate-200/60 dark:border-slate-700/60 shadow-inner focus-within:ring-2 focus-within:ring-[#00a884]/30 focus-within:border-[#00a884] transition-all">
             <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
