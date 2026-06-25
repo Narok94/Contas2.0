@@ -338,9 +338,7 @@ class RealtimeService {
       this.db = {
           users: parsedData.users || this.db.users,
           groups: parsedData.groups || this.db.groups,
-          accounts: (parsedData.accounts || this.db.accounts)
-            .filter((a: Account) => !a.id?.toString().startsWith('projected-'))
-            .map((a: Account) => this.normalizeAccount(a)),
+          accounts: (parsedData.accounts || this.db.accounts).map((a: Account) => this.normalizeAccount(a)),
           incomes: parsedData.incomes || this.db.incomes,
           categories: parsedData.categories || this.db.categories,
           settings: parsedData.settings || this.db.settings
