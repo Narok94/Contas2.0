@@ -18,8 +18,7 @@ import MoveAccountsModal from './components/MoveAccountsModal';
 import { notifyPaymentViaWhatsApp } from './utils/whatsapp';
 import { isVariableExpense, getMonthlyAccounts } from './utils/accountUtils';
 
-import { Plus, MessageSquare } from 'lucide-react';
-import WhatsAppAssistant from './components/WhatsAppAssistant';
+import { Plus } from 'lucide-react';
 
 // isVariableExpense removed as it is now imported from accountUtils
 
@@ -55,20 +54,11 @@ const App: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   
-  const [isChatMode, setIsChatMode] = useState(() => {
-    const stored = localStorage.getItem('tatu_mobile_chat_mode');
-    return stored !== 'false';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('tatu_mobile_chat_mode', String(isChatMode));
-  }, [isChatMode]);
-
   const constraintsRef = useRef<HTMLDivElement>(null);
 
-  // Redirect to accounts view on mobile devices when logged in (allow other tabs in traditional layout)
+  // Redirect to accounts view on mobile devices when logged in
   useEffect(() => {
-    if (isMobile && activeGroupId && view !== 'accounts' && view !== 'dashboard' && view !== 'income' && view !== 'login') {
+    if (isMobile && activeGroupId && view !== 'accounts' && view !== 'login') {
       setView('accounts');
     }
   }, [isMobile, activeGroupId, view]);
@@ -603,22 +593,6 @@ const App: React.FC = () => {
   if (view === 'login') return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => {}} />;
   if (!currentUser || !activeGroupId) return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => {}} />;
 
-  if (isMobile && isChatMode) {
-    return (
-      <div className="fixed inset-0 h-[100dvh] w-full bg-[#efeae2] dark:bg-[#0b141a] overflow-hidden flex flex-col z-50">
-        <WhatsAppAssistant
-          currentUser={currentUser}
-          activeGroupId={activeGroupId}
-          accounts={userAccounts}
-          incomes={userIncomes}
-          categories={categories}
-          selectedDate={selectedDate}
-          onSwitchToTraditional={() => setIsChatMode(false)}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary relative overflow-x-hidden">
       {/* Decorative Background Elements (mostly visible in dark mode, extremely subtle in light) */}
@@ -696,15 +670,6 @@ const App: React.FC = () => {
               <Plus className="w-7 h-7" strokeWidth={3.5} />
             </button>
           </div>
-        )}
-        {isMobile && !isChatMode && (
-          <button
-            onClick={() => setIsChatMode(true)}
-            className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-[#00a884] text-white rounded-full shadow-[0_8px_30px_rgba(0,168,132,0.4)] active:scale-95 transition-all border-[3px] border-white dark:border-[#0B0E14] hover:bg-opacity-95 pointer-events-auto"
-            title="Conversar com o Bot"
-          >
-            <MessageSquare className="w-6 h-6" />
-          </button>
         )}
 
         <SettingsModal 
