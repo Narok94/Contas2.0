@@ -38,90 +38,6 @@ class RealtimeService {
     window.addEventListener('storage', this.handleCrossTabSync);
   }
 
-  private ensureJessicaCustomAccounts() {
-    const customSpecs = [
-      { name: 'Pet love', value: 133.79, category: '📦 Outros', type: 'installment', current: 2, total: 2 },
-      { name: 'Época', value: 74.88, category: '📦 Outros', type: 'installment', current: 6, total: 8 },
-      { name: 'Centauro', value: 99.99, category: '📦 Outros', type: 'installment', current: 7, total: 10 },
-      { name: 'Stanley', value: 22.80, category: '📦 Outros', type: 'installment', current: 7, total: 10 },
-      { name: 'Celular Jessica', value: 323.81, category: '📦 Outros', type: 'installment', current: 17, total: 21 },
-      { name: 'Farmácia', value: 60.13, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
-      { name: 'Disney', value: 46.90, category: '🎮 Lazer', type: 'recurrent' },
-      { name: 'Academia Jessica', value: 129.90, category: '🏥 Saúde', type: 'recurrent' },
-      { name: 'Havan', value: 29.99, category: '📦 Outros', type: 'installment', current: 9, total: 10 },
-      { name: 'Compras bh', value: 242.40, category: '🍱 Alimentação', type: 'installment', current: 3, total: 3 },
-      { name: 'Farmácia minas master', value: 39.50, category: '🏥 Saúde', type: 'installment', current: 1, total: 2 },
-      { name: 'Big sup', value: 55.00, category: '🍱 Alimentação', type: 'installment', current: 1, total: 2 },
-      { name: 'Loja 61', value: 81.68, category: '📦 Outros', type: 'installment', current: 1, total: 3 },
-      { name: 'Farmácia minas master 2', value: 63.28, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 },
-      { name: 'Dragaria americana', value: 64.52, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 },
-      { name: 'Araújo', value: 88.00, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 }
-    ];
-
-    const targetGroup = 'jessica-personal'; 
-    const hasPetLove = this.db.accounts.some(a => a.groupId === targetGroup && a.name.toLowerCase() === 'pet love');
-
-    if (!hasPetLove) {
-      console.log('[RealtimeService] Restaurando contas perdidas da Jessica...');
-      
-      const namesToFilter = customSpecs.map(s => s.name.toLowerCase());
-      
-      let filteredAccounts = this.db.accounts.filter(a => {
-        if (a.groupId === targetGroup) {
-          const lowerName = a.name.toLowerCase();
-          return !namesToFilter.some(filterName => lowerName === filterName);
-        }
-        return true;
-      });
-
-      const newAccounts: Account[] = [];
-
-      customSpecs.forEach(spec => {
-        if (spec.type === 'installment') {
-          const installmentId = `series-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-          
-          for (let i = 1; i <= spec.total!; i++) {
-            // Se "current" era o status em Junho (mês 5), então mês de pagamento inicial é 5 - current + 1
-            // Vamos apenas adicionar as parcelas e ajustar o status
-            const isPaid = i < spec.current!;
-            const monthOffset = i - spec.current!;
-            // Set payment date correctly (Junho é mês 5). Mês atual é julho (6), então vamos adicionar + 1 no monthOffset ou manter Junho (5) como a parcela atual
-            const paymentDate = new Date(2026, 5 + monthOffset, 15, 12, 0, 0);
-
-            newAccounts.push({
-              id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${i}`,
-              groupId: targetGroup,
-              name: spec.name,
-              category: spec.category,
-              value: spec.value,
-              status: isPaid ? AccountStatus.PAID : AccountStatus.PENDING,
-              isRecurrent: false,
-              isInstallment: true,
-              currentInstallment: i,
-              totalInstallments: spec.total!,
-              installmentId: installmentId,
-              paymentDate: paymentDate.toISOString()
-            });
-          }
-        } else if (spec.type === 'recurrent') {
-          newAccounts.push({
-            id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-template`,
-            groupId: targetGroup,
-            name: spec.name,
-            category: spec.category,
-            value: spec.value,
-            status: AccountStatus.PENDING,
-            isRecurrent: true,
-            isInstallment: false
-          });
-        }
-      });
-
-      this.db.accounts = [...filteredAccounts, ...newAccounts];
-      this.saveLocal();
-    }
-  }
-
   private loadAndArmorData(): Db {
     const defaultSettings: AppSettings = { appName: 'TATU.' };
     let recoveredAccounts: Account[] = [];
@@ -178,6 +94,108 @@ class RealtimeService {
     db.accounts = db.accounts.map(a => this.normalizeAccount(a));
 
     return db;
+  }
+
+  private ensureJessicaCustomAccounts() {
+    const customSpecs = [
+      { name: 'Celular Jessica', value: 323.81, category: '💳 Cartão', type: 'installment', current: 18, total: 21 },
+      { name: 'Farmácia', value: 60.13, category: '🏥 Saúde', type: 'installment', current: 3, total: 3 },
+      { name: 'Havan', value: 29.99, category: '📦 Outros', type: 'installment', current: 10, total: 10 },
+      { name: 'Centauro', value: 99.99, category: '📦 Outros', type: 'installment', current: 8, total: 10 },
+      { name: 'Época', value: 74.88, category: '📦 Outros', type: 'installment', current: 7, total: 8 },
+      { name: 'Stanley', value: 22.80, category: '📦 Outros', type: 'installment', current: 8, total: 10 },
+      { name: 'Farmácia minas master 2', value: 63.28, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
+      { name: 'Drogaria americana', value: 64.52, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
+      { name: 'Loja 61', value: 81.68, category: '📦 Outros', type: 'installment', current: 2, total: 3 },
+      { name: 'Farmácia minas master', value: 39.50, category: '🏥 Saúde', type: 'installment', current: 2, total: 2 },
+      { name: 'Big sup', value: 55.00, category: '🍱 Alimentação', type: 'installment', current: 2, total: 2 },
+      { name: 'Araújo', value: 88.00, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
+      { name: 'Shopee', value: 82.11, category: '📦 Outros', type: 'installment', current: 2, total: 2 },
+      { name: 'Alvorada', value: 59.51, category: '🍱 Alimentação', type: 'installment', current: 2, total: 2 },
+      { name: 'Mercado', value: 92.93, category: '🍱 Alimentação', type: 'installment', current: 2, total: 3 },
+      { name: 'Farmacia Minas', value: 47.25, category: '🏥 Saúde', type: 'installment', current: 2, total: 2 },
+      { name: 'Big Suplementos', value: 87.00, category: '🍱 Alimentação', type: 'installment', current: 1, total: 3 },
+      { name: 'Clube da Casa', value: 44.00, category: '🏠 Moradia', type: 'installment', current: 1, total: 2 },
+      { name: 'Dentista Pri', value: 294.00, category: '🏥 Saúde', type: 'installment', current: 1, total: 8 },
+      { name: 'Spotify', value: 0.00, category: '🎮 Lazer', type: 'recurrent' },
+      { name: 'Youtube', value: 0.00, category: '🎮 Lazer', type: 'recurrent' },
+      { name: 'Alvorada', value: 85.00, category: '🍱 Alimentação', type: 'single' },
+      { name: 'bh', value: 63.00, category: '🍱 Alimentação', type: 'single' },
+      { name: 'PAI', value: 648.90, category: '📦 Outros', type: 'recurrent' },
+      { name: 'MÃE', value: 150.00, category: '📦 Outros', type: 'recurrent' },
+      { name: 'CARTÃO CAIXA', value: 200.00, category: '💳 Cartão', type: 'recurrent' },
+      { name: 'CELULAR+ UNIMED', value: 470.00, category: '🏥 Saúde', type: 'recurrent' },
+      { name: 'AGUA', value: 160.00, category: '💧 Água', type: 'recurrent' },
+      { name: 'LUZ', value: 0.00, category: '💡 Luz', type: 'recurrent' },
+      { name: 'INTERNET', value: 89.90, category: '🌐 Internet', type: 'recurrent' }
+    ];
+
+    const targetGroup = 'jessica-personal'; 
+    const hasNewSeed = localStorage.getItem('tatu_new_seed_v7');
+
+    if (!hasNewSeed) {
+      console.log('[RealtimeService] Resetando todas as contas antigas e iniciando nova carga...');
+      
+      // Clear out all previous accounts for this group
+      let filteredAccounts = this.db.accounts.filter(a => a.groupId !== targetGroup);
+
+      const newAccounts: Account[] = [];
+
+      customSpecs.forEach((spec, idx) => {
+        if (spec.type === 'installment') {
+          const installmentId = `series-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${idx}`;
+          
+          for (let i = 1; i <= spec.total!; i++) {
+            const isPaid = i < spec.current!;
+            const monthOffset = i - spec.current!;
+            const paymentDate = new Date(2026, 6 + monthOffset, 15, 12, 0, 0);
+
+            newAccounts.push({
+              id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${i}-${idx}`,
+              groupId: targetGroup,
+              name: spec.name,
+              category: spec.category,
+              value: spec.value,
+              status: isPaid ? AccountStatus.PAID : AccountStatus.PENDING,
+              isRecurrent: false,
+              isInstallment: true,
+              currentInstallment: i,
+              totalInstallments: spec.total!,
+              installmentId: installmentId,
+              paymentDate: paymentDate.toISOString()
+            });
+          }
+        } else if (spec.type === 'recurrent') {
+          newAccounts.push({
+            id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-template-${idx}`,
+            groupId: targetGroup,
+            name: spec.name,
+            category: spec.category,
+            value: spec.value,
+            status: AccountStatus.PENDING,
+            isRecurrent: true,
+            isInstallment: false
+          });
+        } else if (spec.type === 'single') {
+          newAccounts.push({
+            id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${idx}`,
+            groupId: targetGroup,
+            name: spec.name,
+            category: spec.category,
+            value: spec.value,
+            status: AccountStatus.PENDING,
+            isRecurrent: false,
+            isInstallment: false,
+            paymentDate: new Date(2026, 6, 15, 12, 0, 0).toISOString()
+          });
+        }
+      });
+
+      this.db.accounts = [...filteredAccounts, ...newAccounts];
+      localStorage.setItem('tatu_new_seed_v7', 'true');
+      this.saveLocal();
+      this.persistRemote();
+    }
   }
 
   private async init() {

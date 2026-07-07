@@ -27,10 +27,13 @@ export const MOCK_USERS: User[] = [
 ];
 
 export const MOCK_ACCOUNTS: Account[] = [
-  { id: 'acc-j3', groupId: 'jessica-personal', name: 'Unimed', category: '🏥 Saúde', value: 348.69, status: AccountStatus.PAID, isRecurrent: true, isInstallment: false, paymentDate: lastMonth.toISOString() },
-  { id: 'acc-j6', groupId: 'jessica-personal', name: 'Cartão', category: '💳 Cartão', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
-  { id: 'acc-j9', groupId: 'jessica-personal', name: 'Cemig', category: '💡 Luz', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
-  { id: 'acc-j10', groupId: 'jessica-personal', name: 'Copasa', category: '💧 Água', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-pai', groupId: 'jessica-personal', name: 'PAI', category: '📦 Outros', value: 648.90, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-mae', groupId: 'jessica-personal', name: 'MÃE', category: '📦 Outros', value: 150.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-cartao-caixa', groupId: 'jessica-personal', name: 'CARTÃO CAIXA', category: '💳 Cartão', value: 200.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-celular-unimed', groupId: 'jessica-personal', name: 'CELULAR+ UNIMED', category: '🏥 Saúde', value: 470.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-agua', groupId: 'jessica-personal', name: 'AGUA', category: '💧 Água', value: 160.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-luz', groupId: 'jessica-personal', name: 'LUZ', category: '💡 Luz', value: 0.00, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
+  { id: 'acc-internet', groupId: 'jessica-personal', name: 'INTERNET', category: '🌐 Internet', value: 89.90, status: AccountStatus.PENDING, isRecurrent: true, isInstallment: false },
 ];
 
 export const MOCK_INCOMES: Income[] = [

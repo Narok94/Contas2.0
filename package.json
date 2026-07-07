@@ -9,6 +9,8 @@
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
+    "@google/genai": "^2.10.0",
+    "@types/node": "^26.0.1",
     "esbuild": "0.23.0",
     "typescript": "^5.0.0"
   },
