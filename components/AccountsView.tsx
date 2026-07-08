@@ -100,66 +100,12 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
   const [activeActionsId, setActiveActionsId] = useState<string | null>(null);
 
   const getCategoryStyle = (category: string) => {
-    const rawName = (category || '').toUpperCase();
-    
-    // Default fallback
-    let style = {
-        bg: 'bg-slate-50 dark:bg-slate-900/30',
-        border: 'border-slate-100 dark:border-slate-800',
-        text: 'text-slate-600 dark:text-slate-400'
+    // Return neutral colors for all categories
+    return {
+        bg: 'bg-slate-50 dark:bg-dark-surface-light',
+        border: 'border-slate-100 dark:border-dark-border-color',
+        text: 'text-slate-600 dark:text-slate-300'
     };
-
-    if (rawName.includes('LAZER') || rawName.includes('FESTA') || rawName.includes('EVENTO') || rawName.includes('PLAY')) {
-        style = {
-            bg: 'bg-rose-50 dark:bg-rose-950/20',
-            border: 'border-rose-100 dark:border-rose-900/30',
-            text: 'text-rose-600 dark:text-rose-400'
-        };
-    } else if (rawName.includes('CARTÃO') || rawName.includes('CRÉDITO') || rawName.includes('CARD') || rawName.includes('BANCO')) {
-        style = {
-            bg: 'bg-violet-50 dark:bg-violet-950/20',
-            border: 'border-violet-100 dark:border-violet-900/30',
-            text: 'text-violet-600 dark:text-violet-400'
-        };
-    } else if (rawName.includes('SAÚDE') || rawName.includes('DR') || rawName.includes('MEDICINA') || rawName.includes('FARMÁCIA') || rawName.includes('MÉDICO')) {
-        style = {
-            bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-            border: 'border-emerald-100 dark:border-emerald-900/30',
-            text: 'text-emerald-700 dark:text-emerald-400'
-        };
-    } else if (rawName.includes('ASSINATURA') || rawName.includes('STREAM') || rawName.includes('TELEFONE') || rawName.includes('INTERNET') || rawName.includes('PROVEDOR')) {
-        style = {
-            bg: 'bg-cyan-50 dark:bg-cyan-950/20',
-            border: 'border-cyan-100 dark:border-cyan-900/30',
-            text: 'text-cyan-600 dark:text-cyan-400'
-        };
-    } else if (rawName.includes('ALIMENTAÇÃO') || rawName.includes('FEIRA') || rawName.includes('MERCADO') || rawName.includes('SUPERMERCADO') || rawName.includes('RESTAURANTE') || rawName.includes('COMPRAS') || rawName.includes('SHOPPING')) {
-        style = {
-            bg: 'bg-amber-50 dark:bg-amber-950/20',
-            border: 'border-amber-100 dark:border-amber-900/30',
-            text: 'text-amber-700 dark:text-amber-400'
-        };
-    } else if (rawName.includes('ÁGUA') || rawName.includes('SANEAMENTO') || rawName.includes('COPASA') || rawName.includes('SABESP')) {
-        style = {
-            bg: 'bg-blue-50 dark:bg-blue-950/20',
-            border: 'border-blue-100 dark:border-blue-900/30',
-            text: 'text-blue-600 dark:text-blue-400'
-        };
-    } else if (rawName.includes('LUZ') || rawName.includes('ENERGIA') || rawName.includes('FORÇA') || rawName.includes('CEMIG')) {
-        style = {
-            bg: 'bg-indigo-50 dark:bg-indigo-950/20',
-            border: 'border-indigo-100 dark:border-indigo-900/30',
-            text: 'text-indigo-600 dark:text-indigo-400'
-        };
-    } else if (rawName.includes('PET') || rawName.includes('CACHORRO') || rawName.includes('GATO') || rawName.includes('VET')) {
-         style = {
-            bg: 'bg-pink-50 dark:bg-pink-950/20',
-            border: 'border-pink-100 dark:border-pink-900/30',
-            text: 'text-pink-600 dark:text-pink-400'
-         };
-    }
-
-    return style;
   };
 
   const renderAccounts = (accountsList: Account[], title: string, colorClass: string) => {
@@ -207,16 +153,17 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                             >
                                                 {/* Header: Category & Installment/Recurrent */}
                                                 <div className="flex justify-between items-start">
-                                                    <span className={`${isMobile ? 'text-[8px] px-1.5 py-0.2' : 'text-[10px] px-2 py-0.5 shadow-sm'} font-black uppercase border rounded tracking-wider ${catColors.bg} ${catColors.border} ${catColors.text}`}>
+                                                    <span className={`${isMobile ? 'text-[8px] px-1.5 py-0.2' : 'text-[10px] px-2 py-0.5 shadow-sm gap-1.5'} font-black uppercase border rounded tracking-wider flex items-center ${catColors.bg} ${catColors.border} ${catColors.text}`}>
+                                                        {getCategoryIcon(acc.category, isMobile ? "w-2 h-2" : "w-3 h-3")}
                                                         {catName}
                                                     </span>
                                                     <div className="flex flex-col items-end gap-1">
                                                         {acc.isInstallment ? (
-                                                            <span className={`${isMobile ? 'text-[8px] px-1 py-0.2' : 'text-[11px] px-2 py-0.5'} font-black text-blue-600 bg-blue-50 border border-blue-150 rounded`}>
+                                                            <span className={`${isMobile ? 'text-[8px] px-1 py-0.2' : 'text-[11px] px-2 py-0.5'} font-black text-primary bg-primary/5 border border-primary/20 rounded`}>
                                                                 {isMobile ? `${acc.currentInstallment}/${acc.totalInstallments}` : `Parcela ${acc.currentInstallment} de ${acc.totalInstallments}`}
                                                             </span>
                                                         ) : acc.isRecurrent ? (
-                                                            <span className={`${isMobile ? 'text-[8px] p-0.5' : 'text-[10px] px-2 py-0.5 gap-1'} font-black text-indigo-600 bg-indigo-50 border border-indigo-150 rounded flex items-center justify-center uppercase tracking-wider`}>
+                                                            <span className={`${isMobile ? 'text-[8px] p-0.5' : 'text-[10px] px-2 py-0.5 gap-1'} font-black text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-dark-surface-light border border-slate-100 dark:border-dark-border-color rounded flex items-center justify-center uppercase tracking-wider`}>
                                                                 <Repeat className={isMobile ? "w-2.5 h-2.5" : "w-3 h-3"} /> {!isMobile && "Recorrente"}
                                                             </span>
                                                         ) : (acc.paymentDate || (acc as any).dueDate || (acc as any).date) ? (
@@ -230,10 +177,10 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
 
                                                 {/* Body: Title & Value */}
                                                 <div className={`flex flex-col ${isMobile ? 'gap-0.5' : 'gap-1'}`}>
-                                                    <h3 className={`font-bold ${isMobile ? 'text-[11px] sm:text-[12px]' : 'text-sm sm:text-base'} leading-tight line-clamp-2 uppercase tracking-tight ${isPaid ? 'text-slate-300 line-through' : 'text-slate-700 dark:text-gray-100'}`}>
+                                                    <h3 className={`font-bold ${isMobile ? 'text-[11px] sm:text-[12px]' : 'text-sm sm:text-base'} leading-tight line-clamp-2 uppercase tracking-tight ${isPaid ? 'text-slate-300 dark:text-slate-600 line-through' : 'text-slate-700 dark:text-gray-100'}`}>
                                                         {acc.name}
                                                     </h3>
-                                                    <p className={`font-black tracking-tight ${isPaid ? 'text-slate-300' : 'text-slate-900 dark:text-white'} ${isMobile ? 'text-xs' : 'text-xl'}`}>
+                                                    <p className={`font-black tracking-tight ${isPaid ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'} ${isMobile ? 'text-xs' : 'text-xl'}`}>
                                                         {formatCurrency(acc.value)}
                                                     </p>
                                                 </div>
@@ -244,8 +191,8 @@ const AccountsView: React.FC<AccountsViewProps> = ({ accounts, onEditAccount, on
                                                         onClick={(e) => { e.stopPropagation(); onToggleStatus(acc); }}
                                                         className={`flex-1 flex items-center justify-center rounded-lg font-black uppercase tracking-wider transition-all border ${isMobile ? 'gap-1.5 py-1 px-3 text-[9px]' : 'gap-2 py-2 px-4 text-[11px] hover:scale-[1.02] active:scale-95'} ${
                                                             isPaid 
-                                                                ? 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100' 
-                                                                : 'bg-emerald-500/10 border border-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-sm'
+                                                                ? 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100 dark:bg-dark-surface-light dark:border-dark-border-color dark:hover:bg-slate-800' 
+                                                                : 'bg-emerald-500/10 border border-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-sm dark:text-emerald-400'
                                                         }`}
                                                     >
                                                         {isPaid ? 'DESFAZER' : 'PAGAR'}

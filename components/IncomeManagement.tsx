@@ -129,7 +129,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                                             <p className="font-bold text-text-primary dark:text-dark-text-primary text-xs flex items-center gap-1.5 truncate">
                                                 {income.name} 
                                                 {income.isRecurrent && (
-                                                    <span className="text-[7px] font-black uppercase bg-primary/10 text-primary px-1 rounded shrink-0">Rec</span>
+                                                    <span className="text-[7px] font-black uppercase bg-slate-50 text-slate-500 dark:bg-dark-surface-light dark:text-slate-400 border border-slate-100 dark:border-dark-border-color px-1 rounded shrink-0">Rec</span>
                                                 )}
                                             </p>
                                             <p className="text-sm font-mono font-black text-success tracking-tighter">{formatCurrency(income.value)}</p>

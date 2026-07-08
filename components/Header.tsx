@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { type User } from '../types';
-import { Plus } from 'lucide-react';
+import { Plus, Sun, Moon } from 'lucide-react';
 import realtimeService from '../services/realtimeService';
+import { useTheme } from '../hooks/useTheme';
 
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -38,6 +39,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme(currentUser?.username);
 
   useEffect(() => {
     const settings = realtimeService.getSettings();
@@ -140,6 +142,14 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 <span className="hidden sm:inline">Novo</span>
               </button>
             )}
+
+            <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-100 dark:border-dark-border-color text-slate-400 hover:text-primary transition-all shadow-sm active:scale-95 hover:border-slate-200"
+                title="Alternar Tema"
+            >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
 
             <div className="relative" ref={menuRef}>
               <button
