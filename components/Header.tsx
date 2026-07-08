@@ -81,41 +81,39 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 </div>
             </div>
           </div>
-
           {/* Embedded Nav tabs inside the header */}
           {onViewChange && (
-            <nav className="hidden sm:flex items-center bg-slate-50 dark:bg-dark-surface p-1 rounded-full border border-slate-100 dark:border-dark-border-color shadow-sm gap-1">
+            <nav className="hidden sm:flex items-center bg-slate-100/50 dark:bg-dark-surface/50 p-1.5 rounded-xl border border-slate-200/50 dark:border-dark-border-color/50 gap-2">
               <button 
                 onClick={() => onViewChange('dashboard')} 
-                className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
+                className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
                   activeView === 'dashboard' 
-                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
+                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm ring-1 ring-slate-200/50 dark:ring-white/5' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary hover:bg-slate-200/30'
                 }`}
               >
                 Início
               </button>
               <button 
                 onClick={() => onViewChange('accounts')} 
-                className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
+                className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
                   activeView === 'accounts' 
-                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
+                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm ring-1 ring-slate-200/50 dark:ring-white/5' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary hover:bg-slate-200/30'
                 }`}
               >
                 Contas
               </button>
               <button 
                 onClick={() => onViewChange('income')} 
-                className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
+                className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
                   activeView === 'income' 
-                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
+                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm ring-1 ring-slate-200/50 dark:ring-white/5' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary hover:bg-slate-200/30'
                 }`}
               >
                 Entradas
               </button>
-
             </nav>
           )}
 

@@ -18,11 +18,12 @@ interface DashboardProps {
   incomes: Income[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
+  isMobile?: boolean;
 }
 
 const COLORS = ['#6366F1', '#00DC82', '#FF4D4D', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
 
-const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, setSelectedDate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, setSelectedDate, isMobile }) => {
   const [activeTab, setActiveTab] = useState<'summary' | 'trends' | 'detailed'>('summary');
   
   const formatCurrency = (val: number) => (
@@ -120,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
   }, [accounts, selectedDate]);
 
   return (
-    <div className="space-y-6 pb-12 font-sans max-w-[1024px] mx-auto px-4 sm:px-6">
+    <div className={`space-y-6 pb-12 font-sans max-w-[1024px] mx-auto ${isMobile ? 'px-4 sm:px-6' : 'px-8 pt-4'}`}>
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
             <div>
               <h1 className="text-xl font-black text-navy dark:text-gray-100 tracking-tighter">
@@ -166,7 +167,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-slate-100 dark:border-dark-border-color p-5 flex flex-col gap-6">
+                        <div className={`bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-slate-100 dark:border-dark-border-color flex flex-col gap-6 ${isMobile ? 'p-5' : 'p-8'}`}>
                             <h3 className="text-[10px] font-semibold text-text-muted dark:text-gray-400 uppercase tracking-widest">
                                 Alocação de Gastos
                             </h3>
@@ -214,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({ accounts, incomes, selectedDate, 
                             })()}
                         </div>
 
-                        <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-slate-100 dark:border-dark-border-color p-5 flex flex-col gap-6">
+                        <div className={`bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-slate-100 dark:border-dark-border-color flex flex-col gap-6 ${isMobile ? 'p-5' : 'p-8'}`}>
                             <h3 className="text-[10px] font-semibold text-text-muted dark:text-gray-400 uppercase tracking-widest">
                                 Parcelamentos Próximos
                             </h3>

@@ -5,6 +5,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { type User, type Account, type Income, AccountStatus } from '../types';
 import * as dataService from '../services/dataService';
 import realtimeService from '../services/realtimeService';
+import { useTheme } from '../hooks/useTheme';
 
 declare let process: any;
 
@@ -35,6 +36,7 @@ const WhatsAppAssistant: React.FC<WhatsAppAssistantProps> = ({
   selectedDate,
   onSwitchToTraditional
 }) => {
+  const { theme } = useTheme(currentUser?.username);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -491,23 +493,34 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
     }
   };
 
+  const isDark = theme === 'dark';
+  const notebookBgStyle = {
+    backgroundColor: isDark ? '#151412' : '#fdfaf2',
+    backgroundImage: isDark
+      ? `linear-gradient(to right, transparent 49px, rgba(239, 68, 68, 0.15) 49px, rgba(239, 68, 68, 0.15) 51px, transparent 51px),
+         linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)`
+      : `linear-gradient(to right, transparent 49px, rgba(239, 68, 68, 0.25) 49px, rgba(239, 68, 68, 0.25) 51px, transparent 51px),
+         linear-gradient(rgba(14, 165, 233, 0.12) 1px, transparent 1px)`,
+    backgroundSize: '100% 100%, 100% 32px',
+    backgroundAttachment: 'local',
+  };
+
   return (
-    <div id="whatsapp-mobile-view" className="flex flex-col h-full w-full bg-[#efeae2] dark:bg-[#0b141a] rounded-none md:rounded-3xl overflow-hidden shadow-2xl border-0 md:border md:border-slate-200/60 dark:md:border-slate-800/60 transition-all duration-300 relative">
+    <div id="whatsapp-mobile-view" className="flex flex-col h-full w-full bg-[#f6f2e9] dark:bg-[#12110f] rounded-none md:rounded-3xl overflow-hidden shadow-2xl border-0 md:border md:border-stone-300 dark:md:border-stone-800 transition-all duration-300 relative">
       
-      {/* WhatsApp Header - Elegant dark slate/emerald header */}
-      <div className="flex items-center justify-between px-4 py-4 bg-[#075e54] dark:bg-[#1f2c34] text-white select-none shadow-md z-10">
+      {/* Notebook Header - Premium leather cover style */}
+      <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-[#503527] via-[#40271b] to-[#503527] dark:from-[#251a14] dark:via-[#19110d] dark:to-[#251a14] text-amber-50 select-none shadow-lg z-10 border-b border-amber-950/40 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-slate-700 flex items-center justify-center font-black text-xl text-primary overflow-hidden relative border border-white/20 shadow-inner">
-            🦦
-            <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#075e54] dark:border-[#1f2c34] animate-pulse" />
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center font-black text-2xl overflow-hidden relative border border-amber-500/20 shadow-inner">
+            📒
           </div>
           <div>
-            <h3 className="font-bold text-sm tracking-tight flex items-center gap-1 text-slate-50">
-              Tatu Zap Bot
-              <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse" />
+            <h3 className="font-serif font-bold text-base tracking-wide flex items-center gap-1.5 text-amber-100">
+              Anotações da Jéssica
+              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
             </h3>
-            <p className="text-[10px] text-emerald-100/95 font-semibold tracking-wide">
-              {isTyping ? 'digitando...' : 'online'}
+            <p className="text-[10px] text-amber-200/70 font-sans tracking-widest uppercase">
+              {isTyping ? 'escrevendo...' : 'diário de contas'}
             </p>
           </div>
         </div>
@@ -515,14 +528,14 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
         <div className="flex items-center gap-2.5">
           <button 
             onClick={onSwitchToTraditional} 
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 active:scale-95 transition-all rounded-full border border-white/10 text-[11px] font-black tracking-tight uppercase"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50/10 hover:bg-amber-50/20 active:scale-95 transition-all rounded-lg border border-amber-500/20 text-[10px] font-sans tracking-wider uppercase font-black text-amber-100"
             title="Fechar Chat"
           >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Fechar</span>
+            <LayoutDashboard className="w-3.5 h-3.5 text-amber-300" />
+            <span>Painel</span>
           </button>
           <div className="relative group">
-            <button className="p-2 hover:bg-white/10 rounded-full active:scale-90 transition-colors text-white">
+            <button className="p-2 hover:bg-amber-50/10 rounded-lg active:scale-90 transition-colors text-amber-200">
               <MoreVertical className="w-4 h-4" />
             </button>
             <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-white dark:bg-dark-surface border border-slate-100 dark:border-dark-border-color shadow-lg rounded-xl overflow-hidden py-1 z-50 min-w-[140px]">
@@ -530,21 +543,44 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
                 onClick={clearChatHistory} 
                 className="w-full text-left px-4 py-2.5 text-xs text-rose-500 dark:text-rose-400 hover:bg-slate-50 dark:hover:bg-dark-surface-light font-bold"
               >
-                Limpar Conversa
+                Limpar Histórico
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* WhatsApp Body (Message Lists) */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative scrollbar-none no-scrollbar">
-        {/* Subtle WhatsApp watermark background effect */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.015] bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat" />
+      {/* Notebook Spiral Spine at the top of pages */}
+      <div className="flex justify-around items-center px-6 bg-gradient-to-b from-[#e6dfd5] via-[#efeae0] to-[#eae4d8] dark:from-[#252321] dark:via-[#2c2a27] dark:to-[#1e1d1b] h-9 border-b border-stone-300 dark:border-stone-800 shadow-sm relative z-20 overflow-visible shrink-0 select-none">
+        {Array.from({ length: 18 }).map((_, i) => (
+          <div key={i} className="relative flex flex-col items-center w-5">
+            {/* Realistic Oval Punch Hole with deep dark interior shadow */}
+            <div className="w-3.5 h-3.5 rounded-full bg-stone-950 dark:bg-black shadow-[inset_0_2px_5px_rgba(0,0,0,0.9)] border border-stone-800/40 relative z-10 flex items-center justify-center">
+              <div className="w-2.5 h-2.5 rounded-full bg-black/60" />
+            </div>
+            
+            {/* 3D Realistic Drop Shadow cast by the metallic spiral onto the page */}
+            <div className="absolute top-1 w-2.5 h-11 rounded-full bg-black/35 blur-[1.5px] transform rotate-[18deg] -translate-y-[16px] translate-x-[3px] z-20 pointer-events-none" />
+            
+            {/* Metallic Shiny Coiled Loop with specular reflection highlights */}
+            <div className="absolute top-0.5 w-2.5 h-11 rounded-full bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-400 dark:from-zinc-500 dark:via-zinc-200 dark:to-zinc-600 shadow-[1px_2px_5px_rgba(0,0,0,0.35)] border border-zinc-200/20 transform rotate-[18deg] -translate-y-[18px] z-30 pointer-events-none">
+              {/* Specular Highlight Streak */}
+              <div className="absolute inset-y-0 left-[25%] w-[20%] bg-gradient-to-r from-white to-transparent opacity-80 blur-[0.2px]" />
+              {/* Metallic shadow edge */}
+              <div className="absolute inset-y-0 right-0 w-[20%] bg-black/10" />
+            </div>
+          </div>
+        ))}
+      </div>
 
-        <div className="flex justify-center my-1 relative z-10">
-          <span className="bg-emerald-500/10 text-[#00a884] dark:text-[#00c298] text-[10px] font-semibold px-3 py-1 rounded-full border border-emerald-500/10 shadow-xs">
-            🔒 Criptografado ponta a ponta
+      {/* Notebook Body (Lined Pages) */}
+      <div 
+        className="flex-1 overflow-y-auto pl-16 pr-5 py-[32px] relative scrollbar-none no-scrollbar flex flex-col"
+        style={notebookBgStyle}
+      >
+        <div className="h-[32px] flex items-center justify-center relative z-10 mb-[32px] shrink-0">
+          <span className="bg-amber-100/40 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[11px] font-sans font-bold px-3 py-1 rounded-md border border-amber-500/10 shadow-xs tracking-wider">
+            📝 Caderno de Contas Sincronizado
           </span>
         </div>
 
@@ -554,25 +590,37 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
             return (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, scale: 0.95, y: 12 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`flex w-full relative z-10 ${isUser ? 'justify-end' : 'justify-start'}`}
+                className={`w-full relative z-10 mb-[16px] flex ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm text-[14px] leading-relaxed relative flex flex-col ${
-                    isUser
-                      ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-[#303030] dark:text-gray-100 rounded-tr-none shadow-xs'
-                      : 'bg-white dark:bg-[#1f2c34] text-slate-800 dark:text-gray-100 rounded-tl-none border border-slate-100 dark:border-slate-800/20 shadow-[0_2px_8px_rgba(0,0,0,0.03)]'
+                  className={`max-w-[85%] relative flex flex-col transition-transform duration-300 ${
+                    isUser ? 'items-end text-right' : 'items-start text-left'
                   }`}
+                  style={{
+                    fontFamily: isUser ? "'Caveat', cursive" : "'Kalam', cursive",
+                    fontSize: isUser ? '23px' : '18px',
+                    lineHeight: '32px',
+                    transform: 'translateY(-2px)', // Align baseline exactly to sit on top of the notebook line
+                  }}
                 >
-                  <p className="whitespace-pre-line font-medium">{msg.text}</p>
+                  <p 
+                    className={`whitespace-pre-line font-bold tracking-wide ${
+                      isUser 
+                        ? 'text-blue-700 dark:text-sky-300 drop-shadow-xs' 
+                        : 'text-stone-800 dark:text-stone-100 drop-shadow-xs'
+                    }`}
+                  >
+                    {msg.text}
+                  </p>
                   
-                  <div className="flex items-center justify-end gap-1 mt-1.5 self-end text-[10px] text-slate-400 dark:text-slate-500 select-none">
+                  <div className="flex items-center gap-1 mt-1 text-[9px] font-sans text-stone-400 dark:text-stone-500 select-none h-[12px] leading-none">
                     <span>{msg.timestamp}</span>
                     {isUser && (
-                      <CheckCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-sky-400" />
+                      <CheckCheck className="w-3 h-3 text-blue-500 dark:text-blue-400" />
                     )}
                   </div>
                 </div>
@@ -582,13 +630,10 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
         </AnimatePresence>
 
         {isTyping && (
-          <div className="flex w-full justify-start relative z-10">
-            <div className="bg-white dark:bg-[#1f2c34] rounded-2xl rounded-tl-none px-4 py-3 shadow-xs border border-slate-100 dark:border-slate-800/20">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-[#8696a0] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-[#8696a0] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-[#8696a0] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
+          <div className="flex w-full justify-start relative z-10 h-[32px] mb-[32px] shrink-0">
+            <div className="flex items-center gap-2 pl-2 h-[32px]">
+              <span className="text-lg animate-bounce">✍️</span>
+              <span className="text-xs font-sans font-bold text-stone-500 dark:text-stone-400 italic">Escrevendo no caderno...</span>
             </div>
           </div>
         )}
@@ -596,31 +641,31 @@ Não coloque nenhuma formatação markdown fora do bloco JSON. Apenas retorne o 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* WhatsApp Input Footer - Styled elegantly, guaranteed visible send button */}
-      <div className="bg-[#f0f2f5] dark:bg-[#111b21] px-4 py-4 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-2 z-10 relative">
+      {/* Notebook Bottom Cover & Input Field */}
+      <div className="bg-gradient-to-b from-[#efe9df] to-[#eae3d8] dark:from-[#1b1917] dark:to-[#12110f] px-4 py-4 border-t border-stone-300 dark:border-stone-800 flex flex-col gap-2 z-10 relative shrink-0">
         <form onSubmit={handleSend} className="flex items-center gap-2.5 w-full">
-          <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-full flex items-center px-3.5 py-1.5 border border-slate-200/60 dark:border-slate-700/60 shadow-inner focus-within:ring-2 focus-within:ring-[#00a884]/30 focus-within:border-[#00a884] transition-all">
-            <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+          <div className="flex-1 bg-[#faf9f6] dark:bg-[#242320] rounded-xl flex items-center px-3.5 py-1.5 border border-stone-300 dark:border-stone-700 shadow-inner focus-within:ring-2 focus-within:ring-amber-500/30 focus-within:border-amber-500 transition-all">
+            <button type="button" className="p-1.5 text-stone-400 hover:text-stone-600 dark:text-stone-400 dark:hover:text-stone-200 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800/50 transition-colors">
               <Smile className="w-5 h-5" />
             </button>
             
             <input
               type="text"
-              className="flex-1 bg-transparent border-none outline-none py-1.5 px-2 text-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-semibold"
-              placeholder="Digite uma mensagem..."
+              className="flex-1 bg-transparent border-none outline-none py-1.5 px-2 text-sm text-stone-800 dark:text-gray-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 font-semibold"
+              placeholder="Digite o gasto ou entrada..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
             />
 
-            <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+            <button type="button" className="p-1.5 text-stone-400 hover:text-stone-600 dark:text-stone-400 dark:hover:text-stone-200 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800/50 transition-colors">
               <Paperclip className="w-5 h-5" />
             </button>
           </div>
 
           <button
             type="submit"
-            className="w-12 h-12 rounded-full bg-[#00a884] hover:bg-[#008f6f] text-white flex items-center justify-center active:scale-95 transition-all shadow-[0_4px_12px_rgba(0,168,132,0.3)] shrink-0"
-            title="Enviar mensagem"
+            className="w-12 h-12 rounded-xl bg-gradient-to-r from-[#8b5a2b] to-[#704822] hover:from-[#704822] hover:to-[#5e3c1c] text-white flex items-center justify-center active:scale-95 transition-all shadow-md shrink-0"
+            title="Anotar Gasto"
           >
             <Send className="w-5 h-5 ml-0.5 text-white" />
           </button>

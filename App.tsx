@@ -647,6 +647,7 @@ const App: React.FC = () => {
                   incomes={userIncomes} 
                   selectedDate={selectedDate}
                   setSelectedDate={setSelectedDate}
+                  isMobile={isMobile}
               />
           )}
           {view === 'accounts' && (
@@ -675,12 +676,13 @@ const App: React.FC = () => {
                   selectedDate={selectedDate} setSelectedDate={setSelectedDate} 
                   onOpenMoveModal={() => setIsMoveModalOpen(true)} 
                   categories={categories}
+                  isMobile={isMobile}
               />
           )}
           {view === 'income' && <IncomeManagement incomes={userIncomes} onAddOrUpdate={(data) => {
               if (data.id) dataService.updateIncome({...data, date: new Date().toISOString()} as any);
               else dataService.addIncome({...data, date: new Date().toISOString(), id: `inc-${Date.now()}`} as any);
-          }} onDelete={(id) => dataService.deleteIncome(id)} activeGroupId={activeGroupId} />}
+          }} onDelete={(id) => dataService.deleteIncome(id)} activeGroupId={activeGroupId} isMobile={isMobile} />}
         </main>
         <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-40" />
         {isMobile && currentUser && activeGroupId && (
