@@ -8,10 +8,9 @@ interface IncomeManagementProps {
     onAddOrUpdate: (incomeData: Omit<Income, 'id' | 'date'> & { id?: string }) => void;
     onDelete: (incomeId: string) => void;
     activeGroupId: string | null;
-    isMobile?: boolean;
 }
 
-const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpdate, onDelete, activeGroupId, isMobile }) => {
+const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpdate, onDelete, activeGroupId }) => {
     const [name, setName] = useState('');
     const [value, setValue] = useState('');
     const [isRecurrent, setIsRecurrent] = useState(false);
@@ -57,7 +56,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
     const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
-        <div className={`max-w-5xl mx-auto space-y-4 font-sans pb-24 ${isMobile ? 'p-2 sm:p-0' : 'p-6'}`}>
+        <div className="max-w-5xl mx-auto p-2 sm:p-0 space-y-4 font-sans pb-24">
             <header className="flex items-center gap-3 px-2">
                 <div className="p-2 rounded-xl bg-success/10 text-success">
                     <TrendingUp className="w-5 h-5" />
@@ -70,7 +69,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div className="lg:col-span-4 order-1">
-                    <form onSubmit={handleSubmit} className={`bg-white dark:bg-dark-surface rounded-xl border border-slate-100 dark:border-dark-border-color shadow-sm space-y-4 ${isMobile ? 'p-4' : 'p-6'}`}>
+                    <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-dark-surface rounded-xl border border-slate-100 dark:border-dark-border-color shadow-sm space-y-4">
                         <div className="flex items-center gap-2 mb-2">
                             <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                 {editingIncome ? <Edit2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -120,7 +119,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                         </div>
                         <div className="divide-y divide-slate-100 dark:divide-dark-border-color max-h-[500px] overflow-y-auto">
                             {incomes.length > 0 ? incomes.map(income => (
-                                <div key={income.id} className={`flex items-center justify-between hover:bg-primary/5 transition-colors group ${isMobile ? 'p-3' : 'p-4'}`}>
+                                <div key={income.id} className="flex items-center justify-between p-3 hover:bg-primary/5 transition-colors group">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-lg bg-success/10 text-success flex items-center justify-center shrink-0">
                                             <Banknote className="w-4 h-4" />
@@ -129,7 +128,7 @@ const IncomeManagement: React.FC<IncomeManagementProps> = ({ incomes, onAddOrUpd
                                             <p className="font-bold text-text-primary dark:text-dark-text-primary text-xs flex items-center gap-1.5 truncate">
                                                 {income.name} 
                                                 {income.isRecurrent && (
-                                                    <span className="text-[7px] font-black uppercase bg-slate-50 text-slate-500 dark:bg-dark-surface-light dark:text-slate-400 border border-slate-100 dark:border-dark-border-color px-1 rounded shrink-0">Rec</span>
+                                                    <span className="text-[7px] font-black uppercase bg-primary/10 text-primary px-1 rounded shrink-0">Rec</span>
                                                 )}
                                             </p>
                                             <p className="text-sm font-mono font-black text-success tracking-tighter">{formatCurrency(income.value)}</p>

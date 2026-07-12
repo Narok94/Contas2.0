@@ -14,7 +14,7 @@ export const useTheme = (username?: string) => {
         }
         const stored = localStorage.getItem('theme') as Theme | null;
         if (stored) return stored;
-        return 'light'; // Keep default light for others or global if not configured
+        return 'dark'; // Keep default dark for others or global if not configured
     }, [username]);
 
     const [theme, setTheme] = useState<Theme>(getInitialTheme);

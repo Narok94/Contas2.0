@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { type User } from '../types';
-import { Plus, Sun, Moon } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import realtimeService from '../services/realtimeService';
-import { useTheme } from '../hooks/useTheme';
 
 const TatuIcon = ({ className = "w-full h-full" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -39,7 +38,6 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { theme, toggleTheme } = useTheme(currentUser?.username);
 
   useEffect(() => {
     const settings = realtimeService.getSettings();
@@ -83,38 +81,50 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 </div>
             </div>
           </div>
+
           {/* Embedded Nav tabs inside the header */}
           {onViewChange && (
-            <nav className="hidden sm:flex items-center bg-slate-100/50 dark:bg-dark-surface/50 p-1.5 rounded-xl border border-slate-200/50 dark:border-dark-border-color/50 gap-2">
+            <nav className="hidden sm:flex items-center bg-slate-50 dark:bg-dark-surface p-1 rounded-full border border-slate-100 dark:border-dark-border-color shadow-sm gap-1">
               <button 
                 onClick={() => onViewChange('dashboard')} 
-                className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
+                className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
                   activeView === 'dashboard' 
-                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm ring-1 ring-slate-200/50 dark:ring-white/5' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary hover:bg-slate-200/30'
+                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
                 }`}
               >
                 Início
               </button>
               <button 
                 onClick={() => onViewChange('accounts')} 
-                className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
+                className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
                   activeView === 'accounts' 
-                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm ring-1 ring-slate-200/50 dark:ring-white/5' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary hover:bg-slate-200/30'
+                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
                 }`}
               >
                 Contas
               </button>
               <button 
                 onClick={() => onViewChange('income')} 
-                className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
+                className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
                   activeView === 'income' 
-                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm ring-1 ring-slate-200/50 dark:ring-white/5' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary hover:bg-slate-200/30'
+                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
                 }`}
               >
                 Entradas
+              </button>
+
+              <button 
+                onClick={() => onViewChange('assistant')} 
+                className={`px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
+                  activeView === 'assistant' 
+                    ? 'bg-white dark:bg-dark-surface-light text-primary shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-dark-text-primary'
+                }`}
+              >
+                Assistente
               </button>
             </nav>
           )}
@@ -142,14 +152,6 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onSettingsClick, onLogout,
                 <span className="hidden sm:inline">Novo</span>
               </button>
             )}
-
-            <button
-                onClick={toggleTheme}
-                className="p-2 rounded-xl bg-slate-50 dark:bg-dark-surface border border-slate-100 dark:border-dark-border-color text-slate-400 hover:text-primary transition-all shadow-sm active:scale-95 hover:border-slate-200"
-                title="Alternar Tema"
-            >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
 
             <div className="relative" ref={menuRef}>
               <button

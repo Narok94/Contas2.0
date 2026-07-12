@@ -38,6 +38,13 @@ class RealtimeService {
     window.addEventListener('storage', this.handleCrossTabSync);
   }
 
+  private handleCrossTabSync = (e: StorageEvent) => {
+    if (e.key === DB_MAIN_KEY) {
+      this.db = this.loadAndArmorData();
+      this.notifyAll();
+    }
+  }
+
   private loadAndArmorData(): Db {
     const defaultSettings: AppSettings = { appName: 'TATU.' };
     let recoveredAccounts: Account[] = [];
@@ -98,60 +105,53 @@ class RealtimeService {
 
   private ensureJessicaCustomAccounts() {
     const customSpecs = [
-      { name: 'Celular Jessica', value: 323.81, category: '💳 Cartão', type: 'installment', current: 18, total: 21 },
-      { name: 'Farmácia', value: 60.13, category: '🏥 Saúde', type: 'installment', current: 3, total: 3 },
-      { name: 'Havan', value: 29.99, category: '📦 Outros', type: 'installment', current: 10, total: 10 },
-      { name: 'Centauro', value: 99.99, category: '📦 Outros', type: 'installment', current: 8, total: 10 },
-      { name: 'Época', value: 74.88, category: '📦 Outros', type: 'installment', current: 7, total: 8 },
-      { name: 'Stanley', value: 22.80, category: '📦 Outros', type: 'installment', current: 8, total: 10 },
-      { name: 'Farmácia minas master 2', value: 63.28, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
-      { name: 'Drogaria americana', value: 64.52, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
-      { name: 'Loja 61', value: 81.68, category: '📦 Outros', type: 'installment', current: 2, total: 3 },
-      { name: 'Farmácia minas master', value: 39.50, category: '🏥 Saúde', type: 'installment', current: 2, total: 2 },
-      { name: 'Big sup', value: 55.00, category: '🍱 Alimentação', type: 'installment', current: 2, total: 2 },
-      { name: 'Araújo', value: 88.00, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
-      { name: 'Shopee', value: 82.11, category: '📦 Outros', type: 'installment', current: 2, total: 2 },
-      { name: 'Alvorada', value: 59.51, category: '🍱 Alimentação', type: 'installment', current: 2, total: 2 },
-      { name: 'Mercado', value: 92.93, category: '🍱 Alimentação', type: 'installment', current: 2, total: 3 },
-      { name: 'Farmacia Minas', value: 47.25, category: '🏥 Saúde', type: 'installment', current: 2, total: 2 },
-      { name: 'Big Suplementos', value: 87.00, category: '🍱 Alimentação', type: 'installment', current: 1, total: 3 },
-      { name: 'Clube da Casa', value: 44.00, category: '🏠 Moradia', type: 'installment', current: 1, total: 2 },
-      { name: 'Dentista Pri', value: 294.00, category: '🏥 Saúde', type: 'installment', current: 1, total: 8 },
-      { name: 'Spotify', value: 0.00, category: '🎮 Lazer', type: 'recurrent' },
-      { name: 'Youtube', value: 0.00, category: '🎮 Lazer', type: 'recurrent' },
-      { name: 'Alvorada', value: 85.00, category: '🍱 Alimentação', type: 'single' },
-      { name: 'bh', value: 63.00, category: '🍱 Alimentação', type: 'single' },
-      { name: 'PAI', value: 648.90, category: '📦 Outros', type: 'recurrent' },
-      { name: 'MÃE', value: 150.00, category: '📦 Outros', type: 'recurrent' },
-      { name: 'CARTÃO CAIXA', value: 200.00, category: '💳 Cartão', type: 'recurrent' },
-      { name: 'CELULAR+ UNIMED', value: 470.00, category: '🏥 Saúde', type: 'recurrent' },
-      { name: 'AGUA', value: 160.00, category: '💧 Água', type: 'recurrent' },
-      { name: 'LUZ', value: 0.00, category: '💡 Luz', type: 'recurrent' },
-      { name: 'INTERNET', value: 89.90, category: '🌐 Internet', type: 'recurrent' }
+      { name: 'Pet love', value: 133.79, category: '📦 Outros', type: 'installment', current: 2, total: 2 },
+      { name: 'Época', value: 74.88, category: '📦 Outros', type: 'installment', current: 6, total: 8 },
+      { name: 'Centauro', value: 99.99, category: '📦 Outros', type: 'installment', current: 7, total: 10 },
+      { name: 'Stanley', value: 22.80, category: '📦 Outros', type: 'installment', current: 7, total: 10 },
+      { name: 'Celular Jessica', value: 323.81, category: '📦 Outros', type: 'installment', current: 17, total: 21 },
+      { name: 'Farmácia', value: 60.13, category: '🏥 Saúde', type: 'installment', current: 2, total: 3 },
+      { name: 'Disney', value: 46.90, category: '🎮 Lazer', type: 'recurrent' },
+      { name: 'Academia Jessica', value: 129.90, category: '🏥 Saúde', type: 'recurrent' },
+      { name: 'Havan', value: 29.99, category: '📦 Outros', type: 'installment', current: 9, total: 10 },
+      { name: 'Compras bh', value: 242.40, category: '🍱 Alimentação', type: 'installment', current: 3, total: 3 },
+      { name: 'Farmácia minas master', value: 39.50, category: '🏥 Saúde', type: 'installment', current: 1, total: 2 },
+      { name: 'Big sup', value: 55.00, category: '🍱 Alimentação', type: 'installment', current: 1, total: 2 },
+      { name: 'Loja 61', value: 81.68, category: '📦 Outros', type: 'installment', current: 1, total: 3 },
+      { name: 'Farmácia minas master 2', value: 63.28, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 },
+      { name: 'Dragaria americana', value: 64.52, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 },
+      { name: 'Araújo', value: 88.00, category: '🏥 Saúde', type: 'installment', current: 1, total: 3 }
     ];
 
     const targetGroup = 'jessica-personal'; 
-    const hasNewSeed = localStorage.getItem('tatu_new_seed_v7');
+    const hasPetLove = this.db.accounts.some(a => a.groupId === targetGroup && a.name.toLowerCase() === 'pet love');
 
-    if (!hasNewSeed) {
-      console.log('[RealtimeService] Resetando todas as contas antigas e iniciando nova carga...');
+    if (!hasPetLove) {
+      console.log('[RealtimeService] Iniciando atualização profunda das contas da Jessica...');
       
-      // Clear out all previous accounts for this group
-      let filteredAccounts = this.db.accounts.filter(a => a.groupId !== targetGroup);
+      const namesToFilter = customSpecs.map(s => s.name.toLowerCase());
+      
+      let filteredAccounts = this.db.accounts.filter(a => {
+        if (a.groupId === targetGroup) {
+          const lowerName = a.name.toLowerCase();
+          return !namesToFilter.some(filterName => lowerName === filterName);
+        }
+        return true;
+      });
 
       const newAccounts: Account[] = [];
 
-      customSpecs.forEach((spec, idx) => {
+      customSpecs.forEach(spec => {
         if (spec.type === 'installment') {
-          const installmentId = `series-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${idx}`;
+          const installmentId = `series-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
           
           for (let i = 1; i <= spec.total!; i++) {
             const isPaid = i < spec.current!;
             const monthOffset = i - spec.current!;
-            const paymentDate = new Date(2026, 6 + monthOffset, 15, 12, 0, 0);
+            const paymentDate = new Date(2026, 5 + monthOffset, 15, 12, 0, 0);
 
             newAccounts.push({
-              id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${i}-${idx}`,
+              id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${i}`,
               groupId: targetGroup,
               name: spec.name,
               category: spec.category,
@@ -167,7 +167,7 @@ class RealtimeService {
           }
         } else if (spec.type === 'recurrent') {
           newAccounts.push({
-            id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-template-${idx}`,
+            id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-template`,
             groupId: targetGroup,
             name: spec.name,
             category: spec.category,
@@ -176,25 +176,12 @@ class RealtimeService {
             isRecurrent: true,
             isInstallment: false
           });
-        } else if (spec.type === 'single') {
-          newAccounts.push({
-            id: `acc-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${idx}`,
-            groupId: targetGroup,
-            name: spec.name,
-            category: spec.category,
-            value: spec.value,
-            status: AccountStatus.PENDING,
-            isRecurrent: false,
-            isInstallment: false,
-            paymentDate: new Date(2026, 6, 15, 12, 0, 0).toISOString()
-          });
         }
       });
 
       this.db.accounts = [...filteredAccounts, ...newAccounts];
-      localStorage.setItem('tatu_new_seed_v7', 'true');
       this.saveLocal();
-      this.persistRemote();
+      this.syncWithRemote(); // Sync to server after creating mock data
     }
   }
 
@@ -203,9 +190,8 @@ class RealtimeService {
     if (userStr) {
       const user = JSON.parse(userStr);
       this.currentUserIdentifier = user.username;
-      this.syncWithRemote();
     }
-    this.notifyAll();
+    await this.syncWithRemote();
   }
 
   private saveLocal() {
@@ -214,26 +200,39 @@ class RealtimeService {
     localStorage.setItem(DB_BACKUP_KEY, payload);
   }
 
+  public async syncWithRemote() {
+    this.setSyncStatus('syncing');
+    try {
+      const [usersRes, groupsRes, accountsRes, incomesRes, categoriesRes, settingsRes] = await Promise.all([
+        fetch('/api/users'), fetch('/api/groups'), fetch('/api/accounts'), fetch('/api/incomes'), fetch('/api/categories'), fetch('/api/settings')
+      ]);
+
+      if (usersRes.ok) this.db.users = await usersRes.json();
+      if (groupsRes.ok) this.db.groups = await groupsRes.json();
+      if (accountsRes.ok) {
+        const accs = await accountsRes.json();
+        this.db.accounts = accs.map((a: any) => this.normalizeAccount(a));
+      }
+      if (incomesRes.ok) this.db.incomes = await incomesRes.json();
+      if (categoriesRes.ok) this.db.categories = await categoriesRes.json();
+      if (settingsRes.ok) this.db.settings = await settingsRes.json();
+
+      this.saveLocal();
+      this.notifyAll();
+      this.lastSyncTime = new Date();
+      this.setSyncStatus('synced');
+    } catch (err) {
+      console.error('Sync failed:', err);
+      this.setSyncStatus('error');
+    }
+  }
+
   public setUser(username: string) {
     if (this.currentUserIdentifier !== username) {
       this.currentUserIdentifier = username;
       if (username) this.syncWithRemote();
       else this.setSyncStatus('local');
     }
-  }
-
-  private handleCrossTabSync = (e: StorageEvent) => {
-    if ((e.key === DB_MAIN_KEY || e.key === DB_BACKUP_KEY) && e.newValue) {
-      try {
-        const parsed = JSON.parse(e.newValue);
-        this.db = parsed.db || parsed;
-        this.notifyAll();
-      } catch (err) {}
-    }
-  }
-
-  public async syncWithRemote() {
-    this.setSyncStatus('synced');
   }
 
   private setSyncStatus(status: SyncStatus) {
@@ -245,10 +244,6 @@ class RealtimeService {
     this.syncListeners.push(cb);
     cb(this.currentSyncStatus, this.lastSyncTime);
     return () => { this.syncListeners = this.syncListeners.filter(c => c !== cb); };
-  }
-
-  private async persistRemote() {
-    // No remote sync
   }
 
   private notifyAll() {
@@ -296,7 +291,9 @@ class RealtimeService {
   public updateAccount = async (acc: Account) => { 
       const normalized = this.normalizeAccount(acc);
       this.db.accounts = this.db.accounts.map(a => a.id === normalized.id ? normalized : a); 
-      this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
+      this.notify('accounts'); 
+      this.saveLocal();
+      await fetch(`/api/accounts/${normalized.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(normalized) });
   }
 
   public updateAccountAndSeries = async (acc: Account) => {
@@ -316,44 +313,114 @@ class RealtimeService {
               }
               return a.id === normalized.id ? normalized : a;
           });
+          this.notify('accounts'); this.saveLocal();
+          await Promise.all(this.db.accounts.filter(a => a.installmentId === normalized.installmentId).map(a => 
+            fetch(`/api/accounts/${a.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(a) })
+          ));
       } else {
           this.db.accounts = this.db.accounts.map(a => a.id === normalized.id ? normalized : a);
+          this.notify('accounts'); this.saveLocal();
+          await fetch(`/api/accounts/${normalized.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(normalized) });
       }
-      this.notify('accounts'); this.saveLocal(); this.persistRemote();
   }
 
   public addAccount = async (acc: Account) => { 
       const normalized = this.normalizeAccount(acc);
       this.db.accounts = [...this.db.accounts, normalized]; 
-      this.notify('accounts'); this.saveLocal(); this.persistRemote(); 
+      this.notify('accounts'); this.saveLocal();
+      await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(normalized) });
   }
   
-  public deleteAccount = async (id: string) => { this.db.accounts = this.db.accounts.filter(a => a.id !== id); this.notify('accounts'); this.saveLocal(); this.persistRemote(); }
+  public deleteAccount = async (id: string) => { 
+      this.db.accounts = this.db.accounts.filter(a => a.id !== id); 
+      this.notify('accounts'); this.saveLocal(); 
+      await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
+  }
+
   public updateMultipleAccounts = async (accs: Account[]) => {
     const accsMap = new Map(accs.map(a => [a.id, this.normalizeAccount(a)]));
     this.db.accounts = this.db.accounts.map(a => accsMap.has(a.id) ? accsMap.get(a.id)! : a);
-    this.notify('accounts'); this.saveLocal(); this.persistRemote();
+    this.notify('accounts'); this.saveLocal();
+    await Promise.all(accs.map(a => 
+      fetch(`/api/accounts/${a.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.normalizeAccount(a)) })
+    ));
   }
 
-  public addUser = async (u: Omit<User, 'id'>) => { const newUser = { ...u, id: `user-${Date.now()}` } as User; this.db.users = [...this.db.users, newUser]; this.notify('users'); this.saveLocal(); this.persistRemote(); return newUser; }
-  public updateUser = async (u: User) => { this.db.users = this.db.users.map(old => old.id === u.id ? u : old); this.notify('users'); this.saveLocal(); this.persistRemote(); return u; }
-  public deleteUser = async (id: string) => { this.db.users = this.db.users.filter(u => u.id !== id); this.notify('users'); this.saveLocal(); this.persistRemote(); }
+  public addUser = async (u: Omit<User, 'id'>) => { 
+      const newUser = { ...u, id: `user-${Date.now()}` } as User; 
+      this.db.users = [...this.db.users, newUser]; 
+      this.notify('users'); this.saveLocal(); 
+      await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
+      return newUser; 
+  }
 
-  public addGroup = async (g: Omit<Group, 'id'>) => { const newGroup = { ...g, id: `group-${Date.now()}` } as Group; this.db.groups = [...this.db.groups, newGroup]; this.notify('groups'); this.saveLocal(); this.persistRemote(); return newGroup; }
-  public updateGroup = async (g: Group) => { this.db.groups = this.db.groups.map(old => old.id === g.id ? g : old); this.notify('groups'); this.saveLocal(); this.persistRemote(); return g; }
-  public deleteGroup = async (id: string) => { this.db.groups = this.db.groups.filter(g => g.id !== id); this.notify('groups'); this.saveLocal(); this.persistRemote(); }
+  public updateUser = async (u: User) => { 
+      this.db.users = this.db.users.map(old => old.id === u.id ? u : old); 
+      this.notify('users'); this.saveLocal(); 
+      await fetch(`/api/users/${u.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(u) });
+      return u; 
+  }
+
+  public deleteUser = async (id: string) => { 
+      this.db.users = this.db.users.filter(u => u.id !== id); 
+      this.notify('users'); this.saveLocal(); 
+      await fetch(`/api/users/${id}`, { method: 'DELETE' });
+  }
+
+  public addGroup = async (g: Omit<Group, 'id'>) => { 
+      const newGroup = { ...g, id: `group-${Date.now()}` } as Group; 
+      this.db.groups = [...this.db.groups, newGroup]; 
+      this.notify('groups'); this.saveLocal(); 
+      await fetch('/api/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newGroup) });
+      return newGroup; 
+  }
+
+  public updateGroup = async (g: Group) => { 
+      this.db.groups = this.db.groups.map(old => old.id === g.id ? g : old); 
+      this.notify('groups'); this.saveLocal(); 
+      await fetch(`/api/groups/${g.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(g) });
+      return g; 
+  }
+
+  public deleteGroup = async (id: string) => { 
+      this.db.groups = this.db.groups.filter(g => g.id !== id); 
+      this.notify('groups'); this.saveLocal(); 
+      await fetch(`/api/groups/${id}`, { method: 'DELETE' });
+  }
   
-  public addIncome = async (i: Income) => { this.db.incomes = [...this.db.incomes, i]; this.notify('incomes'); this.saveLocal(); this.persistRemote(); }
-  public updateIncome = async (inc: Income) => { this.db.incomes = this.db.incomes.map(i => i.id === inc.id ? inc : i); this.notify('incomes'); this.saveLocal(); this.persistRemote(); return inc; }
-  public deleteIncome = async (id: string) => { this.db.incomes = this.db.incomes.filter(i => i.id !== id); this.notify('incomes'); this.saveLocal(); this.persistRemote(); }
+  public addIncome = async (i: Income) => { 
+      this.db.incomes = [...this.db.incomes, i]; 
+      this.notify('incomes'); this.saveLocal(); 
+      await fetch('/api/incomes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(i) });
+  }
 
-  public saveCategories = async (cats: string[]) => { this.db.categories = cats; this.notify('categories'); this.saveLocal(); this.persistRemote(); }
+  public updateIncome = async (inc: Income) => { 
+      this.db.incomes = this.db.incomes.map(i => i.id === inc.id ? inc : i); 
+      this.notify('incomes'); this.saveLocal(); 
+      await fetch(`/api/incomes/${inc.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(inc) });
+      return inc; 
+  }
+
+  public deleteIncome = async (id: string) => { 
+      this.db.incomes = this.db.incomes.filter(i => i.id !== id); 
+      this.notify('incomes'); this.saveLocal(); 
+      await fetch(`/api/incomes/${id}`, { method: 'DELETE' });
+  }
+
+  public saveCategories = async (cats: string[]) => { 
+      this.db.categories = cats; 
+      this.notify('categories'); this.saveLocal(); 
+      await fetch('/api/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ categories: cats }) });
+  }
+
   public updateSettings = async (settings: AppSettings) => { 
-    this.db.settings = settings; this.notify('settings'); this.saveLocal(); 
+      this.db.settings = settings; 
+      this.notify('settings'); this.saveLocal(); 
+      await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
   }
 
   public exportData = () => this.db;
-  public importData = (data: Partial<Db> | any) => { 
+  public importData = async (data: Partial<Db> | any) => { 
       const parsedData = data.db || data;
       this.db = {
           users: parsedData.users || this.db.users,
@@ -365,7 +432,13 @@ class RealtimeService {
       };
       this.notifyAll(); 
       this.saveLocal(); 
-      this.persistRemote(); 
+
+      // Push all to API
+      await fetch('/api/import', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(this.db) 
+      });
   }
 }
 

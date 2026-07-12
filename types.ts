@@ -45,6 +45,7 @@ export interface Account {
   totalValue?: number;
   installmentId?: string;
   paymentDate?: string;
+  isFromAssistant?: boolean;
 }
 
 export interface Income {
